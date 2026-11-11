@@ -233,7 +233,9 @@ services:
     dataset_adapter:
       adapter: "ducklake"
       config:
-        catalog: "postgres:postgresql://{{ secret.POSTGRES_USER }}:{{ secret.POSTGRES_PASSWORD }}@postgres:5432/ducklake"
+        # No password here: libpq reads it from PGPASSWORD (set in docker-compose.yml),
+        # so a failed ATTACH, whose DuckDB error repeats this DSN, cannot echo it.
+        catalog: "postgres:postgresql://{{ secret.POSTGRES_USER }}@postgres:5432/ducklake"
         data_path: "storage/datasets/"
 
   object_storage:
