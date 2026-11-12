@@ -291,18 +291,44 @@ def test_the_instructions_name_every_sidebar_section_help_included():
         assert f"- {section}:" in INSTRUCTIONS, section
 
 
+def help_topic_titles():
+    """The help pages' titles: a topic's title, two spaces in, not its entries'."""
+    topics = (APP / "js" / "help" / "topics.js").read_text()
+    return set(re.findall(r"^  title: '([^']+)',$", topics, re.MULTILINE))
+
+
+def shows_label(source, label):
+    """Whether `label` is a whole UI string in `source`: an element's text or a string literal."""
+    return re.search(rf"(?:>\s*|['\"`]){re.escape(label)}(?:\s*<|['\"`])", source) is not None
+
+
+def test_a_label_counts_only_as_a_whole_ui_string():
+    assert shows_label("<button>Disable</button>", "Disable")
+    assert shows_label("button('Try it', run)", "Try it")
+    assert not shows_label("<button>Add papers</button>", "Add")
+    assert not shows_label("'Disable schedule'", "Disable")
+
+
+def test_help_paths_name_help_pages_not_their_entries():
+    titles = help_topic_titles()
+    assert len(titles) == 11, titles
+    assert {"Getting started", "FAQ", "Glossary", "Collections"} <= titles
+    assert "Members" not in titles
+
+
 def test_every_place_the_instructions_point_to_exists_in_the_app():
     """The first part is a sidebar section and the last a button, tab or help page.
 
     Parts in between may name the user's own things ("Solitude studies") or a
-    placeholder ("(the run)").
+    placeholder ("(the run)"). The help is left out of the app's source: its own
+    text cannot vouch for a label.
     """
     source = "\n".join(
-        path.read_text() for path in [APP / "index.html", *sorted(APP.glob("js/**/*.js"))]
+        path.read_text()
+        for path in [APP / "index.html", *sorted(APP.glob("js/**/*.js"))]
+        if "help" not in path.relative_to(APP).parts
     )
-    help_titles = set(
-        re.findall(r"title: '([^']+)'", (APP / "js" / "help" / "topics.js").read_text())
-    )
+    help_titles = help_topic_titles()
     paths = arrow_paths()
 
     assert len(paths) >= 8, paths
@@ -314,7 +340,7 @@ def test_every_place_the_instructions_point_to_exists_in_the_app():
         if section == "Help":
             assert last in help_titles, parts
         else:
-            assert last in source, parts
+            assert shows_label(source, last), parts
     assert ["Collections", "Solitude studies", "Run on this collection"] in paths
     assert any(parts[0] == "Help" for parts in paths)
 

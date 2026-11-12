@@ -1,10 +1,12 @@
 // The workspace shell: one section visible at a time, chosen by the hash route.
 //
-// Each section module exports create(root, ctx) returning { show(route), hide(),
-// refresh() }. Sections are created on first visit and then kept, so a draft in
-// one section survives a visit to another. A section may also export
-// keepsFocus(route): true when its show() has put focus somewhere itself, such
-// as Help opened at an entry, so the shell leaves it there.
+// Each section module exports create(root, ctx) returning { show(route, options),
+// hide(), refresh() }. Sections are created on first visit and then kept, so a
+// draft in one section survives a visit to another. show() is told `entering`
+// (re-entered after a visit elsewhere) and `first` (the app's first show, when
+// nothing takes focus from Nexus). A section may also return keepsFocus(): true
+// when its last show() put focus somewhere itself, such as Help opened at an
+// entry, so the shell leaves it there.
 
 import { createRouter, href, SECTIONS } from './router.js';
 import { $, confirmAction, toast } from './ui.js';
@@ -77,8 +79,8 @@ export function boot({ modules = MODULES, every = (ms, work) => setInterval(work
     active = route.section;
     // A section created earlier is told it is being re-entered, so it re-reads its lists.
     const instance = section(route.section);
-    instance.show(route, { entering: entering && existed });
-    if (entering && !first && !instance.keepsFocus?.(route)) $(`section-${route.section}`).querySelector('h1')?.focus();
+    instance.show(route, { entering: entering && existed, first });
+    if (entering && !first && !instance.keepsFocus?.()) $(`section-${route.section}`).querySelector('h1')?.focus();
   }
 
   function refresh() {

@@ -165,9 +165,8 @@ export function create(root, ctx) {
     const body = $('res-papers');
     body.replaceChildren();
     if (!data.papers.length) {
-      body.innerHTML = emptyRow(5, state.params.toString()
-        ? 'No papers match these filters. Clear the filters to see every paper.'
-        : 'No papers have been ingested yet. Run the pipeline on a collection first.', state.params.toString() ? undefined : [helpHref('faq', 'not-ingested'), 'Why papers are not ingested yet']);
+      if (state.params.toString()) body.innerHTML = emptyRow(5, 'No papers match these filters. Clear the filters to see every paper.');
+      else body.innerHTML = emptyRow(5, 'No papers have been ingested yet. Run the pipeline on a collection first.', [helpHref('faq', 'not-ingested'), 'Why papers are not ingested yet']);
       return;
     }
     for (const paper of data.papers) {

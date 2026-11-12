@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const { readFileSync, readdirSync } = require('node:fs');
 const { join } = require('node:path');
 const { test } = require('node:test');
-const { ROOT, install, load } = require('./harness.cjs');
+const { ROOT, fire, install, load } = require('./harness.cjs');
 
 const read = (...parts) => readFileSync(join(ROOT, ...parts), 'utf8');
 const sectionFiles = () => readdirSync(join(ROOT, 'js', 'sections')).filter((name) => name.endsWith('.js'));
@@ -106,8 +106,49 @@ test('an entry link opens its page scrolled to the entry, with focus on its head
   assert.deepEqual($('help-runs-saved-configurations').scrolled, { block: 'start' });
   assert.match(html(dom), /<h2 id="help-runs-saved-configurations" tabindex="-1">Saved configurations<\/h2>/);
   assert.match(html(dom), /href="#\/help\/runs\/saved-configurations" aria-current="true"/);
-  assert.equal(section.keepsFocus({ parts: ['runs', 'saved-configurations'] }), true);
-  assert.equal(section.keepsFocus({ parts: ['runs'] }), false);
+  assert.equal(section.keepsFocus(), true);
+  section.show({ parts: ['runs'] });
+  assert.equal(section.keepsFocus(), false);
+  // The index's list of pages is an entry too, marked when it is the one open.
+  section.show({ parts: ['getting-started', 'pages'] });
+  assert.match(html(dom), /href="#\/help\/getting-started\/pages" aria-current="true">All help pages/);
+});
+
+test('opening the app at an entry scrolls to it and leaves focus where Nexus has it', async () => {
+  const dom = install({ hash: '#/help/faq/run-failed' });
+  const { boot } = await load('shell.js');
+  boot({ every() {} });
+  const heading = { focus() { heading.focused = true; } };
+  dom.$('section-help').querySelector = () => heading;
+  const entry = dom.$('help-faq-run-failed');
+  assert.deepEqual(entry.scrolled, { block: 'start' });
+  assert.equal(entry.focused, undefined, 'the entry does not take focus on the first show');
+  assert.equal(heading.focused, undefined, 'nor does the page heading');
+
+  // Once the app is open, following an entry link focuses it.
+  dom.location.hash = '#/help/faq/no-results';
+  dom.hashchange();
+  assert.equal(dom.$('help-faq-no-results').focused, true);
+});
+
+test('a link to the entry already open scrolls to it and focuses it again', async () => {
+  const dom = install({ hash: '#/help/faq/run-failed' });
+  const { boot } = await load('shell.js');
+  boot({ every() {} });
+  const entry = dom.$('help-faq-run-failed');
+  entry.scrolled = undefined;
+  const link = { getAttribute: (key) => (key === 'href' ? '#/help/faq/run-failed' : null) };
+  let prevented = false;
+  await fire(dom.$('section-help'), 'click', { target: { closest: () => link }, preventDefault() { prevented = true; } });
+  assert.equal(prevented, true);
+  assert.deepEqual(entry.scrolled, { block: 'start' });
+  assert.equal(entry.focused, true);
+
+  // A link elsewhere is left to the browser.
+  prevented = false;
+  const other = { getAttribute: () => '#/help/faq/no-results' };
+  await fire(dom.$('section-help'), 'click', { target: { closest: () => other }, preventDefault() { prevented = true; } });
+  assert.equal(prevented, false);
 });
 
 test('moving between help pages focuses the new page heading', async () => {
@@ -133,7 +174,7 @@ test('an unknown topic shows the index with a note, and an unknown entry its pag
   assert.match(html(dom), /“Prompts” has no part called “nothing-here”, so it opens at the top\./);
   assert.match(html(dom), /id="help-prompts-try-it"/, 'the whole page is shown');
   assert.equal($('help-title').focused, true);
-  assert.equal(section.keepsFocus({ parts: ['prompts', 'nothing-here'] }), false);
+  assert.equal(section.keepsFocus(), false);
 
   section.show({ parts: ['nowhere', 'at-all'] });
   assert.match(html(dom), /There is no help page called “nowhere”/);
@@ -161,13 +202,30 @@ test('entered from another section at an entry, the entry keeps focus; at a page
   assert.equal(heading.focused, 1);
 });
 
+// Whether `label` is a whole UI string in `source`: the text of an element, or a
+// string literal, never part of a longer label ("Add" is not in "Add papers").
+function showsLabel(source, label) {
+  const literal = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?:>\\s*|['"\`])${literal}(?:\\s*<|['"\`])`).test(source);
+}
+
+test('a label counts only as a whole UI string', () => {
+  assert.ok(showsLabel('<button>Add</button>', 'Add'));
+  assert.ok(showsLabel("button('Add', run)", 'Add'));
+  assert.ok(showsLabel('<span>\n  Save version\n</span>', 'Save version'));
+  assert.ok(!showsLabel('<button>Add papers</button>', 'Add'), 'a renamed short label fails');
+  assert.ok(!showsLabel("'Open collection'", 'Open'));
+  assert.ok(!showsLabel('<p>Papers you saved</p>', 'Papers'));
+  assert.ok(!showsLabel('const Search = 1;', 'Search'));
+});
+
 test('every label the help marks with ui() is written the same way in the app', async () => {
   install();
   const { UI_LABELS } = await load('help/topics.js');
   // The help's own section is left out: a label must exist where the app shows it.
   const sources = [read('index.html'), read('js', 'ui.js'), ...sectionFiles().filter((f) => f !== 'help.js').map((f) => read('js', 'sections', f))].join('\n');
   assert.ok(UI_LABELS.size > 150, `${UI_LABELS.size} labels`);
-  const missing = [...UI_LABELS].filter((label) => !sources.includes(label));
+  const missing = [...UI_LABELS].filter((label) => !showsLabel(sources, label));
   assert.deepEqual(missing, []);
 });
 

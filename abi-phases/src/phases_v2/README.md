@@ -808,8 +808,8 @@ questions to the matching help page ("Help → FAQ"). The help's page on the Ass
 says the same as its instructions: what it does alone, what needs a yes, and what it
 cannot do and where to do it instead. `agents/WorkspaceAssistantAgent_test.py` checks
 that the instructions name every sidebar section and that every place they name with
-arrows ("Collections → Solitude studies → Run on this collection") ends on a label the
-app has, or on a help page.
+arrows ("Collections → Solitude studies → Run on this collection") ends on a whole label
+the app has outside its help pages, or, for "Help → X", on a help page's title.
 
 Its tools (`assistant/tools.py`) are thin wrappers (`assistant/workspace.py`) over the
 same services the endpoints use: `PipelineAppService` and its collections, prompt

@@ -39,20 +39,11 @@ export function resolve(parts = []) {
   return { topic, entry, note: '' };
 }
 
-// Every route the help answers: each page, and each page at each entry.
-export function routes() {
-  return TOPICS.flatMap((topic) => [
-    topicHref(topic),
-    helpHref(topic.id),
-    ...entriesOf(topic).map((entry) => helpHref(topic.id, entry.id)),
-  ]);
-}
-
 function template({ topic, entry, note }) {
   const entries = entriesOf(topic);
   const open = topic.section
     ? `<p class="help-open"><a class="button small" href="#/${topic.section}">Open ${esc(topic.title)}</a></p>` : '';
-  const toc = entries.map((e) => `<li><a href="${helpHref(topic.id, e.id)}"${e === entry ? ' aria-current="true"' : ''}>${esc(e.title)}</a></li>`).join('');
+  const toc = entries.map((e) => `<li><a href="${helpHref(topic.id, e.id)}"${e.id === entry?.id ? ' aria-current="true"' : ''}>${esc(e.title)}</a></li>`).join('');
   const pages = TOPICS.map((t) => `<li><a href="${topicHref(t)}"${t === topic ? ' aria-current="page"' : ''}>${esc(t.title)}</a></li>`).join('');
   return `
   <header class="page-head"><p class="eyebrow">Help</p><h1 id="help-title" tabindex="-1">${esc(topic.title)}</h1>
@@ -68,21 +59,39 @@ function template({ topic, entry, note }) {
   </div>`;
 }
 
-export function create(root) {
+export function create(root, ctx) {
   // Shown since it was last hidden: moving between help pages then focuses the
   // new page, while the shell focuses it when Help is entered from elsewhere.
   let active = false;
+  // Whether the last show() put focus on an entry heading.
+  let focused = false;
 
-  function show(route) {
+  // A link to the route already open fires no hashchange: "On this page" at the
+  // open entry would do nothing. Navigating to it shows it again instead.
+  root.addEventListener('click', (event) => {
+    const link = event.target?.closest?.('a[href^="#/help"]');
+    const target = link?.getAttribute('href');
+    if (!target || target !== location.hash || !ctx) return;
+    event.preventDefault();
+    ctx.navigate(target);
+  });
+
+  // `first` is the app's first show, opened at this route: focus stays where
+  // Nexus has it, so its own shortcuts keep working. The entry is still scrolled to.
+  function show(route, { first = false } = {}) {
     const view = resolve(route.parts);
     const within = active;
     active = true;
+    focused = false;
     root.innerHTML = template(view);
     document.title = view.topic.id === INDEX_TOPIC ? 'Help · HealthyPhases' : `${view.topic.title} · Help · HealthyPhases`;
     if (view.entry) {
       const heading = $(headingId(view.topic.id, view.entry.id));
       heading.scrollIntoView?.({ block: 'start' });
-      heading.focus();
+      if (!first) {
+        heading.focus();
+        focused = true;
+      }
     } else if (within) {
       $('help-title').focus();
     }
@@ -94,7 +103,7 @@ export function create(root) {
     hide() { active = false; },
     // The pages are part of the app: there is nothing to read again.
     refresh() {},
-    // An entry gets focus from show(), and keeps it.
-    keepsFocus: (route) => Boolean(resolve(route.parts).entry),
+    // An entry heading given focus by show() keeps it.
+    keepsFocus: () => focused,
   };
 }

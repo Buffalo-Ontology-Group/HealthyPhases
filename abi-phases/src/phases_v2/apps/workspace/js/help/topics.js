@@ -138,7 +138,7 @@ const library = {
         + list([
           `${ui('Disable')} stops future runs; work already started can finish. ${ui('Enable')} starts a fresh interval.`,
           `${ui('Delete')} removes the schedule after asking. Saved searches and downloaded papers stay.`,
-          `A search keeps its result limit. When a schedule says ${ui('Result limit reached')}, narrow its query so no paper is missed.`,
+          `A search keeps its result limit. When a schedule says ${ui('Result limit reached. Some matching papers were not checked.')} narrow its query so no paper is missed.`,
         ]) + p('Schedules only search and download. They never start a pipeline run.'),
     },
     {
@@ -524,7 +524,7 @@ const faq = {
       title: 'A run failed, or is stuck as pending',
       body: p(`<strong>Pending.</strong> The ${term('orchestrator')} looks for queued runs every 30 seconds and starts each one it finds, so a run should leave ${ui('pending')} within a minute. If it stays pending for several minutes, the orchestrator is not running: contact the person who invited you. Don’t request the same run again; the queued one starts once the orchestrator is back.`)
         + p(`<strong>Running for a long time.</strong> That is normal for a large collection: each chunk goes through each prompt. Its page refreshes every 10 seconds.`)
-        + p(`<strong>Failed.</strong> Open the run: its error says why, for example a paper that could not be read or found. Everything finished before it stopped is kept: papers read, chunks made, and the findings already stored. A failed run is not retried on its own. Fix what the error names, then request the same run again: it skips every chunk that already has findings for that prompt version and model, and does the rest.`)
+        + p(`<strong>Failed.</strong> Open the run: its error says why, for example a paper that could not be read or found. Everything finished before it stopped is kept: papers read, chunks made, and the findings already stored. A failed run is not retried on its own. Fix what the error names, then request the same run again: it skips every chunk that already succeeded with that prompt version and model, findings or none, and does the rest.`)
         + p(`<strong>Succeeded, with failed chunks.</strong> The run’s page counts them, and the paper’s page shows each error. Running again tries only those chunks.`),
     },
     {
