@@ -119,3 +119,45 @@ space.
   word list, for review.
 
 ## Results
+
+### Full corpus (2026-11-12)
+
+Production, read-only. The selection is the current `conditional_statement`
+version from the default model: 46,426 conditionals from 293 papers, out of
+88,643 conditional items in the store. Left out: 41,232 from older versions,
+984 from another model, 1 not in the form. The halves come to 37,394 distinct
+antecedents and 44,709 distinct consequents, 82,072 distinct halves in all.
+Embedding them cost $0.15.
+
+`min_cluster_size` is 40, chosen from a sweep over 15, 25, 40, 60 and 100:
+
+- the data is 11 times the spike's papers, but 5 times its halves;
+- from 15 to 40, single-paper clusters fall from 128 to 19, while the
+  clustered share stays at 68% and the edges with 2+ papers barely move
+  (606 to 556);
+- from 60 up, HDBSCAN selects parent clusters, and two blobs of 6,272 and
+  4,221 halves take in the corpus's central topic and most of its method talk.
+
+| variant | points | clusters | clustered | papers per cluster: 1 / 2 / 3-5 / 6+ |
+|---|---|---|---|---|
+| sentences | 46,426 | 266 | 77% | 27 / 21 / 68 / 150 |
+| parts | 82,072 | 331 | 68% | 19 / 23 / 62 / 227 |
+
+- **Terms.** Merges at 0.90 absorb 3 clusters, which gives 328 terms: 306 domain, 15 methodological and 7 measurement. The tree has 58 level-1 parents and 52 level-2 parents.
+- **Term graph.** 552 edges between two terms have 2 or more papers, and 239 have 3 or more. The strongest are known findings:
+  - loneliness → poorer health and mortality: 32 papers;
+  - older age → more time in solitude: 19;
+  - a deficient network → loneliness: 19;
+  - solitude → lower high-arousal affect.
+- **Stability over seeds 42, 1 and 2.** Majority mapping 97–99%; adjusted Rand index 0.93–0.98 for parts and 0.97–0.98 for sentences. 62% of halves are clustered in all three runs.
+- **Against the 26-paper run.** It was rebuilt from production's data: 10,166 conditionals, 229 part clusters, 68% clustered; the spike reported 9,414, 195 and 70%. Of its 226 terms, 74 held, 72 went into a broader current term, 9 are near and 71 were not found. 215 of the 328 current terms are new.
+
+The run's report, candidate-terms table and term graph are attached to task #738.
+
+### 26 papers (2026-09-24)
+
+The first run, before this port, mixed two models: 9,414 conditionals, 162
+sentence clusters (76% clustered) and 195 part clusters (70%) at
+`min_cluster_size` 15. Three quarters of the points sat in clusters whose
+members read as one idea, at every cluster size, and noise was one-off claims
+with no sibling in the corpus: "no term applies yet", not garbage.
