@@ -6,7 +6,7 @@
 
 import { fetchBlob, phases, PREFIXES, saveBlob } from '../api.js';
 import {
-  $, action, emptyRow, esc, fill, formatDate, formatNumber, latest, message, pagination, plural, tableHtml,
+  $, action, emptyRow, esc, fill, formatDate, formatNumber, helpHref, latest, learnMore, message, pagination, plural, tableHtml,
 } from '../ui.js';
 import {
   compareHtml, groupHtml, groupKey, groupLabel, headerHtml, ranRows,
@@ -19,7 +19,7 @@ const FILTERS = ['q', 'collection', 'prompt', 'model', 'has_results', 'sort', 'r
 
 const template = () => `
   <header class="page-head"><p class="eyebrow">Step 4 · Explore results</p><h1 tabindex="-1">Results</h1>
-    <p class="lede">Open any paper to see what each prompt version and model found in it, where in the paper, and how they compare.</p></header>
+    <p class="lede">Open any paper to see what each prompt version and model found in it, where in the paper, and how they compare. ${learnMore('results', '', 'Results')}</p></header>
   <div id="res-view-list" class="stack">
     <section class="card">
       <form id="res-filters" role="search">
@@ -50,19 +50,19 @@ const template = () => `
       <p id="res-paper-message" class="msg" role="status"></p>
     </section>
     <section class="card">
-      <h2>What ran on this paper</h2>
+      <div class="card-head"><h2>What ran on this paper</h2>${learnMore('results', 'what-ran', 'What ran on this paper')}</div>
       <div class="wide-table">${tableHtml('res-ran', ['Prompt version', 'Model', 'Chunks read', 'Items found', 'Runs'], 'Prompt versions and models run on this paper')}</div>
       <h3>Runs that included it</h3>
       <div id="res-requests"></div>
     </section>
     <section class="card">
-      <div class="card-head"><h2>Results</h2><button id="res-group-csv" type="button" class="small">Download these results (CSV)</button></div>
+      <div class="card-head"><h2>Results</h2><div class="row">${learnMore('results', 'by-chunk', 'results chunk by chunk')}<button id="res-group-csv" type="button" class="small">Download these results (CSV)</button></div></div>
       <label for="res-group">Prompt version and model</label><select id="res-group"></select>
       <div id="res-group-body" class="try-results"></div>
       <div class="row center"><button id="res-group-more" type="button" hidden>Show all</button></div>
     </section>
     <section class="card">
-      <h2>Compare two versions or models</h2>
+      <div class="card-head"><h2>Compare two versions or models</h2>${learnMore('results', 'compare', 'comparing')}</div>
       <div class="grid"><div><label for="res-compare-a">First</label><select id="res-compare-a"></select></div>
         <div><label for="res-compare-b">Second</label><select id="res-compare-b"></select></div></div>
       <div id="res-compare-body" class="try-results"></div>
@@ -167,7 +167,7 @@ export function create(root, ctx) {
     if (!data.papers.length) {
       body.innerHTML = emptyRow(5, state.params.toString()
         ? 'No papers match these filters. Clear the filters to see every paper.'
-        : 'No papers have been ingested yet. Run the pipeline on a collection first.');
+        : 'No papers have been ingested yet. Run the pipeline on a collection first.', state.params.toString() ? undefined : [helpHref('faq', 'not-ingested'), 'Why papers are not ingested yet']);
       return;
     }
     for (const paper of data.papers) {
@@ -232,7 +232,7 @@ export function create(root, ctx) {
     $('res-group-csv').disabled = !group;
     $('res-group-more').hidden = true;
     if (!group) {
-      $('res-group-body').innerHTML = '<p class="empty">Nothing has been run on this paper yet. Run the pipeline on a collection that holds it.</p>';
+      $('res-group-body').innerHTML = `<p class="empty">Nothing has been run on this paper yet. Run the pipeline on a collection that holds it. <a href="${helpHref('faq', 'no-results')}">Why a paper has no results</a></p>`;
       return;
     }
     const limit = state.showAll ? Infinity : ITEM_LIMIT;

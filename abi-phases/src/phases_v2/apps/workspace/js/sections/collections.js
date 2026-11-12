@@ -7,7 +7,7 @@
 
 import { phases, pubmed } from '../api.js';
 import {
-  $, action, emptyRow, emptyState, esc, fill, formatDate, message, plural, statusPill, tableHtml,
+  $, action, emptyRow, emptyState, esc, fill, formatDate, helpHref, learnMore, message, plural, statusPill, tableHtml,
 } from '../ui.js';
 
 export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
@@ -32,7 +32,7 @@ export function collectionSummary(c) {
 
 const template = () => `
   <header class="page-head"><p class="eyebrow">Step 1 · Collect papers</p><h1 tabindex="-1">Collections</h1>
-    <p class="lede">Gather papers from PubMed searches, your own PDFs, storage folders and the library into one collection, then run the pipeline or search within it.</p></header>
+    <p class="lede">Gather papers from PubMed searches, your own PDFs, storage folders and the library into one collection, then run the pipeline or search within it. ${learnMore('collections', '', 'Collections')}</p></header>
   <div class="split">
     <section class="card">
       <div class="card-head"><h2>Your collections</h2><button id="col-new" type="button">New collection</button></div>
@@ -51,7 +51,7 @@ const template = () => `
         </form>
       </section>
       <section class="card">
-        <h2>Add papers</h2>
+        <div class="card-head"><h2>Add papers</h2>${learnMore('collections', 'add-papers', 'adding papers')}</div>
         <p id="col-add-hint" class="hint"></p>
         <div class="grid">
           <div><label for="col-upload-files">Upload PDFs (up to 25 MiB each)</label><input id="col-upload-files" type="file" accept="application/pdf,.pdf" multiple>
@@ -71,11 +71,11 @@ const template = () => `
         <p id="col-add-message" class="msg" role="status"></p>
       </section>
       <section class="card">
-        <h2>Members</h2>
+        <div class="card-head"><h2>Members</h2>${learnMore('collections', 'members', 'Members')}</div>
         ${tableHtml('col-members', ['Type', 'Member', 'Papers', 'Actions'], 'Collection members')}
       </section>
       <section class="card">
-        <div class="card-head"><h2>Papers</h2><button id="col-refresh" type="button">Refresh</button></div>
+        <div class="card-head"><h2>Papers</h2><div class="row">${learnMore('collections', 'papers', 'paper states')}<button id="col-refresh" type="button">Refresh</button></div></div>
         <p id="col-papers-summary" class="msg" role="status"></p>
         ${tableHtml('col-papers', ['Paper', 'Stored at', 'Status'], 'Papers in this collection', true)}
       </section>
@@ -112,7 +112,7 @@ export function create(root, ctx) {
   function renderCollections() {
     $('col-list').replaceChildren();
     if (!state.collections.length) {
-      $('col-list').innerHTML = emptyState('No collections yet. Name one and add papers to reuse them in runs and searches.');
+      $('col-list').innerHTML = emptyState('No collections yet. Name one and add papers to reuse them in runs and searches.', [helpHref('collections', 'create'), 'How to create one']);
     }
     for (const collection of state.collections) {
       const button = document.createElement('button');
@@ -184,7 +184,7 @@ export function create(root, ctx) {
     body.replaceChildren();
     if (state.collectionId) {
       const members = state.detail?.members || [];
-      if (!members.length) body.innerHTML = emptyRow(4, 'No members yet. Add papers above.');
+      if (!members.length) body.innerHTML = emptyRow(4, 'No members yet. Add papers above.', [helpHref('collections', 'add-papers'), 'How to add papers']);
       for (const m of members) {
         const label = m.kind === 'folder' && m.uploads ? 'PDFs uploaded into this collection' : m.label;
         body.append(memberRow(m.kind, label, m.paper_count, () => removeMember(m, label), m.error));
@@ -192,7 +192,7 @@ export function create(root, ctx) {
       return;
     }
     const { members, files } = state.draft;
-    if (!members.length && !files.length) body.innerHTML = emptyRow(4, 'Nothing added yet. Add papers in any of the four ways above.');
+    if (!members.length && !files.length) body.innerHTML = emptyRow(4, 'Nothing added yet. Add papers in any of the four ways above.', [helpHref('collections', 'add-papers'), 'How to add papers']);
     for (const m of members) {
       body.append(memberRow(commandKind(m.command), m.label, null, () => {
         state.draft.members = state.draft.members.filter((d) => d !== m);
@@ -223,7 +223,7 @@ export function create(root, ctx) {
       + (detail.truncated ? ` Showing the first ${detail.papers.length}.` : '')
       + (failed.length ? ` Could not read: ${failed.map((m) => m.label).join('; ')}.` : ''),
       failed.length ? 'warn' : '');
-    if (!detail.papers.length) body.innerHTML = emptyRow(3, 'No papers yet. Add papers above; a PubMed search counts its downloaded papers.');
+    if (!detail.papers.length) body.innerHTML = emptyRow(3, 'No papers yet. Add papers above; a PubMed search counts its downloaded papers.', [helpHref('collections', 'add-papers'), 'How to add papers']);
     for (const paper of detail.papers) {
       const [tone, label] = STATUSES[paper.status] || ['idle', paper.status];
       const row = document.createElement('tr');

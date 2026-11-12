@@ -9,6 +9,7 @@ a real one.
 
 import json
 import pathlib
+import re
 from types import SimpleNamespace
 
 import pytest
@@ -50,15 +51,16 @@ SRC = pathlib.Path(phases_v2.__file__).parents[1]
 PROJECT = SRC.parent
 MANIFEST = SRC / "phases_v2" / "apps" / "workspace" / "manifest.json"
 REF = "phases_v2 WorkspaceAssistantAgent"
-SECTIONS = (
-    "Overview",
-    "Library",
-    "Collections",
-    "Prompts",
-    "Runs",
-    "Results",
-    "Search",
-)
+APP = SRC / "phases_v2" / "apps" / "workspace"
+
+
+def sidebar_titles():
+    """The sidebar's section names, Help included, as index.html shows them."""
+    html = (APP / "index.html").read_text()
+    return re.findall(r'<a href="#/\w+" data-nav="\w+"[^>]*>.*?<span>([^<]+)</span></a>', html)
+
+
+SECTIONS = tuple(sidebar_titles())
 
 
 class ScriptedChat(GenericFakeChatModel):
@@ -265,6 +267,61 @@ def test_the_instructions_cover_the_app_and_how_to_behave():
     assert "You cannot upload files" in INSTRUCTIONS
     assert "Collections → (the collection) → Upload PDFs" in INSTRUCTIONS
     assert "storage folder, with add_to_collection" in INSTRUCTIONS
+
+
+def arrow_paths():
+    """Every place the instructions name with arrows, as its parts.
+
+    "Collections → Solitude studies → Run on this collection" gives
+    ["Collections", "Solitude studies", "Run on this collection"]. Parts end at
+    punctuation, so text before the first part stays with it.
+    """
+    segments = re.split(r'[,.;:"\n]', INSTRUCTIONS)
+    return [
+        [part.strip() for part in segment.split("→")]
+        for segment in segments
+        if "→" in segment
+    ]
+
+
+def test_the_instructions_name_every_sidebar_section_help_included():
+    assert "Help" in SECTIONS
+    assert len(SECTIONS) == 8
+    for section in SECTIONS:
+        assert f"- {section}:" in INSTRUCTIONS, section
+
+
+def test_every_place_the_instructions_point_to_exists_in_the_app():
+    """The first part is a sidebar section and the last a button, tab or help page.
+
+    Parts in between may name the user's own things ("Solitude studies") or a
+    placeholder ("(the run)").
+    """
+    source = "\n".join(
+        path.read_text() for path in [APP / "index.html", *sorted(APP.glob("js/**/*.js"))]
+    )
+    help_titles = set(
+        re.findall(r"title: '([^']+)'", (APP / "js" / "help" / "topics.js").read_text())
+    )
+    paths = arrow_paths()
+
+    assert len(paths) >= 8, paths
+    for parts in paths:
+        first, last = parts[0], parts[-1]
+        section = next((s for s in SECTIONS if first == s or first.endswith(f" {s}")), None)
+        assert section, parts
+        assert not last.startswith("("), parts
+        if section == "Help":
+            assert last in help_titles, parts
+        else:
+            assert last in source, parts
+    assert ["Collections", "Solitude studies", "Run on this collection"] in paths
+    assert any(parts[0] == "Help" for parts in paths)
+
+
+def test_the_instructions_send_how_to_questions_to_the_help():
+    assert "For how-to questions" in INSTRUCTIONS
+    assert '"Help → FAQ"' in INSTRUCTIONS
 
 
 # -- a conversation through the agent's graph --------------------------------------

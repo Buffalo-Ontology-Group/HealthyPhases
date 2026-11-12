@@ -33,6 +33,7 @@ function element(tag = 'div') {
     querySelector() { return element(); },
     querySelectorAll() { return []; },
     focus() { el.focused = true; },
+    scrollIntoView(options) { el.scrolled = options || true; },
     click() { el.clicked = true; },
     showModal() { this.open = true; },
     close() { this.open = false; if (this.onclose) this.onclose(); for (const h of this.listeners.close || []) h({}); },
@@ -57,7 +58,7 @@ function response(payload, { ok = true, status = ok ? 200 : 422, type = 'applica
 
 function install({ hash = '', storage = {}, session = {} } = {}) {
   const elements = new Map();
-  const navLinks = ['overview', 'library', 'collections', 'prompts', 'runs', 'results', 'search'].map((name) => {
+  const navLinks = ['overview', 'library', 'collections', 'prompts', 'runs', 'results', 'search', 'help'].map((name) => {
     const link = element('a');
     link.dataset.nav = name;
     return link;

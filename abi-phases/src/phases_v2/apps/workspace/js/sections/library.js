@@ -5,7 +5,7 @@
 
 import { openalex, phases, pubmed } from '../api.js';
 import {
-  $, action, emptyRow, esc, fill, formatDate, latest, message, pagination, plural, statusPill, tableHtml,
+  $, action, emptyRow, esc, fill, formatDate, helpHref, latest, learnMore, message, pagination, plural, statusPill, tableHtml,
 } from '../ui.js';
 
 const VIEWS = {
@@ -46,12 +46,12 @@ export const queryLabel = (q) => `${q.query} · ${formatDate(q.created_at)}`;
 
 const template = () => `
   <header class="page-head"><p class="eyebrow">Step 1 · Collect papers</p><h1 tabindex="-1">Library</h1>
-    <p class="lede">Find papers on PubMed, download them, keep searches up to date and enrich them with citation data.</p></header>
+    <p class="lede">Find papers on PubMed, download them, keep searches up to date and enrich them with citation data. ${learnMore('library', '', 'Library')}</p></header>
   <nav class="tabs" aria-label="Library views">${Object.entries(VIEWS).map(([view, label]) => `<a id="lib-tab-${view}" href="#/library/${view}" ${view === 'enrichment' ? 'hidden' : ''}>${label}</a>`).join('')}</nav>
 
   <div id="lib-view-papers" class="stack" hidden>
     <section class="card">
-      <div class="card-head"><div><h2>Paper library</h2><p class="muted">Every paper across your saved searches and full ingestions, listed once.</p></div>
+      <div class="card-head"><div><h2>Paper library</h2><p class="muted">Every paper across your saved searches and full ingestions, listed once. ${learnMore('library', 'papers', 'Papers')}</p></div>
         <div class="row"><button id="lib-enrich-library" type="button" hidden>Enrich selected search</button><button id="lib-refresh-library" type="button">Refresh papers</button></div></div>
       <form id="lib-filters"><div class="filters">
         <div><label for="lib-filter-search">Search your library</label><input id="lib-filter-search" maxlength="300" placeholder="Title, author, journal, PMID or DOI"></div>
@@ -77,7 +77,7 @@ const template = () => `
 
   <div id="lib-view-search" class="stack" hidden>
     <section class="card">
-      <h2>Search PubMed</h2>
+      <div class="card-head"><h2>Search PubMed</h2>${learnMore('library', 'search', 'Search PubMed')}</div>
       <form id="lib-search-form">
         <label for="lib-query">PubMed query</label>
         <div class="search-row"><input id="lib-query" required maxlength="2000" placeholder="e.g. solitude AND mental health" autocomplete="off"><button class="primary" id="lib-search">Search</button></div>
@@ -109,7 +109,7 @@ const template = () => `
 
   <div id="lib-view-downloads" class="stack" hidden>
     <section class="card">
-      <div class="card-head"><div><h2>Ingestion requests</h2><p class="muted">Downloads of previewed papers. Requests run when the orchestrator is available.</p></div><button id="lib-refresh-requests" type="button">Refresh status</button></div>
+      <div class="card-head"><div><h2>Ingestion requests</h2><p class="muted">Downloads of previewed papers. Requests run when the orchestrator is available. ${learnMore('library', 'downloads', 'Downloads')}</p></div><button id="lib-refresh-requests" type="button">Refresh status</button></div>
       <p id="lib-request-message" class="msg" role="status"></p>
       ${tableHtml('lib-requests', ['Search', 'Status', 'Progress', 'Details'], 'Ingestion requests')}
     </section>
@@ -123,7 +123,7 @@ const template = () => `
 
   <div id="lib-view-schedules" class="stack" hidden>
     <section class="card">
-      <div class="card-head"><div><h2>Scheduled searches</h2><p class="muted">Repeat saved searches and optionally download the new papers they find.</p></div><button id="lib-refresh-schedules" type="button">Refresh schedules</button></div>
+      <div class="card-head"><div><h2>Scheduled searches</h2><p class="muted">Repeat saved searches and optionally download the new papers they find. ${learnMore('library', 'schedules', 'Schedules')}</p></div><button id="lib-refresh-schedules" type="button">Refresh schedules</button></div>
       <p class="hint">Times are in your local timezone. Disabling stops future runs; work already started can finish. Re-enabling starts a fresh interval.</p>
       <p id="lib-schedule-status" class="msg" role="status" aria-live="polite"></p>
       ${tableHtml('lib-schedules', ['Search', 'Schedule', 'Next run', 'Last run', 'Actions'], 'Scheduled searches')}
@@ -149,7 +149,7 @@ const template = () => `
   <div id="lib-view-enrichment" class="stack" hidden>
     <section class="card">
       <h2>Enrich a saved search</h2>
-      <p class="muted">Adds citations, topics, affiliations, references and open-access locations from OpenAlex to every record saved for the search, including papers without a PDF.</p>
+      <p class="muted">Adds citations, topics, affiliations, references and open-access locations from OpenAlex to every record saved for the search, including papers without a PDF. ${learnMore('library', 'enrichment', 'Enrichment')}</p>
       <form id="lib-enrich-form" class="row end">
         <div class="grow"><label for="lib-enrich-search">Saved search</label><select id="lib-enrich-search" required><option value="">Choose a search</option></select></div>
         <button id="lib-enrich-submit" class="primary">Queue enrichment</button>
@@ -380,7 +380,12 @@ export function create(root, ctx) {
       message('lib-summary', data.total
         ? `Showing ${first}-${first + data.papers.length - 1} of ${data.total} papers.`
         : 'No papers match these filters. Clear the filters, or search PubMed and download papers first.');
-      if (!data.total) $('lib-papers').innerHTML = emptyRow(4, 'Nothing to show yet.');
+      if (!data.total) {
+        const filtered = Object.keys(filterParams(state.libraryFilters, 1)).length > 0;
+        $('lib-papers').innerHTML = filtered
+          ? emptyRow(4, 'No paper matches these filters.')
+          : emptyRow(4, 'The library is empty. Search PubMed and download papers to fill it.', [helpHref('library', 'search'), 'How to search PubMed']);
+      }
       const shown = [];
       for (const row of data.papers) {
         const p = row.paper;

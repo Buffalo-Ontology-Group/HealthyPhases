@@ -3,7 +3,7 @@
 // the same chunks with the same model. Nothing is saved by trying.
 
 import { phases } from '../api.js';
-import { $, esc, fill, latest, message, plural, statusPill } from '../ui.js';
+import { $, esc, fill, latest, learnMore, message, plural, statusPill } from '../ui.js';
 import { probabilisticRelations } from './search_render.js';
 
 export const MAX_CHUNKS = 10;
@@ -16,11 +16,11 @@ const SEARCH_DELAY_MS = 250;
 export const template = () => `
   <section class="card" aria-labelledby="pr-try-title">
     <div class="card-head"><div><h2 id="pr-try-title">Try it</h2>
-      <p class="hint">Runs the text in the editor on up to ${MAX_CHUNKS} chunks of a paper and shows the result here. Nothing is saved.</p></div></div>
+      <p class="hint">Runs the text in the editor on up to ${MAX_CHUNKS} chunks of a paper and shows the result here. Nothing is saved.</p></div>${learnMore('prompts', 'try-it', 'Try it')}</div>
     <div class="filters">
       <div><label for="pr-try-chunker">Chunker</label><select id="pr-try-chunker"></select></div>
       <div><label for="pr-try-model">Model</label><select id="pr-try-model"></select></div>
-      <div><label for="pr-try-baseline">Compare with</label><select id="pr-try-baseline"></select></div>
+      <div><label for="pr-try-baseline">Compare with</label><select id="pr-try-baseline"></select><p class="hint">${learnMore('prompts', 'compare-with', 'Compare with')}</p></div>
     </div>
     <div class="grid">
       <div><label for="pr-try-paper-q">Find an ingested paper</label><input id="pr-try-paper-q" type="search" placeholder="Search by file name">

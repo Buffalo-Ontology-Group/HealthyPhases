@@ -3,7 +3,7 @@
 
 import { phases } from '../api.js';
 import { diffHtml, diffSummary, lineDiff } from '../diff.js';
-import { $, emptyRow, esc, fill, formatDate, formatNumber, latest, message, plural, tableHtml } from '../ui.js';
+import { $, emptyRow, esc, fill, formatDate, formatNumber, latest, learnMore, message, plural, tableHtml } from '../ui.js';
 
 export const DRAFT = 'draft';
 const LINKED_REQUESTS = 3;
@@ -11,7 +11,7 @@ const LINKED_REQUESTS = 3;
 export const template = () => `
   <section class="card" aria-labelledby="pr-ver-title">
     <div class="card-head"><div><h2 id="pr-ver-title">Versions</h2>
-      <p class="hint">Every text saved under this name, newest first. Open one to edit from it, or use it in a run.</p></div></div>
+      <p class="hint">Every text saved under this name, newest first. Open one to edit from it, or use it in a run.</p></div>${learnMore('prompts', 'versions', 'Versions')}</div>
     <div class="versions-table">${tableHtml('pr-ver-rows', ['Version', 'First seen', 'Used by', 'Items', ''], 'Prompt versions')}</div>
     <p id="pr-ver-message" class="msg" role="status"></p>
     <h3>Compare</h3>
