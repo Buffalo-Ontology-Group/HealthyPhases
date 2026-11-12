@@ -377,11 +377,15 @@ export function create(root, ctx) {
       $('lib-page-number').max = Math.max(1, data.total_pages);
       if (state.view === 'papers') ctx.replace(ctx.href('library', [], filterParams(state.libraryFilters, state.libraryPage)));
       const first = (data.page - 1) * data.page_size + 1;
+      // Sorting and page size change how papers are shown, not which ones.
+      const { sort: _sort, page_size: _pageSize, ...narrowing } = filterParams(state.libraryFilters || {}, 1);
+      const filtered = Object.keys(narrowing).length > 0;
       message('lib-summary', data.total
         ? `Showing ${first}-${first + data.papers.length - 1} of ${data.total} papers.`
-        : 'No papers match these filters. Clear the filters, or search PubMed and download papers first.');
+        : filtered
+          ? 'No papers match these filters. Clear the filters to see every paper.'
+          : 'No papers yet. Search PubMed and download papers first.');
       if (!data.total) {
-        const filtered = Object.keys(filterParams(state.libraryFilters, 1)).length > 0;
         $('lib-papers').innerHTML = filtered
           ? emptyRow(4, 'No paper matches these filters.')
           : emptyRow(4, 'The library is empty. Search PubMed and download papers to fill it.', [helpHref('library', 'search'), 'How to search PubMed']);

@@ -81,7 +81,11 @@ lists its entries at the top ("On this page") and, for a section's page, links t
 ("Open Library"). The hash is the route, so an entry is a route part rather than an
 `#anchor`. An unknown topic shows the index and an unknown entry its page, each with a
 note. Entering a page focuses its heading and an entry link its entry's heading; the
-section's `keepsFocus(route)` tells the shell not to move focus back to the `h1`.
+section's `keepsFocus()` tells the shell not to move focus back to the `h1`. On the app's
+first show (`show(route, { first: true })`, for example after a reload at an entry) the
+entry is only scrolled to: focus stays with Nexus so ⌘K / Ctrl+K keeps working. A link to
+the entry already open fires no `hashchange`, so the section catches the click and
+navigates to it again, which scrolls to and focuses the entry.
 
 Every section's page head ends its lede with a **Learn more** link to its page, and
 Library's tabs, the parts of Prompts, Runs, Collections and Results, and the empty states
@@ -93,15 +97,17 @@ The help and the Assistant's instructions describe the same app, and tests catch
 drifting apart:
 
 - Labels of the app are written `ui('Run on this collection')`, which bolds and records
-  them; `help_test.cjs` checks each one appears verbatim in `index.html`, `js/ui.js` or
-  `js/sections/*.js`. Labels of the Nexus pages around the app (its sign-in screen and
+  them; `help_test.cjs` checks each one appears as a whole UI string (an element's text
+  or a string literal, so `Add` does not match `Add papers`) in `index.html`, `js/ui.js`
+  or `js/sections/*.js`. Labels of the Nexus pages around the app (its sign-in screen and
   sidebar) use `nexus()` instead and are pinned to a short list checked against Nexus.
 - Every sidebar section has a help page and a Learn more link to it, and every `#/help/...`
   link in the app or the help opens a page or an entry.
 - `manifest_test.py` checks the sidebar lists the router's sections, Help included;
   `agents/WorkspaceAssistantAgent_test.py` checks each is named in the Assistant's
-  instructions, and that each place they name with arrows ends on a label that exists in
-  the app, or on a help page title.
+  instructions, and that each place they name with arrows ends on a whole label that
+  exists in the app outside the help, or, for `Help → X`, on a help page title (not an
+  entry's).
 
 When a label changes, change it in the help too; when a section gains a part, give it an
 entry and a Learn more link.
