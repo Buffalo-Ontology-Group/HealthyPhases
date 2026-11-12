@@ -7,7 +7,7 @@
 // #/prompts/new an empty form.
 
 import { phases } from '../api.js';
-import { $, action, emptyState, esc, fill, message } from '../ui.js';
+import { $, action, emptyState, esc, fill, helpHref, learnMore, message } from '../ui.js';
 import { createTry, shortId, template as tryTemplate } from './prompt_try.js';
 import { createVersions, template as versionsTemplate } from './prompt_versions.js';
 
@@ -29,7 +29,7 @@ export function formatExample(key) {
 
 const template = () => `
   <header class="page-head"><p class="eyebrow">Step 2 · Prepare prompts</p><h1 tabindex="-1">Prompts</h1>
-    <p class="lede">Write and refine the instructions that extract findings from each chunk of a paper.</p></header>
+    <p class="lede">Write and refine the instructions that extract findings from each chunk of a paper. ${learnMore('prompts', '', 'Prompts')}</p></header>
   <div class="split">
     <section class="card">
       <div class="card-head"><h2>Prompt library</h2><button id="pr-new" type="button">New prompt</button></div>
@@ -38,7 +38,7 @@ const template = () => `
     </section>
     <div class="stack">
     <section class="card">
-      <h2 id="pr-title">New prompt</h2>
+      <div class="card-head"><h2 id="pr-title">New prompt</h2>${learnMore('prompts', 'editor', 'the editor')}</div>
       <form id="pr-form"><div class="stack">
         <div><label for="pr-name">Prompt name</label><input id="pr-name" required maxlength="100"></div>
         <div><label for="pr-output">Output format</label><select id="pr-output"></select><p id="pr-format" class="hint"></p></div>
@@ -110,7 +110,7 @@ export function create(root, ctx) {
     if (!prompts.length) {
       $('pr-list').innerHTML = state.prompts.length
         ? emptyState('No prompt matches this search. Clear it to see every prompt.')
-        : emptyState('No prompts yet. Write one with New prompt.');
+        : emptyState('No prompts yet. Write one with New prompt.', [helpHref('prompts', 'editor'), 'How to write a prompt']);
     }
     for (const prompt of prompts) {
       const button = document.createElement('button');

@@ -66,14 +66,26 @@ export function statusPill(status, label = status) {
   return `<span class="pill ${tone(status)}">${esc(label || 'unknown')}</span>`;
 }
 
-export function emptyRow(columns, text) {
-  return `<tr><td colspan="${columns}" class="empty">${esc(text)}</td></tr>`;
+// An empty state names the next step; `link` is an optional [href, label].
+const nextStep = (link) => (link ? ` <a href="${esc(link[0])}">${esc(link[1])}</a>` : '');
+
+export function emptyRow(columns, text, link) {
+  return `<tr><td colspan="${columns}" class="empty">${esc(text)}${nextStep(link)}</td></tr>`;
 }
 
-// An empty state names the next step; `link` is an optional [href, label].
 export function emptyState(text, link) {
-  const next = link ? ` <a href="${esc(link[0])}">${esc(link[1])}</a>` : '';
-  return `<p class="empty">${esc(text)}${next}</p>`;
+  return `<p class="empty">${esc(text)}${nextStep(link)}</p>`;
+}
+
+// Help pages live at #/help/<topic> and #/help/<topic>/<entry> (js/help/topics.js).
+// Call these with literal names: a test reads every call to check the page exists.
+export const helpHref = (topic, entry = '') => `#/help/${topic}${entry ? `/${entry}` : ''}`;
+
+// A "Learn more" link to a help page; `about` names it for screen readers when
+// several such links share a page.
+export function learnMore(topic, entry = '', about = '') {
+  const label = about ? ` aria-label="Learn more about ${esc(about)}"` : '';
+  return `<a class="learn-more" href="${helpHref(topic, entry)}"${label}>Learn more</a>`;
 }
 
 // `scroll` caps the height for long secondary lists, such as document previews.

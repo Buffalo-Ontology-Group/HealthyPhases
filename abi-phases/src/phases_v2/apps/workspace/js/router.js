@@ -1,11 +1,12 @@
 // Hash routes: #/<section>/<part>...?<params>, for example #/runs/<request_id>
-// or #/search?q=stress&mode=keyword.
+// or #/search?q=stress&mode=keyword. Help pages are #/help/<topic>/<entry>:
+// the hash is the route, so an entry within a page is a route part, not an #anchor.
 //
 // Nexus mints a fresh iframe URL (with a new access token) whenever it reloads
 // the app, which drops the hash. The last route is therefore kept in
 // sessionStorage and restored when the app opens without one.
 
-export const SECTIONS = ['overview', 'library', 'collections', 'prompts', 'runs', 'results', 'search'];
+export const SECTIONS = ['overview', 'library', 'collections', 'prompts', 'runs', 'results', 'search', 'help'];
 export const DEFAULT_SECTION = 'overview';
 const STORAGE_KEY = 'healthyphases.workspace.route';
 

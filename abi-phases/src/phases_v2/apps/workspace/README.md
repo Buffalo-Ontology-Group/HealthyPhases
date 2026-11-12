@@ -20,7 +20,8 @@ workspace/
 │   ├── ui.js             # escaping, messages, pills, empty states, pagination, toasts, confirmation
 │   ├── documents.js      # previews of what a run reads (folders, a PubMed search, a collection)
 │   ├── diff.js           # line diff of two prompt texts
-│   └── sections/         # overview, library, collections, prompts, runs, results, search
+│   ├── help/topics.js    # the help pages: one per section, Getting started, Glossary, The Assistant, FAQ
+│   └── sections/         # overview, library, collections, prompts, runs, results, search, help
 │                         # (+ search_render; prompt_try and prompt_versions for Prompts;
 │                         # paper_view for Results)
 ├── tests/                # node --test suites (*.cjs) and their small DOM stand-in
@@ -32,7 +33,8 @@ The manifest's `"agent": "phases_v2 WorkspaceAssistantAgent"` makes Nexus load t
 Assistant in its right pane while the app is open (see the module README, "The
 Assistant"). Nothing passes between the app and the pane, so the app only says how to
 open it: the sidebar's foot and the Overview name the pane's button at the top right of
-Nexus and ⌘K / Ctrl+K, which Nexus catches only once focus is outside the app's frame.
+Nexus and ⌘K / Ctrl+K, which Nexus catches only once focus is outside the app's frame,
+and link to Help → The Assistant.
 Changes the Assistant makes appear when the user clicks back into the app, like any
 change made elsewhere.
 
@@ -59,6 +61,9 @@ response sets.
 | `#/results?q=...&collection=...&prompt=...&model=...&has_results=true\|false&request=...&sort=...&page=2` | Ingested papers with their counts, filtered |
 | `#/results/<paper_id>?group=...&a=...&b=...` | One paper: its records, what ran, results by chunk for one prompt version × model (`group`, as `<prompt_id>\|<model_id>`), and two compared side by side (`a`, `b`) |
 | `#/search?q=...&mode=semantic\|keyword\|effects&prompt=...&model=...&path=...&collection=...` | Search results |
+| `#/help` | Help: Getting started (signing in, opening the app, the four steps), then every help page |
+| `#/help/<topic>` | A help page: `overview`, `library`, `collections`, `prompts`, `runs`, `results`, `search`, `glossary`, `assistant`, `faq` (`getting-started` is the index) |
+| `#/help/<topic>/<entry>` | A help page opened at one entry, scrolled to it with focus on its heading, for example `#/help/library/schedules` or `#/help/faq/run-failed` |
 
 A paper's page is reached from Results and from the other sections: a search hit's
 **Open paper**, a paper in a collection's Papers table, a run's **Papers in this run**
@@ -68,6 +73,38 @@ A paper's page is reached from Results and from the other sections: a search hit
 Nexus gives the iframe a new URL, with a new access token, each time it reloads the app,
 which drops the hash. The router therefore keeps the last route in `sessionStorage` and
 restores it when the app opens without one.
+
+## Help
+
+The help pages are in `js/help/topics.js` and `js/sections/help.js` renders them. Each page
+lists its entries at the top ("On this page") and, for a section's page, links to it
+("Open Library"). The hash is the route, so an entry is a route part rather than an
+`#anchor`. An unknown topic shows the index and an unknown entry its page, each with a
+note. Entering a page focuses its heading and an entry link its entry's heading; the
+section's `keepsFocus(route)` tells the shell not to move focus back to the `h1`.
+
+Every section's page head ends its lede with a **Learn more** link to its page, and
+Library's tabs, the parts of Prompts, Runs, Collections and Results, and the empty states
+link to their entry. Build these with `learnMore(topic, entry)` and `helpHref(topic, entry)`
+from `ui.js`, with literal names: `tests/help_test.cjs` reads every call and checks the
+page and entry exist.
+
+The help and the Assistant's instructions describe the same app, and tests catch them
+drifting apart:
+
+- Labels of the app are written `ui('Run on this collection')`, which bolds and records
+  them; `help_test.cjs` checks each one appears verbatim in `index.html`, `js/ui.js` or
+  `js/sections/*.js`. Labels of the Nexus pages around the app (its sign-in screen and
+  sidebar) use `nexus()` instead and are pinned to a short list checked against Nexus.
+- Every sidebar section has a help page and a Learn more link to it, and every `#/help/...`
+  link in the app or the help opens a page or an entry.
+- `manifest_test.py` checks the sidebar lists the router's sections, Help included;
+  `agents/WorkspaceAssistantAgent_test.py` checks each is named in the Assistant's
+  instructions, and that each place they name with arrows ends on a label that exists in
+  the app, or on a help page title.
+
+When a label changes, change it in the help too; when a section gains a part, give it an
+entry and a Learn more link.
 
 ## Sections
 

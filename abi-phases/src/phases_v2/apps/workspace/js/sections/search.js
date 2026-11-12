@@ -5,7 +5,7 @@
 // snapshot, loaded by infinite scroll or the Load more button.
 
 import { fetchBlob, phases, PREFIXES, saveBlob, search as searchApi } from '../api.js';
-import { $, esc, fill, message } from '../ui.js';
+import { $, esc, fill, helpHref, learnMore, message } from '../ui.js';
 import { highlight, parsePayload, probabilisticRelations, renderExtraction } from './search_render.js';
 
 export { highlight, keywordTerms, renderExtraction } from './search_render.js';
@@ -21,7 +21,7 @@ const keyOf = (params) => new URLSearchParams([...params].sort(([a], [b]) => (a 
 
 const template = () => `
   <header class="page-head"><p class="eyebrow">Step 4 · Explore results</p><h1 tabindex="-1">Search</h1>
-    <p class="lede">Find which papers, and where in them, a finding is stated. Search by meaning, by words, or by the effect itself.</p></header>
+    <p class="lede">Find which papers, and where in them, a finding is stated. Search by meaning, by words, or by the effect itself. ${learnMore('search', '', 'Search')}</p></header>
   <section class="card">
     <form id="sr-form" role="search">
       <div class="segmented" role="group" aria-label="Search mode">${Object.entries(MODES).map(([mode, m]) => `<button type="button" id="sr-mode-${mode}" data-mode="${mode}" aria-pressed="false">${m.label}<small>${m.hint}</small></button>`).join('')}</div>
@@ -38,6 +38,7 @@ const template = () => `
       </div>
       <details class="filters-panel" id="sr-filters">
         <summary>Filters</summary>
+        <p class="hint">${learnMore('search', 'filters', 'the filters')}</p>
         <div class="grid">
           <div><label for="sr-size">Batch size</label><input type="number" id="sr-size" value="10" min="1" max="100"></div>
           <div id="sr-threshold-wrap"><label for="sr-threshold">Minimum score</label><input type="number" id="sr-threshold" step="0.05" min="0" max="1" placeholder="any"></div>
@@ -175,7 +176,7 @@ export function create(root, ctx) {
     const box = $('sr-results');
     if (!append) box.replaceChildren();
     if (!data.hits.length && !append) {
-      box.innerHTML = `<div class="card empty">No matches for “${esc(data.query || 'all targets')}”. Try other words, another mode, or fewer filters.</div>`;
+      box.innerHTML = `<div class="card empty">No matches for “${esc(data.query || 'all targets')}”. Try other words, another mode, or fewer filters. <a href="${helpHref('search', 'modes')}">How each mode searches</a></div>`;
       return;
     }
     for (const h of data.hits) {

@@ -6,7 +6,7 @@
 import { phases } from '../api.js';
 import { documentPreview } from '../documents.js';
 import {
-  $, action, emptyRow, esc, fill, formatDate, message, plural, selected, selectValues, statusPill, tableHtml,
+  $, action, emptyRow, esc, fill, formatDate, helpHref, learnMore, message, plural, selected, selectValues, statusPill, tableHtml,
 } from '../ui.js';
 import { promptLabel } from './prompts.js';
 
@@ -29,19 +29,19 @@ export function resultSummary(request) {
 
 const template = () => `
   <header class="page-head"><p class="eyebrow">Step 3 · Run the pipeline</p><h1 tabindex="-1">Runs</h1>
-    <p class="lede">Queue extraction runs over your papers and follow them until they finish.</p></header>
+    <p class="lede">Queue extraction runs over your papers and follow them until they finish. ${learnMore('runs', '', 'Runs')}</p></header>
   <nav class="tabs" aria-label="Run views"><a id="run-tab-list" href="#/runs">Requests</a><a id="run-tab-new" href="#/runs/new">New run</a></nav>
 
   <div id="run-view-list" class="stack" hidden>
     <section class="card">
       <div class="card-head"><div><h2>Run requests</h2><p id="run-updated" class="hint">Refreshes every 10 seconds while this page is open.</p></div>
         <div class="row"><a class="button primary" href="#/runs/new">New run</a><button id="run-refresh-requests" type="button">Refresh</button></div></div>
-      <div class="row"><label for="run-status" class="inline">Status</label><select id="run-status" class="auto"><option value="">All statuses</option>${STATUSES.map((s) => `<option value="${s}">${s}</option>`).join('')}</select><span class="hint">Most recent 100 requests</span></div>
+      <div class="row"><label for="run-status" class="inline">Status</label><select id="run-status" class="auto"><option value="">All statuses</option>${STATUSES.map((s) => `<option value="${s}">${s}</option>`).join('')}</select><span class="hint">Most recent 100 requests</span>${learnMore('runs', 'statuses', 'the statuses')}</div>
       <p id="run-requests-message" class="msg" role="status"></p>
       ${tableHtml('run-requests', ['Run', 'Status', 'Prompts', 'Model'], 'Run requests')}
     </section>
     <section class="card" id="run-detail" hidden aria-labelledby="run-detail-title">
-      <div class="card-head"><h2 id="run-detail-title" tabindex="-1">Run details</h2><a id="run-detail-close" class="button" href="#/runs">Close</a></div>
+      <div class="card-head"><h2 id="run-detail-title" tabindex="-1">Run details</h2><div class="row">${learnMore('runs', 'run-page', 'a run’s page')}<a id="run-detail-close" class="button" href="#/runs">Close</a></div></div>
       <div id="run-detail-content"></div>
       <div class="row actions"><a id="run-detail-papers" class="button" href="#/results" hidden>Papers in this run</a><a id="run-detail-collection" class="button" href="#/collections" hidden>Open the collection</a><a id="run-detail-results" class="button" href="#/search" hidden>Search with this run's prompts and model</a></div>
     </section>
@@ -50,12 +50,12 @@ const template = () => `
   <div id="run-view-new" class="stack" hidden>
     <p id="run-app-message" class="msg" role="status"></p>
     <section class="card">
-      <h2>Saved configurations</h2>
+      <div class="card-head"><h2>Saved configurations</h2>${learnMore('runs', 'saved-configurations', 'Saved configurations')}</div>
       <div class="row"><label class="sr-only" for="run-saved">Saved configuration</label><select id="run-saved" class="grow"></select><button id="run-load-saved" type="button" disabled>Load into the form</button><button id="run-run-saved" type="button" disabled>Run saved configuration</button></div>
       <p id="run-saved-message" class="msg" role="status"></p>
     </section>
     <section class="card">
-      <h2>1. Choose papers</h2>
+      <div class="card-head"><h2>1. Choose papers</h2>${learnMore('runs', 'new-run', 'New run')}</div>
       <div class="grid">
         <div><label for="run-source">Paper source</label><select id="run-source"><option value="storage">Storage folders</option><option value="collection">Collection</option><option value="pubmed">PubMed search</option></select>
           <p class="hint">A collection holds the papers you gathered; a PubMed source contains the papers downloaded for that search.</p></div>
@@ -370,7 +370,9 @@ export function create(root, ctx) {
     const status = $('run-status').value;
     const requests = state.requests.filter((r) => !status || r.status === status);
     if (!requests.length) {
-      $('run-requests').innerHTML = emptyRow(4, state.requests.length ? 'No runs have this status. Choose All statuses.' : 'No runs yet. Start one from New run.');
+      $('run-requests').innerHTML = state.requests.length
+        ? emptyRow(4, 'No runs have this status. Choose All statuses.')
+        : emptyRow(4, 'No runs yet. Start one from New run.', [helpHref('runs', 'new-run'), 'How to start a run']);
     }
     for (const request of requests) {
       const row = document.createElement('tr');

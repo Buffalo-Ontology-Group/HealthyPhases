@@ -654,6 +654,14 @@ Search app; their HTTP APIs are unchanged. Its sections, in the left navigation:
   refreshes every 10 seconds while it is visible.
 - **Search**: semantic, keyword and effects search over extracted items (see
   [Reverse search](#reverse-search)), optionally limited to one collection.
+- **Help**: Getting started (signing in at Nexus with an emailed code, opening the app,
+  the four steps), a page per section above, a glossary, a page on the Assistant and an
+  FAQ (a missing sign-in code, papers not ingested, failed or pending runs, papers without
+  results, older prompt versions, uploading PDFs). Pages and their entries are deep links
+  (`#/help/faq/run-failed`). Every section's page head has a **Learn more** link to its
+  page, and empty states link to the entry that says what to do next. Tests keep the
+  help's labels, the app's labels and the Assistant's instructions in step (see
+  [`apps/workspace/README.md`](apps/workspace/README.md), "Help").
 
 Every section has a deep link (`#/runs/<request_id>`, `#/search?q=...&mode=keyword`,
 `#/library/schedules`, ...), and the last route comes back when Nexus reloads the app.
@@ -794,8 +802,14 @@ the pane with its button at the top right of Nexus, or ⌘K / Ctrl+K once focus 
 the app; the app's sidebar and Overview say so, with example requests.
 
 The pane gets no message from the app, so the Assistant does not know the section or
-item on screen. Its instructions describe each section, the workflow and the names of
-the buttons, and tell it to look things up or ask.
+item on screen. Its instructions describe each section, Help included, the workflow and
+the names of the buttons, and tell it to look things up or ask, and to point how-to
+questions to the matching help page ("Help → FAQ"). The help's page on the Assistant
+says the same as its instructions: what it does alone, what needs a yes, and what it
+cannot do and where to do it instead. `agents/WorkspaceAssistantAgent_test.py` checks
+that the instructions name every sidebar section and that every place they name with
+arrows ("Collections → Solitude studies → Run on this collection") ends on a label the
+app has, or on a help page.
 
 Its tools (`assistant/tools.py`) are thin wrappers (`assistant/workspace.py`) over the
 same services the endpoints use: `PipelineAppService` and its collections, prompt
