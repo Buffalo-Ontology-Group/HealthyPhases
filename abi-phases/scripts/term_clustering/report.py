@@ -368,7 +368,7 @@ def stability_section(
                 f"| {variant} | {p['a']} | {p['b']} | {pct(p['clustered_in_both'])} | {pct(p['b_to_a'])} | "
                 f"{pct(p['a_to_b'])} | {p['ari']:.2f} |"
             )
-        seeds = ", ".join(
+        seeds = "; ".join(
             f"seed {s['seed']}: {s['clusters']} clusters, {pct(s['noise'])} noise"
             for s in data["seeds"]
         )
