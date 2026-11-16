@@ -28,8 +28,16 @@ export function promptLabel(prompt, prompts) {
   return versions > 1 ? `${prompt.name} (version ${prompt.prompt_id.slice(-8)})` : prompt.name;
 }
 
-// What makes two prompt names the same name, as the server compares them.
-export const nameKey = (name) => String(name || '').trim().toLowerCase();
+// The characters Python's str.strip() removes, which JavaScript's trim() does
+// not quite match (it keeps \x1c-\x1f and \x85, and removes \ufeff).
+const PY_SPACE = '\\t\\n\\v\\f\\r\\x1c-\\x20\\x85\\xa0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000';
+const PY_STRIP = new RegExp(`^[${PY_SPACE}]+|[${PY_SPACE}]+$`, 'g');
+const PY_RSTRIP = new RegExp(`[${PY_SPACE}]+$`);
+
+// What makes two prompt names the same name, as the server compares them
+// (strip, then casefold). Upper- then lower-casing folds what toLowerCase()
+// alone does not, so "Straße" and "STRASSE" are one name here too.
+export const nameKey = (name) => String(name || '').replace(PY_STRIP, '').toUpperCase().toLowerCase();
 
 // Why the name in the editor cannot take a new version, or '' when it can:
 // a name nobody has yet is free, one you own is yours.
@@ -41,14 +49,15 @@ export function readOnlyReason(name, prompts) {
 // The longest prompt name the server accepts.
 export const MAX_NAME = 100;
 
-// "<name> copy", numbered when that name is taken. The name is cut so that the
-// suffix always fits in MAX_NAME.
+// "<name> copy", numbered when that name is taken, as the server names a copy.
+// The name is cut, in characters as the server counts them, so that the suffix
+// always fits in MAX_NAME.
 export function copyName(name, prompts) {
   const taken = new Set(prompts.map((p) => nameKey(p.name)));
-  const base = String(name || 'Prompt');
+  const base = Array.from(String(name || 'Prompt'));
   for (let n = 1; ; n += 1) {
     const suffix = n === 1 ? ' copy' : ` copy ${n}`;
-    const candidate = base.slice(0, MAX_NAME - suffix.length).trimEnd() + suffix;
+    const candidate = base.slice(0, MAX_NAME - suffix.length).join('').replace(PY_RSTRIP, '') + suffix;
     if (!taken.has(nameKey(candidate))) return candidate;
   }
 }

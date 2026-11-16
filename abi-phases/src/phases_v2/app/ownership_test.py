@@ -30,7 +30,7 @@ from phases_v2.chunking.chunkers import WINDOW_512_128
 from phases_v2.datasets.row_store import DatasetRowStore
 from phases_v2.datasets.store import ensure_datasets
 from phases_v2.models.catalog import DECLARED_MODELS
-from phases_v2.ownership import SYSTEM, Actor, NotAllowed
+from phases_v2.ownership import SYSTEM, Actor, IdentityUnavailable, NotAllowed
 from phases_v2.paper_collections.adapters.secondary.StoredMemberSources import (
     StoredMemberSources,
 )
@@ -47,6 +47,8 @@ BEA = Actor.user("user-bea", "Bea Example", "bea@example.org")
 SESSIONS = {"ada-session": ADA, "bea-session": BEA}
 #: A token the validator accepts but Nexus cannot place (a deleted user, say).
 UNPLACED = "unplaced-session"
+#: A token the validator accepts while Nexus itself is failing.
+OUTAGE = "outage-session"
 PDF = b"%PDF-1.7 a paper"
 
 
@@ -74,13 +76,15 @@ def env(store, monkeypatch):
     monkeypatch.setattr(
         abi_api_key_auth,
         "_EXTRA_APP_HTML_TOKEN_VALIDATORS",
-        [lambda token, _request: token in SESSIONS or token == UNPLACED],
+        [lambda token, _request: token in SESSIONS or token in (UNPLACED, OUTAGE)],
     )
 
     identified = []
 
     async def identify(token):
         identified.append(token)
+        if token == OUTAGE:
+            raise IdentityUnavailable()
         return SESSIONS.get(token)
 
     pubmed = PubmedCatalog(store.dataset)
@@ -106,6 +110,7 @@ def env(store, monkeypatch):
         bea=client("bea-session"),
         key=client(API_KEY),
         unplaced=client(UNPLACED),
+        outage=client(OUTAGE),
         identified=identified,
     )
 
@@ -519,6 +524,21 @@ def test_a_session_nexus_cannot_place_changes_nothing(env):
     )
 
 
+def test_when_nexus_cannot_answer_the_user_is_asked_to_try_again(env):
+    for response in (
+        env.outage.get(f"{PREFIX}/prompts"),
+        env.outage.post(f"{PREFIX}/collections", json={"name": unique("Outage")}),
+        save_prompt(env.outage, unique("Outage prompt")),
+    ):
+        assert response.status_code == 503, response.text
+        detail = response.json()["detail"]
+        assert "Try again in a few moments" in detail
+        assert "sign in again" not in detail
+    # Nothing is remembered about the failure: the next request asks again.
+    env.outage.get(f"{PREFIX}/prompts")
+    assert env.identified.count(OUTAGE) == 4
+
+
 def test_an_owner_filter_other_than_mine_or_all_is_refused(env):
     assert (
         env.ada.get(f"{PREFIX}/prompts", params={"owner": "theirs"}).status_code == 422
@@ -575,6 +595,17 @@ def test_nobody_uploads_into_another_users_collection_folder(env):
     ok(upload_to_folder(env.key, folder, "scripted.pdf", b"%PDF-1.7 script"), 201)
 
 
+def test_an_archived_collections_folder_takes_uploads_from_the_api_key_only(env):
+    adas = create_collection(env.ada, unique("Ada archived"))
+    folder = f"phases_v2/collections/{adas['collection_id']}"
+    env.service.resources.archive_collection(adas["collection_id"], ADA)
+
+    refused(upload_to_folder(env.ada, folder), "is archived")
+    refused(upload_to_folder(env.bea, folder), "is archived")
+    assert stored_under(env, folder) == []
+    ok(upload_to_folder(env.key, folder, "scripted.pdf", b"%PDF-1.7 script"), 201)
+
+
 def test_a_shared_collections_folder_still_takes_uploads(env):
     shared_id = str(uuid4())
     now = datetime.now(UTC)
@@ -621,6 +652,90 @@ def test_a_papers_page_names_who_requested_each_run(env, monkeypatch):
     ]
     mine = ok(env.ada.get(f"{PREFIX}/papers/p1"))["requests"][0]
     assert mine["requested_by_you"] is True
+
+
+def test_a_requester_shows_as_their_name_their_label_or_nothing(env, monkeypatch):
+    monkeypatch.setattr(
+        env.service.paper_results,
+        "paper",
+        lambda paper_id: {
+            "requests": [
+                # A run the Assistant queued before runs recorded user ids.
+                {"request_id": "r1", "requested_by": "ada@example.org"},
+                # A script's run, through the API key.
+                {"request_id": "r2", "requested_by": "nightly-script"},
+                # Someone who has not used the app since names were recorded.
+                {"request_id": "r3", "requested_by": "cy@example.org"},
+                {"request_id": "r4", "requested_by": None},
+            ]
+        },
+    )
+    ok(env.ada.get(f"{PREFIX}/prompts"))  # Ada has used the app
+
+    seen_by_bea = ok(env.bea.get(f"{PREFIX}/papers/p1"))["requests"]
+    assert [(r["requested_by_name"], r["requested_by_you"]) for r in seen_by_bea] == [
+        ("Ada Example", False),
+        ("nightly-script", False),
+        ("cy@example.org", False),
+        (None, False),
+    ]
+    seen_by_ada = ok(env.ada.get(f"{PREFIX}/papers/p1"))["requests"]
+    assert [r["requested_by_you"] for r in seen_by_ada] == [True, False, False, False]
+
+
+def test_a_scripts_run_shows_its_label_in_the_run_list(env):
+    collection = create_collection(env.key, unique("Scripted set"))
+    body = dict(run_inputs(collection["collection_id"]), requested_by="nightly-script")
+    queued = ok(env.key.post(f"{PREFIX}/requests", json=body), 201)
+
+    run = ok(env.bea.get(f"{PREFIX}/requests/{queued['request_id']}"))
+    assert (run["requested_by_name"], run["requested_by_you"]) == (
+        "nightly-script",
+        False,
+    )
+    listed = ok(env.bea.get(f"{PREFIX}/requests", params={"owner": "all"}))
+    mine = [r for r in listed["requests"] if r["request_id"] == queued["request_id"]]
+    assert [r["requested_by_name"] for r in mine] == ["nightly-script"]
+
+
+def test_a_prompts_history_never_splits_by_letter_case(env):
+    name = unique("Stress Prompt")
+    ok(save_prompt(env.ada, name), 201)
+
+    saved = ok(save_prompt(env.ada, name.lower(), "Stress again {chunk_text}"), 201)
+    assert saved["name"] == name
+    versions = env.service.versions.versions(name)["versions"]
+    assert {v["template"] for v in versions} == {
+        "Claims in {chunk_text}",
+        "Stress again {chunk_text}",
+    }
+    names = {p["name"] for p in ok(env.ada.get(f"{PREFIX}/prompts"))["prompts"]}
+    assert name in names and name.lower() not in names
+    refused(save_prompt(env.bea, name.upper(), "Bea's {chunk_text}"), "Ada Example")
+
+
+def test_a_copy_never_takes_a_name_already_in_use(env):
+    name = unique("Source")
+    ok(save_prompt(env.ada, name), 201)
+    ok(save_prompt(env.ada, name, "Newer {chunk_text}"), 201)
+    other = unique("Other")
+    ok(save_prompt(env.ada, other), 201)
+
+    for taken in (other, other.upper(), f" {other.lower()} ", name):
+        with pytest.raises(ValueError, match="already named"):
+            env.service.duplicate_prompt(name, new_name=taken, actor=ADA)
+    assert len(env.service.versions.versions(other)["versions"]) == 1
+
+    fresh = unique("Fresh")
+    copy = env.service.duplicate_prompt(name, new_name=fresh, actor=ADA)
+    # Without a version named, the newest one is copied.
+    assert (copy["name"], copy["template"], copy["owner_id"]) == (
+        fresh,
+        "Newer {chunk_text}",
+        ADA.user_id,
+    )
+    with pytest.raises(KeyError, match="No prompt is named"):
+        env.service.duplicate_prompt(unique("Missing"), actor=ADA)
 
 
 def test_listings_and_runs_still_work_when_names_cannot_be_read(env, monkeypatch):

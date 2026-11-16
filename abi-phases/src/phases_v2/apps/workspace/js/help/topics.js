@@ -319,7 +319,7 @@ const runs = {
     {
       id: 'requested-by',
       title: 'Your runs and everyone’s',
-      body: p(`Every run records who requested it, from the app or through the Assistant. ${ui('Requests')} shows your own runs at first: in ${ui('Show')}, choose ${ui('Everyone’s')} for everyone’s 100 latest, and ${ui('Mine')} to go back. ${ui('Requested by')} says ${ui('You')}, or the person’s name; a dash means a run from before runs recorded it, or from a script.`)
+      body: p(`Every run records who requested it, from the app or through the Assistant. ${ui('Requests')} shows your own runs at first: in ${ui('Show')}, choose ${ui('Everyone’s')} for everyone’s 100 latest, and ${ui('Mine')} to go back. ${ui('Requested by')} says ${ui('You')}, or the person’s name. A run queued by a script shows the label the script gave, and a dash means a run that names nobody: one from before runs recorded who requested them, or a script that gave no label.`)
         + p('Anyone can open any run and its results, and run again with the same choices.'),
     },
     {

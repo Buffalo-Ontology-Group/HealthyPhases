@@ -376,6 +376,21 @@ test('a copy of a long prompt name still fits in 100 characters', async () => {
   assert.equal(copyName('Short', [{ name: 'short COPY' }]), 'Short copy 2');
 });
 
+test('prompt names match as the server matches them', async () => {
+  install();
+  const { copyName, nameKey, readOnlyReason } = await load('sections/prompts.js');
+  // The server casefolds: "ß" folds to "ss" there, so the app folds it too.
+  assert.equal(nameKey('Straße'), nameKey('STRASSE'));
+  assert.equal(readOnlyReason('STRASSE', [{ name: 'Straße', can_change: false, read_only_reason: 'Not yours.' }]), 'Not yours.');
+  // It strips what Python's str.strip() strips, and only that.
+  assert.equal(nameKey(' Name\x1c\x85'), 'name');
+  assert.notEqual(nameKey('Name\ufeff'), 'name');
+  // The cut counts characters as the server does, not UTF-16 units.
+  const emoji = `${'a'.repeat(94)}😀😀`;
+  assert.equal(copyName(emoji, []), `${'a'.repeat(94)}😀 copy`);
+  assert.equal(copyName(`${'a'.repeat(94)}\x1c\x1c`, []), `${'a'.repeat(94)} copy`);
+});
+
 test('an older requests answer never replaces a newer one', async () => {
   const { $, a, calls } = await runs();
   const answers = [];
