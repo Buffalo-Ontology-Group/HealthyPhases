@@ -23,7 +23,12 @@ from naas_abi.apps.nexus.apps.api.app.core.workspace_catalog_seed import (
 )
 from naas_abi_core.module.ModuleAgentLoader import ModuleAgentLoader
 from naas_abi_core.services.agent.Agent import AgentConfiguration, AgentSharedState
-from naas_abi_core.services.agent.context import agent_chat_id, agent_user_email
+from naas_abi_core.services.agent.context import (
+    agent_chat_id,
+    agent_user_email,
+    agent_user_id,
+    agent_user_name,
+)
 
 import phases_v2
 import pubmed
@@ -33,6 +38,7 @@ from phases_v2.agents.WorkspaceAssistantAgent import (
 )
 from phases_v2.assistant import factory
 from phases_v2.assistant.request_context import (
+    nexus_actor,
     nexus_context,
     turn_marker,
     turn_markers,
@@ -57,7 +63,9 @@ APP = SRC / "phases_v2" / "apps" / "workspace"
 def sidebar_titles():
     """The sidebar's section names, Help included, as index.html shows them."""
     html = (APP / "index.html").read_text()
-    return re.findall(r'<a href="#/\w+" data-nav="\w+"[^>]*>.*?<span>([^<]+)</span></a>', html)
+    return re.findall(
+        r'<a href="#/\w+" data-nav="\w+"[^>]*>.*?<span>([^<]+)</span></a>', html
+    )
 
 
 SECTIONS = tuple(sidebar_titles())
@@ -299,7 +307,10 @@ def help_topic_titles():
 
 def shows_label(source, label):
     """Whether `label` is a whole UI string in `source`: an element's text or a string literal."""
-    return re.search(rf"(?:>\s*|['\"`]){re.escape(label)}(?:\s*<|['\"`])", source) is not None
+    return (
+        re.search(rf"(?:>\s*|['\"`]){re.escape(label)}(?:\s*<|['\"`])", source)
+        is not None
+    )
 
 
 def test_a_label_counts_only_as_a_whole_ui_string():
@@ -334,7 +345,9 @@ def test_every_place_the_instructions_point_to_exists_in_the_app():
     assert len(paths) >= 8, paths
     for parts in paths:
         first, last = parts[0], parts[-1]
-        section = next((s for s in SECTIONS if first == s or first.endswith(f" {s}")), None)
+        section = next(
+            (s for s in SECTIONS if first == s or first.endswith(f" {s}")), None
+        )
         assert section, parts
         assert not last.startswith("("), parts
         if section == "Help":
@@ -387,9 +400,25 @@ def scripted_agent(env, script):
     )
 
 
+def _as_nexus_user():
+    """What Nexus sets for the user of the conversation, to reset after."""
+    return [
+        (agent_user_id, agent_user_id.set("user-ada")),
+        (agent_user_name, agent_user_name.set("Ada Example")),
+        (agent_user_email, agent_user_email.set("ada@example.org")),
+    ]
+
+
+def _reset(tokens):
+    for variable, token in reversed(tokens):
+        variable.reset(token)
+
+
 def test_a_run_is_queued_only_once_the_user_answers_yes(store):
-    env = build_env(store, context=nexus_context)
+    env = build_env(store, context=nexus_context, actor=nexus_actor)
+    user = _as_nexus_user()
     collection = env.actions.create_collection("Sleep", paper_ids=[PAPER])
+    assert collection["owner"] == "you"
     choices = run_choices(collection["collection_id"])
     seen = {}
 
@@ -417,7 +446,6 @@ def test_a_run_is_queued_only_once_the_user_answers_yes(store):
 
     agent = scripted_agent(env, script)
     chat_token = agent_chat_id.set("chat-1")
-    user_token = agent_user_email.set("jeremy@naas.ai")
     try:
         first = agent.invoke(f"Run Claims on Sleep with {CLAIMS.name}")
         assert "has not answered yet" in first
@@ -426,17 +454,19 @@ def test_a_run_is_queued_only_once_the_user_answers_yes(store):
         second = agent.invoke("Yes, go ahead")
     finally:
         agent_chat_id.reset(chat_token)
-        agent_user_email.reset(user_token)
+        _reset(user)
 
     assert '"queued": true' in second
     [request] = env.requests.requests.values()
-    assert request.requested_by == "jeremy@naas.ai"
+    # The Nexus user id, the same the app's session token carries.
+    assert request.requested_by == "user-ada"
     assert request.prompt_ids == [CLAIMS.prompt_id]
 
 
 def test_a_yes_given_messages_later_does_not_queue_the_run(store):
     """Asked in turn 1, another question in turn 2, "ok thanks" in turn 3."""
-    env = build_env(store, context=nexus_context)
+    env = build_env(store, context=nexus_context, actor=nexus_actor)
+    user = _as_nexus_user()
     collection = env.actions.create_collection("Sleep late", paper_ids=[PAPER])
     choices = run_choices(collection["collection_id"])
     seen = {}
@@ -462,14 +492,13 @@ def test_a_yes_given_messages_later_does_not_queue_the_run(store):
 
     agent = scripted_agent(env, script)
     chat_token = agent_chat_id.set("chat-1")
-    user_token = agent_user_email.set("jeremy@naas.ai")
     try:
         agent.invoke(f"Run Claims on Sleep late with {CLAIMS.name}")
         agent.invoke("Which prompts do I have?")
         third = agent.invoke("ok thanks")
     finally:
         agent_chat_id.reset(chat_token)
-        agent_user_email.reset(user_token)
+        _reset(user)
 
     assert "more than once since" in third
     assert env.requests.requests == {}

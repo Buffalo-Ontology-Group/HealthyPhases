@@ -58,10 +58,13 @@ def register_prompts(
     templates: list[PromptTemplate],
     *,
     already_registered: Collection[str] = (),
+    owner_id: str | None = None,
 ) -> list[str]:
     """Publish every declared template. Returns their ids, in declaration order.
 
-    Templates whose id is in ``already_registered`` are not rewritten.
+    Templates whose id is in ``already_registered`` are not rewritten. New rows
+    record ``owner_id``, the user who owns the prompt's name; ``None`` (the
+    declared prompts, and anything the API key saves) is shared.
     """
     validate(templates)
     if not templates:
@@ -82,6 +85,7 @@ def register_prompts(
                 "template": template.template,
                 "output_key": template.output_key,
                 "registered_at": now,
+                "owner_id": owner_id,
             }
             for template in new
         ],

@@ -6,6 +6,10 @@ so the assistant and the app always agree on what is allowed. The wrappers only
 shape answers for reading in a conversation: short, plain, and with where to
 find the same thing in the app.
 
+The assistant acts as its user (:mod:`phases_v2.ownership`): what it creates
+is theirs, and the services refuse what that user could not do, with a message
+that says why and what to do instead. Lists can keep only the user's own items.
+
 Nothing here deletes, archives, removes a member or turns a schedule off.
 Queuing work that costs money or time goes through a prepared action and a
 token (see :mod:`phases_v2.assistant.confirmations`).
@@ -25,6 +29,7 @@ from phases_v2.assistant.confirmations import (
     ConfirmationGuard,
     RequestContext,
 )
+from phases_v2.ownership import NOBODY, Actor, NotAllowed, check_filter
 from phases_v2.requests.interfaces import RequestNotFound
 from pubmed.domain.pubmed_errors import PublicationNotFound
 
@@ -110,11 +115,14 @@ class WorkspaceActions:
         search: Callable[[], Any] | None = None,
         pubmed: Callable[[], Any] | None = None,
         openalex: Callable[[], Any] | None = None,
+        actor: Callable[[], Actor] | None = None,
     ):
         """Each service is given as a function that builds it on first use:
         ``pipeline`` the app's ``PipelineAppService``, ``search`` the search
         service, and ``pubmed`` and ``openalex`` those modules' services, which
-        build ``None`` when the module is not loaded."""
+        build ``None`` when the module is not loaded. ``actor`` says which user
+        the assistant acts for."""
+        self._actor = actor or (lambda: NOBODY)
         self._pipeline_service = Lazy("The workspace", pipeline)
         self._search_service = Lazy("Search", search)
         self._pubmed_service = Lazy("PubMed", pubmed)
@@ -126,10 +134,18 @@ class WorkspaceActions:
     def _pipeline(self):
         return self._pipeline_service.get()
 
+    def _me(self) -> Actor:
+        """The user the assistant acts for, whose name lists show from now on."""
+        actor = self._actor()
+        self._pipeline.users.remember(actor)
+        return actor
+
     # -- collections ------------------------------------------------------
 
-    def list_collections(self) -> dict[str, Any]:
-        rows = _ask(self._pipeline.resources.summaries, True)
+    def list_collections(self, owner: str = "all") -> dict[str, Any]:
+        """``owner="mine"``: only the user's own collections."""
+        check_filter(owner)
+        rows = _ask(self._pipeline.resources.summaries, True, self._me(), owner)
         return {
             "collections": [
                 {
@@ -140,19 +156,22 @@ class WorkspaceActions:
                     "members": c["member_count"],
                     "unreadable_members": c.get("failed_members", 0),
                     "updated_at": c["updated_at"],
+                    **_owner(c),
                 }
                 for c in rows
             ],
+            "showing": "yours" if owner == "mine" else "everyone's",
             "where": "Collections",
         }
 
     def get_collection(self, collection_id: str) -> dict[str, Any]:
-        detail = _ask(self._pipeline.resources.detail, collection_id)
+        detail = _ask(self._pipeline.resources.detail, collection_id, actor=self._me())
         return _plain(
             {
                 "collection_id": detail["collection_id"],
                 "name": detail["name"],
                 "description": detail["description"],
+                **_owner(detail),
                 "members": [
                     {
                         "member_id": m["member_id"],
@@ -201,6 +220,7 @@ class WorkspaceActions:
                 "description": description or "",
                 "members": _members(pubmed_search_ids, pmids, paper_ids, folders),
             },
+            self._me(),
         )
         return self.get_collection(created["collection_id"])
 
@@ -221,6 +241,7 @@ class WorkspaceActions:
                 if description is None
                 else description,
             },
+            self._me(),
         )
         return self.get_collection(collection_id)
 
@@ -242,6 +263,7 @@ class WorkspaceActions:
             self._pipeline.resources.add_members,
             collection_id,
             {"members": members},
+            self._me(),
         )
         return self.get_collection(collection_id)
 
@@ -352,8 +374,10 @@ class WorkspaceActions:
 
     # -- prompts, models, chunkers ------------------------------------------
 
-    def list_prompts(self) -> dict[str, Any]:
-        prompts = self._pipeline.prompts()
+    def list_prompts(self, owner: str = "all") -> dict[str, Any]:
+        """``owner="mine"``: only the user's own prompts."""
+        check_filter(owner)
+        prompts = self._pipeline.prompts(self._me(), owner)
         return {
             "prompts": [
                 {
@@ -361,17 +385,23 @@ class WorkspaceActions:
                     "name": p["name"],
                     "output_format": p["output_key"],
                     "text_start": _clip(p["template"], 160),
+                    "built_in": p["declared"],
+                    **_owner(p),
                 }
                 for p in prompts
             ],
+            "showing": "yours" if owner == "mine" else "everyone's",
             "where": "Prompts",
         }
 
     def get_prompt_versions(self, name: str) -> dict[str, Any]:
         found = _ask(self._pipeline.versions.versions, name)
+        listed = self._pipeline.prompts(self._me())
+        owned = next((p for p in listed if p["name"] == found["name"]), None)
         return _plain(
             {
                 "name": found["name"],
+                **(_owner(owned) if owned else {}),
                 "versions": [
                     _pick(version, VERSION_FIELDS) for version in found["versions"]
                 ],
@@ -386,12 +416,34 @@ class WorkspaceActions:
         saved = _ask(
             self._pipeline.management.save_prompt,
             {"name": name, "template": template, "output_key": output_format},
+            self._me(),
         )
         return {
             "prompt_id": saved["prompt_id"],
             "name": saved["name"],
             "output_format": saved["output_key"],
             "already_saved": saved["prompt_id"] in known,
+            "where": f"Prompts → {saved['name']}",
+        }
+
+    def duplicate_prompt(
+        self, name: str, new_name: str = "", prompt_id: str = ""
+    ) -> dict[str, Any]:
+        """Copy a prompt (its newest version, or ``prompt_id``) under a new
+        name the user owns."""
+        saved = _ask(
+            self._pipeline.duplicate_prompt,
+            name,
+            new_name or "",
+            prompt_id or "",
+            actor=self._me(),
+        )
+        return {
+            "prompt_id": saved["prompt_id"],
+            "name": saved["name"],
+            "output_format": saved["output_key"],
+            "copied_from": name,
+            "owner": "you",
             "where": f"Prompts → {saved['name']}",
         }
 
@@ -636,16 +688,20 @@ class WorkspaceActions:
 
     # -- runs and saved configurations --------------------------------------
 
-    def list_runs(self) -> dict[str, Any]:
+    def list_runs(self, owner: str = "all") -> dict[str, Any]:
+        """``owner="mine"``: only the runs the user requested."""
+        check_filter(owner)
+        runs = _ask(self._pipeline.recent_requests, LISTED, self._me(), owner)
         return _plain(
             {
-                "runs": [_run(r) for r in _ask(self._pipeline.recent_requests, LISTED)],
+                "runs": [_run(r) for r in runs],
+                "showing": "yours" if owner == "mine" else "everyone's",
                 "where": "Runs",
             }
         )
 
     def get_run(self, run_id: str) -> dict[str, Any]:
-        found = _ask(self._pipeline.request, run_id)
+        found = _ask(self._pipeline.request, run_id, self._me())
         return _plain(dict(_run(found), counts=found.get("counts")))
 
     def list_downloads_and_enrichments(self) -> dict[str, Any]:
@@ -693,8 +749,10 @@ class WorkspaceActions:
         )
         return _plain(out)
 
-    def list_run_configurations(self) -> dict[str, Any]:
-        rows = _ask(self._pipeline.management.pipelines)
+    def list_run_configurations(self, owner: str = "all") -> dict[str, Any]:
+        """``owner="mine"``: only the configurations the user saved."""
+        check_filter(owner)
+        rows = _ask(self._pipeline.management.pipelines, self._me(), owner)
         return _plain(
             {
                 "configurations": [
@@ -703,9 +761,11 @@ class WorkspaceActions:
                         "name": r["name"],
                         "inputs": r["inputs"],
                         "created_at": r["created_at"],
+                        "owner": _owner(r)["owner"],
                     }
                     for r in rows[:LISTED]
                 ],
+                "showing": "yours" if owner == "mine" else "everyone's",
                 "where": "Runs → New run → Saved configurations",
             }
         )
@@ -731,6 +791,7 @@ class WorkspaceActions:
                     "model_id": model_id,
                 },
             },
+            self._me(),
         )
         return _plain(
             {
@@ -801,6 +862,12 @@ class WorkspaceActions:
     ) -> dict[str, Any]:
         params = _run_params(collection_id, chunker_id, prompt_ids, model_id)
         context = self._context()
+        me = self._me()
+        if not me.user_id:
+            raise NotAllowed(
+                "I could not tell which user I am acting for, so I cannot queue "
+                "a run. Reload Nexus and ask again."
+            )
         _collection, scope = _ask(self._pipeline.collection_run_scope, collection_id)
         self._guard.redeem(token, RUN, params, context, basis=scope.manifest())
         # Submitted with the resolution just checked: the run reads exactly the
@@ -808,7 +875,7 @@ class WorkspaceActions:
         request = _ask(
             self._pipeline.submit_collection_run,
             **params,
-            requested_by=context.user[:200] or None,
+            requested_by=me.user_id,
             resolution=scope,
         )
         return {
@@ -1118,9 +1185,28 @@ def _run(request: dict[str, Any]) -> dict[str, Any]:
         "requested_at": request.get("requested_at"),
         "started_at": request.get("started_at"),
         "finished_at": request.get("finished_at"),
-        "requested_by": request.get("requested_by"),
+        "requested_by": "you"
+        if request.get("requested_by_you")
+        else request.get("requested_by_name"),
         "error": request.get("error"),
     }
+
+
+def _owner(row: dict[str, Any]) -> dict[str, Any]:
+    """Whose an item is, and whether the user may change it, said plainly."""
+    owner = (
+        "you"
+        if row.get("owned_by_you")
+        else "shared"
+        if row.get("shared")
+        else row.get("owner_name")
+    )
+    out: dict[str, Any] = {"owner": owner}
+    if "can_change" in row:
+        out["you_can_change"] = row["can_change"]
+        if not row["can_change"]:
+            out["why_you_cannot_change"] = row.get("read_only_reason")
+    return out
 
 
 def _pubmed_paper(paper: dict[str, Any]) -> dict[str, Any]:

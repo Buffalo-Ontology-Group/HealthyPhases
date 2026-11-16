@@ -99,9 +99,9 @@ test('no folders chosen means no request and a hint instead', async () => {
 // ---- Prompts ----
 
 const PROMPTS = { prompts: [
-  { prompt_id: 'effects-aaaaaaaa', name: 'Effects', template: 'A {chunk_text}', output_key: 'effects' },
-  { prompt_id: 'effects-bbbbbbbb', name: 'Effects', template: 'B {chunk_text}', output_key: 'effects' },
-  { prompt_id: 'causes-cccccccc', name: '<b>Causes</b>', template: 'C {chunk_text}', output_key: 'causes' },
+  { owned_by_you: true, prompt_id: 'effects-aaaaaaaa', name: 'Effects', template: 'A {chunk_text}', output_key: 'effects' },
+  { owned_by_you: true, prompt_id: 'effects-bbbbbbbb', name: 'Effects', template: 'B {chunk_text}', output_key: 'effects' },
+  { owned_by_you: true, prompt_id: 'causes-cccccccc', name: '<b>Causes</b>', template: 'C {chunk_text}', output_key: 'causes' },
 ] };
 const prompts = (routes = {}) => mount('prompts', { '/phases_v2/api/prompts': PROMPTS, ...routes });
 
@@ -129,7 +129,7 @@ test('a prompt deep link opens that exact version with its output format', async
 });
 
 test('saving creates a new version, selects it for the next run in place of the old one, and keeps the link', async () => {
-  const saved = { prompt_id: 'effects-dddddddd', name: 'Effects', template: 'D {chunk_text}', output_key: 'effects' };
+  const saved = { owned_by_you: true, prompt_id: 'effects-dddddddd', name: 'Effects', template: 'D {chunk_text}', output_key: 'effects' };
   const { $, a, section, parse, runs, ctx, calls } = await prompts();
   await section.show(parse('#/prompts/effects-bbbbbbbb'));
   globalThis.fetch = routeFetch({ 'POST /phases_v2/api/prompts': saved, '/phases_v2/api/prompts': { prompts: [...PROMPTS.prompts, saved] } }, calls);
@@ -186,7 +186,7 @@ test('New prompt gives a blank form after Duplicate', async () => {
 });
 
 test('coming back to Prompts lists a version saved elsewhere and keeps the open draft', async () => {
-  const added = { prompt_id: 'later-eeeeeeee', name: 'Later', template: 'L {chunk_text}', output_key: 'results' };
+  const added = { owned_by_you: true, prompt_id: 'later-eeeeeeee', name: 'Later', template: 'L {chunk_text}', output_key: 'results' };
   const { $, section, parse } = await prompts();
   await section.show(parse('#/prompts/causes-cccccccc'));
   $('pr-template').value = 'Draft {chunk_text}';

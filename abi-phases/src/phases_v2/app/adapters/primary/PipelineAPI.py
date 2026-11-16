@@ -6,33 +6,81 @@ requests to calls and errors to status codes.
 
 Nothing here contacts the orchestrator. Submitting records a row; a Dagster
 sensor picks it up.
+
+Every endpoint knows who is asking (:func:`caller`): the ABI API key, a Nexus
+user, or nobody known. The services decide what that caller may do; a refusal
+(:class:`~phases_v2.ownership.NotAllowed`) is a 403 with its message.
 """
 
 from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Awaitable, Callable
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.responses import Response
-from naas_abi_core.apps.api.abi_api_key_auth import require_abi_api_token
+from naas_abi_core.apps.api.abi_api_key_auth import (
+    extract_abi_api_token,
+    is_abi_api_token_valid,
+    require_abi_api_token,
+)
 from starlette.concurrency import run_in_threadpool
 
 from phases_v2.app.adapters.primary.SearchAPI import csv_document
 from phases_v2.app.contracts.pipeline_validation import validate_message
 from phases_v2.app.pipeline_management import MAX_UPLOAD_BYTES, ManagementUnavailable
 from phases_v2.app.service import PipelineAppService
+from phases_v2.ownership import NOBODY, SYSTEM, Actor, NotAllowed
 from phases_v2.requests.interfaces import RequestNotFound
 
 PREFIX = "/phases_v2/api"
 
+#: Who a Nexus session token belongs to; ``None`` when it cannot be told.
+Identify = Callable[[str], Awaitable[Actor | None]]
 
-def build_router(service: PipelineAppService) -> APIRouter:
+#: Lists show the caller's own items (``mine``) or everyone's (``all``).
+OWNER = Query(default="all", pattern="^(mine|all)$")
+
+
+def caller_dependency(service: PipelineAppService, identify: Identify):
+    """A dependency giving each endpoint the caller, with no new auth scheme.
+
+    The ABI API key acts as no user (:data:`SYSTEM`). Any other credential is
+    asked of Nexus; one it cannot place is :data:`NOBODY`, which may read but
+    change nothing. Whether a write is allowed in at all is still
+    ``require_abi_api_token``'s decision.
+    """
+
+    async def caller(request: Request) -> Actor:
+        token = extract_abi_api_token(request)
+        if is_abi_api_token_valid(token):
+            return SYSTEM
+        if not token:
+            return NOBODY
+        actor = await identify(token)
+        if actor is None:
+            return NOBODY
+        await run_in_threadpool(service.users.remember, actor)
+        return actor
+
+    return caller
+
+
+def build_router(
+    service: PipelineAppService, identify: Identify | None = None
+) -> APIRouter:
     router = APIRouter(prefix=PREFIX, tags=["phases_v2"])
+    if identify is None:
+        from phases_v2.app.adapters.secondary.NexusUsers import nexus_user
+
+        identify = nexus_user
+    caller = caller_dependency(service, identify)
 
     @router.get("/prompts")
-    def prompts():
-        return {"prompts": service.prompts()}
+    def prompts(owner: str = OWNER, actor: Actor = Depends(caller)):
+        """Every prompt version with its owner; ``owner=mine`` keeps the caller's."""
+        return {"prompts": service.prompts(actor, owner)}
 
     @router.get("/models")
     def models():
@@ -66,20 +114,21 @@ def build_router(service: PipelineAppService) -> APIRouter:
     @router.post(
         "/requests", status_code=201, dependencies=[Depends(require_abi_api_token)]
     )
-    def submit(body: dict):
+    def submit(body: dict, actor: Actor = Depends(caller)):
         # Papers come from storage folders or from a collection. A missing input
         # is a 422 naming the field, rather than a 500.
-        request = management_call(service.submit_inputs, body)
+        request = management_call(service.submit_inputs, body, actor)
         return {"request_id": request.request_id, "status": request.status}
 
     @router.get("/requests")
-    def recent(limit: int = 25):
-        return {"requests": service.recent_requests(limit)}
+    def recent(limit: int = 25, owner: str = OWNER, actor: Actor = Depends(caller)):
+        """The latest requests; ``owner=mine`` keeps those the caller requested."""
+        return {"requests": service.recent_requests(limit, actor, owner)}
 
     @router.get("/requests/{request_id}")
-    def one(request_id: str):
+    def one(request_id: str, actor: Actor = Depends(caller)):
         try:
-            return service.request(request_id)
+            return service.request(request_id, actor)
         except RequestNotFound as missing:
             raise HTTPException(status_code=404, detail=str(missing)) from missing
 
@@ -92,6 +141,8 @@ def build_router(service: PipelineAppService) -> APIRouter:
             # str() of a KeyError quotes its message; show the message itself.
             detail = missing.args[0] if missing.args else "Not found."
             raise HTTPException(status_code=404, detail=str(detail)) from missing
+        except NotAllowed as refused:
+            raise HTTPException(status_code=403, detail=str(refused)) from refused
         except ManagementUnavailable as unavailable:
             raise HTTPException(
                 status_code=503, detail=str(unavailable)
@@ -118,46 +169,61 @@ def build_router(service: PipelineAppService) -> APIRouter:
         status_code=201,
         dependencies=[Depends(require_abi_api_token)],
     )
-    def submit_pubmed(body: dict):
-        request = management_call(service.submit_pubmed, body)
+    def submit_pubmed(body: dict, actor: Actor = Depends(caller)):
+        request = management_call(service.submit_pubmed, body, actor)
         return {"request_id": request.request_id, "status": request.status}
 
     @router.get("/collections")
-    def collections(counts: bool = True):
-        """Every collection, with how many papers each holds unless ``counts=false``."""
-        return {"collections": management_call(service.resources.summaries, counts)}
+    def collections(
+        counts: bool = True, owner: str = OWNER, actor: Actor = Depends(caller)
+    ):
+        """Every collection with its owner, and how many papers each holds unless
+        ``counts=false``; ``owner=mine`` keeps the caller's own."""
+        return {
+            "collections": management_call(
+                service.resources.summaries, counts, actor, owner
+            )
+        }
 
     @router.get("/collections/{collection_id}")
-    def collection(collection_id: str):
+    def collection(collection_id: str, actor: Actor = Depends(caller)):
         """Members and the papers they resolve to now, each with its status."""
-        return management_call(service.resources.detail, collection_id)
+        return management_call(service.resources.detail, collection_id, actor=actor)
 
     @router.post(
         "/collections", status_code=201, dependencies=[Depends(require_abi_api_token)]
     )
-    def create_collection(body: dict):
-        return management_call(service.resources.create_collection, body)
+    def create_collection(body: dict, actor: Actor = Depends(caller)):
+        return management_call(service.resources.create_collection, body, actor)
 
     @router.put(
         "/collections/{collection_id}", dependencies=[Depends(require_abi_api_token)]
     )
-    def update_collection(collection_id: str, body: dict):
-        return management_call(service.resources.update_collection, collection_id, body)
+    def update_collection(
+        collection_id: str, body: dict, actor: Actor = Depends(caller)
+    ):
+        return management_call(
+            service.resources.update_collection, collection_id, body, actor
+        )
 
     @router.post(
         "/collections/{collection_id}/members",
         dependencies=[Depends(require_abi_api_token)],
     )
-    def add_members(collection_id: str, body: dict):
-        return management_call(service.resources.add_members, collection_id, body)
+    def add_members(collection_id: str, body: dict, actor: Actor = Depends(caller)):
+        return management_call(
+            service.resources.add_members, collection_id, body, actor
+        )
 
     @router.delete(
         "/collections/{collection_id}/members/{member_id}",
         dependencies=[Depends(require_abi_api_token)],
     )
-    def remove_member(collection_id: str, member_id: str):
+    def remove_member(
+        collection_id: str, member_id: str, actor: Actor = Depends(caller)
+    ):
         return management_call(
-            service.resources.remove_member, collection_id, member_id
+            service.resources.remove_member, collection_id, member_id, actor
         )
 
     @router.post(
@@ -165,7 +231,12 @@ def build_router(service: PipelineAppService) -> APIRouter:
         status_code=201,
         dependencies=[Depends(require_abi_api_token)],
     )
-    async def upload_to_collection(request: Request, collection_id: str, filename: str):
+    async def upload_to_collection(
+        request: Request,
+        collection_id: str,
+        filename: str,
+        actor: Actor = Depends(caller),
+    ):
         content = await _read_pdf(request)
         return await run_in_threadpool(
             management_call,
@@ -173,20 +244,22 @@ def build_router(service: PipelineAppService) -> APIRouter:
             collection_id,
             filename,
             content,
+            actor,
         )
 
     @router.delete(
         "/collections/{collection_id}", dependencies=[Depends(require_abi_api_token)]
     )
-    def archive_collection(collection_id: str):
-        management_call(service.resources.archive_collection, collection_id)
+    def archive_collection(collection_id: str, actor: Actor = Depends(caller)):
+        management_call(service.resources.archive_collection, collection_id, actor)
         return {"archived": True}
 
     @router.post(
         "/prompts", status_code=201, dependencies=[Depends(require_abi_api_token)]
     )
-    def save_prompt(body: dict):
-        return management_call(service.management.save_prompt, body)
+    def save_prompt(body: dict, actor: Actor = Depends(caller)):
+        """Save a version. Under an existing name, only its owner may."""
+        return management_call(service.management.save_prompt, body, actor)
 
     @router.get("/prompts/versions")
     def prompt_versions(name: str = Query(min_length=1, max_length=100)):
@@ -290,23 +363,27 @@ def build_router(service: PipelineAppService) -> APIRouter:
         )
 
     @router.get("/pipelines")
-    def pipelines():
-        return {"pipelines": management_call(service.management.pipelines)}
+    def pipelines(owner: str = OWNER, actor: Actor = Depends(caller)):
+        """Saved configurations with their owner; ``owner=mine`` keeps the caller's."""
+        return {
+            "pipelines": management_call(service.management.pipelines, actor, owner)
+        }
 
     @router.post(
         "/pipelines", status_code=201, dependencies=[Depends(require_abi_api_token)]
     )
-    def save_pipeline(body: dict):
-        return management_call(service.management.save_pipeline, body)
+    def save_pipeline(body: dict, actor: Actor = Depends(caller)):
+        return management_call(service.management.save_pipeline, body, actor)
 
     @router.post(
         "/pipelines/{pipeline_id}/requests",
         status_code=201,
         dependencies=[Depends(require_abi_api_token)],
     )
-    def run_pipeline(pipeline_id: str):
+    def run_pipeline(pipeline_id: str, actor: Actor = Depends(caller)):
+        """Anyone may run any saved configuration; the run is the caller's."""
         pipeline = management_call(service.management.pipeline, pipeline_id)
-        return submit(pipeline["inputs"])
+        return submit(pipeline["inputs"], actor)
 
     return router
 
@@ -321,5 +398,7 @@ async def _read_pdf(request: Request) -> bytes:
     return bytes(content)
 
 
-def register(app: FastAPI, service: PipelineAppService) -> None:
-    app.include_router(build_router(service))
+def register(
+    app: FastAPI, service: PipelineAppService, identify: Identify | None = None
+) -> None:
+    app.include_router(build_router(service, identify))

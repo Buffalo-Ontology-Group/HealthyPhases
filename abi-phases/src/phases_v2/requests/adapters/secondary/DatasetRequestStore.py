@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+from collections.abc import Collection
+
 from phases_v2.ports import RowStore
 from phases_v2.requests.interfaces import (
     PENDING,
     RequestNotFound,
     RunRequest,
 )
-from phases_v2.sql import literal
+from phases_v2.sql import in_list, literal
 
 _COLUMNS = (
     "request_id, status, locations, chunker_id, prompt_ids, model_id, "
@@ -57,9 +59,18 @@ class DatasetRequestStore:
         )
         return [_to_request(row) for row in rows]
 
-    def recent(self, limit: int = 50) -> list[RunRequest]:
+    def recent(
+        self, limit: int = 50, requested_by: Collection[str | None] | None = None
+    ) -> list[RunRequest]:
+        where = ""
+        if requested_by is not None:
+            named = sorted(v for v in requested_by if v is not None)
+            conditions = [f"requested_by IN {in_list(named)}"] if named else []
+            if None in requested_by:
+                conditions.append("requested_by IS NULL")
+            where = "WHERE " + (" OR ".join(conditions) or "FALSE") + " "
         rows = self._rows.query(
-            f"SELECT {_COLUMNS} FROM run_requests "  # nosec B608
+            f"SELECT {_COLUMNS} FROM run_requests {where}"  # nosec B608 - values quoted by in_list
             f"ORDER BY requested_at DESC LIMIT {int(limit)}"
         )
         return [_to_request(row) for row in rows]

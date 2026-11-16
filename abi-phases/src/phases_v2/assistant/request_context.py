@@ -18,6 +18,7 @@ from phases_v2.assistant.confirmations import (
     current_turn,
     previous_turn,
 )
+from phases_v2.ownership import NOBODY, Actor
 
 
 def nexus_context() -> RequestContext:
@@ -32,6 +33,27 @@ def nexus_context() -> RequestContext:
         user=agent_user_email.get() or agent_user_id.get() or "",
         turn=current_turn.get(),
         previous_turn=previous_turn.get(),
+    )
+
+
+def nexus_actor() -> Actor:
+    """The Nexus user the assistant acts for, owning what it creates.
+
+    The same id the app's session token carries, so the assistant and the app
+    agree on whose things are whose. Without a user (outside Nexus), it is
+    :data:`NOBODY`, which may read but change nothing.
+    """
+    from naas_abi_core.services.agent.context import (
+        agent_user_email,
+        agent_user_id,
+        agent_user_name,
+    )
+
+    user_id = agent_user_id.get()
+    if not user_id:
+        return NOBODY
+    return Actor.user(
+        str(user_id), agent_user_name.get() or "", agent_user_email.get() or ""
     )
 
 
