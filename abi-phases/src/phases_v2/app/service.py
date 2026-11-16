@@ -26,7 +26,7 @@ from phases_v2.ownership import (
     NotAllowed,
     check_filter,
     creation_refusal,
-    owner_view,
+    requester_view,
 )
 from phases_v2.paper_collections.interfaces import Resolution
 from phases_v2.requests.domain import submit
@@ -136,9 +136,7 @@ class PipelineAppService:
         detail = self.paper_results.paper(paper_id)
         people = self.users.names()
         for request in detail.get("requests", []):
-            view = owner_view(request.get("requested_by"), actor, people)
-            request["requested_by_name"] = view["owner_name"]
-            request["requested_by_you"] = view["owned_by_you"]
+            request.update(requester_view(request.get("requested_by"), actor, people))
         return detail
 
     # -- collections ----------------------------------------------------
@@ -152,13 +150,13 @@ class PipelineAppService:
     ) -> dict[str, Any]:
         """Store a PDF in the collection's own folder, which joins it as a member.
 
-        Only who may change the collection uploads into it, checked before
-        anything is stored.
+        Only who may change the collection uploads into it, checked once,
+        before anything is stored.
         """
         self.resources.changeable(collection_id, actor)
-        location = self.resources.upload_folder(collection_id)
+        location = self.resources.upload_prefix(collection_id)
         uploaded = self.management.upload(location, filename, content)
-        self.resources.add_upload_folder(collection_id, actor)
+        self.resources.add_upload_folder(collection_id)
         return uploaded
 
     def upload_document(
@@ -168,14 +166,16 @@ class PipelineAppService:
 
         A collection's upload folder is one of its members, so a PDF stored
         there joins that collection: only who may change the collection uploads
-        into it, checked before anything is stored.
+        into it, checked before anything is stored. Nobody uploads into an
+        archived collection's folder but the API key, which keeps its old
+        rights.
         """
         if refusal := creation_refusal(actor):
             raise NotAllowed(refusal)
         location = self.management.location(location)
         collection_id = self.resources.upload_folder_owner(location)
         if collection_id is not None:
-            self.resources.changeable(collection_id, actor)
+            self.resources.check_upload(collection_id, actor)
         return self.management.upload(location, filename, content)
 
     def collection_run_scope(
@@ -275,31 +275,9 @@ class PipelineAppService:
         prompt_id: str = "",
         actor: Actor = NOBODY,
     ) -> dict[str, Any]:
-        """A copy of a prompt version under a new name, owned by ``actor``.
-
-        Copies ``prompt_id``, or the newest version of ``name``. Without
-        ``new_name`` the copy is named "<name> copy", numbered when taken.
-        """
-        versions = self.versions.versions(name)["versions"]
-        source = (
-            next((v for v in versions if v["prompt_id"] == prompt_id), None)
-            if prompt_id
-            else versions[0]
-        )
-        if source is None:
-            raise ValueError(f"{prompt_id} is not a version of “{name}”.")
-        if not new_name.strip():
-            from phases_v2.app.pipeline_management import prompt_catalog
-
-            new_name = copy_name(name, [p["name"] for p in prompt_catalog(self._rows)])
-        return self.management.save_prompt(
-            {
-                "name": new_name.strip(),
-                "template": source["template"],
-                "output_key": source["output_key"],
-            },
-            actor,
-        )
+        """A copy of a prompt version under a new name, owned by ``actor``;
+        see :meth:`PipelineManagement.duplicate_prompt`."""
+        return self.management.duplicate_prompt(name, new_name, prompt_id, actor)
 
     def models(self) -> list[dict[str, Any]]:
         """Declared models, each marked with whether it can actually be built."""
@@ -633,27 +611,6 @@ def _collection_of(request: RunRequest) -> str | None:
     return None
 
 
-#: The longest prompt name ``SavePrompt`` accepts.
-MAX_PROMPT_NAME = 100
-
-
-def copy_name(name: str, taken: list[str]) -> str:
-    """ "<name> copy", then "<name> copy 2" and on, whichever is free.
-
-    The name is cut so that the suffix always fits in :data:`MAX_PROMPT_NAME`.
-    """
-    from phases_v2.app.pipeline_management import name_key
-
-    used = {name_key(t) for t in taken}
-    number = 1
-    while True:
-        suffix = " copy" if number == 1 else f" copy {number}"
-        candidate = name[: MAX_PROMPT_NAME - len(suffix)].rstrip() + suffix
-        if name_key(candidate) not in used:
-            return candidate
-        number += 1
-
-
 def _requested_by(inputs: dict[str, Any], actor: Actor) -> dict[str, Any]:
     """``inputs`` naming ``actor`` as the requester, when ``actor`` is a user."""
     if actor.system:
@@ -673,9 +630,7 @@ def _request_json(
     people: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     data = asdict(request)
-    view = owner_view(request.requested_by, actor, people or {})
-    data["requested_by_name"] = view["owner_name"]
-    data["requested_by_you"] = view["owned_by_you"]
+    data.update(requester_view(request.requested_by, actor, people or {}))
     for field in ("requested_at", "started_at", "finished_at"):
         data[field] = _iso(data.get(field))
     collection_id = _collection_of(request)

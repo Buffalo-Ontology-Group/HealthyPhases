@@ -353,7 +353,7 @@ class AppResources:
         command = validate_command("UpdateCollection", payload)
         current = self.changeable(collection_id, actor)
         name = command.name.strip()
-        if self.upload_folder(collection_id) in current["locations"]:
+        if self.upload_prefix(collection_id) in current["locations"]:
             self._name_upload_folder(collection_id, name)
         return self.with_owner(
             self._save(current, name=name, description=command.description.strip()),
@@ -403,15 +403,43 @@ class AppResources:
     def upload_folder(self, collection_id: str) -> str:
         """Where PDFs uploaded into the collection are stored."""
         self.collection(collection_id)
+        return self.upload_prefix(collection_id)
+
+    def upload_prefix(self, collection_id: str) -> str:
+        """:meth:`upload_folder`, without reading the collection."""
         return f"{self._root}/collections/{collection_id}"
 
-    def add_upload_folder(
-        self, collection_id: str, actor: Actor = NOBODY
-    ) -> dict[str, Any]:
-        """Make the upload folder a member, and name it in the folder lists."""
+    def check_upload(self, collection_id: str, actor: Actor) -> None:
+        """Refuse a user's upload into the folder of a collection they may not
+        change, or of an archived one.
+
+        The API key keeps the rights it had before owners existed: it stores
+        into any folder. A folder named after no collection is a plain folder.
+        """
+        if actor.system:
+            return
+        found = self._all().get(collection_id)
+        if found is None:
+            return
+        if found["archived"]:
+            raise NotAllowed(
+                f"The collection “{found['name']}” is archived, so nothing can be "
+                "added to it. Upload into another collection, or create a new one."
+            )
+        owned = self.with_owner(self._view(found), actor)
+        if not owned["can_change"]:
+            raise NotAllowed(owned["read_only_reason"])
+
+    def add_upload_folder(self, collection_id: str) -> dict[str, Any]:
+        """Make the upload folder a member, and name it in the folder lists.
+
+        Who may change the collection is the caller's check, made once before
+        the upload; this reads the collection again only to add to its
+        members as they are now.
+        """
         self._writable()
-        current = self.changeable(collection_id, actor)
-        prefix = self.upload_folder(collection_id)
+        current = self.collection(collection_id)
+        prefix = self.upload_prefix(collection_id)
         if prefix in current["locations"]:
             return current
         now = datetime.now(UTC)
@@ -425,7 +453,7 @@ class AppResources:
         self, collection_id: str, name: str, created_at: datetime | None = None
     ) -> None:
         """Name the upload folder after the collection, in the folder lists."""
-        prefix = self.upload_folder(collection_id)
+        prefix = self.upload_prefix(collection_id)
         if created_at is None:
             existing = self._writable().query(
                 f"SELECT created_at FROM input_locations WHERE prefix = {literal(prefix)}"

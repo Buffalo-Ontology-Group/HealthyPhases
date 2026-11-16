@@ -31,12 +31,14 @@ class ManagementUnavailable(RuntimeError):
     pass
 
 
-def prompt_catalog(rows: RowStore | None = None) -> list[dict]:
+def prompt_catalog(rows: RowStore | None = None, *, dated: bool = False) -> list[dict]:
     """Every prompt version, each with its name's owner (``None``: shared).
 
     A name belongs to whoever saved its first version. Names are compared
     without case, so two users never hold look-alike names; a declared name is
     always shared, whoever saved a version under it before owners existed.
+    ``dated`` adds each version's ``registered_at`` (``None`` for a declared
+    version not registered yet).
     """
     declared = {p.prompt_id for p in declared_prompts()}
     catalog = {
@@ -66,6 +68,7 @@ def prompt_catalog(rows: RowStore | None = None) -> list[dict]:
                 "output_key": p["output_key"],
                 "owner_id": owners[name_key(p["name"])],
                 "declared": p["prompt_id"] in declared,
+                **({"registered_at": p.get("registered_at")} if dated else {}),
             }
             for p in catalog.values()
         ),
@@ -76,6 +79,45 @@ def prompt_catalog(rows: RowStore | None = None) -> list[dict]:
 def name_key(name: str) -> str:
     """What makes two prompt names the same name."""
     return name.strip().casefold()
+
+
+#: The longest prompt name ``SavePrompt`` accepts.
+MAX_PROMPT_NAME = 100
+
+
+def copy_name(name: str, taken: list[str]) -> str:
+    """ "<name> copy", then "<name> copy 2" and on, whichever is free.
+
+    The name is cut so that the suffix always fits in :data:`MAX_PROMPT_NAME`.
+    """
+    used = {name_key(t) for t in taken}
+    number = 1
+    while True:
+        suffix = " copy" if number == 1 else f" copy {number}"
+        candidate = name[: MAX_PROMPT_NAME - len(suffix)].rstrip() + suffix
+        if name_key(candidate) not in used:
+            return candidate
+        number += 1
+
+
+def _newest(versions: list[dict]) -> dict:
+    """The version registered last; a declared one never registered is oldest."""
+    return max(
+        versions,
+        key=lambda v: (
+            v["registered_at"] is not None,
+            _instant(v["registered_at"]),
+            v["prompt_id"],
+        ),
+    )
+
+
+def _instant(value) -> datetime:
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value)
+    if not isinstance(value, datetime):
+        return datetime.min.replace(tzinfo=UTC)
+    return value if value.tzinfo else value.replace(tzinfo=UTC)
 
 
 def _name_owners(versions, declared: set[str]) -> dict[str, str | None]:
@@ -158,14 +200,62 @@ class PipelineManagement:
         """Save a version under the payload's name.
 
         A new name becomes the caller's. Under an existing name, only its owner
-        (or the API key) saves; a version always takes the name's owner, so
-        one name's history never splits between people.
+        (or the API key) saves; a version always takes the name's owner and
+        the name as it is already spelled, so one name's history never splits
+        between people or between spellings ("Stress Prompt", "stress prompt").
         """
         validate_message("SavePrompt", payload)
-        prompt = PromptTemplate(**payload)
-        catalog = prompt_catalog(self.rows)
-        same_name = [p for p in catalog if name_key(p["name"]) == name_key(prompt.name)]
+        return self._save_prompt(payload, actor, prompt_catalog(self.rows))
+
+    def duplicate_prompt(
+        self,
+        name: str,
+        new_name: str = "",
+        prompt_id: str = "",
+        actor: Actor = NOBODY,
+    ) -> dict:
+        """A copy of a prompt version under a new name, owned by ``actor``.
+
+        Copies ``prompt_id``, or the newest version of ``name``. Without
+        ``new_name`` the copy is named "<name> copy", numbered when taken; a
+        ``new_name`` any prompt already has, whatever its case, is refused.
+        """
+        from phases_v2.app.app_resources import ResourceNotFound
+
+        catalog = prompt_catalog(self.rows, dated=True)
+        versions = [p for p in catalog if p["name"] == name]
+        if not versions:
+            raise ResourceNotFound(f"No prompt is named {name!r}.")
+        if prompt_id:
+            source = next((v for v in versions if v["prompt_id"] == prompt_id), None)
+            if source is None:
+                raise ValueError(f"{prompt_id} is not a version of “{name}”.")
+        else:
+            source = _newest(versions)
+        new_name = new_name.strip()
+        if not new_name:
+            new_name = copy_name(name, [p["name"] for p in catalog])
+        elif taken := next(
+            (p for p in catalog if name_key(p["name"]) == name_key(new_name)), None
+        ):
+            raise ValueError(
+                f"A prompt is already named “{taken['name']}”. Choose another "
+                "name for the copy."
+            )
+        payload = {
+            "name": new_name,
+            "template": source["template"],
+            "output_key": source["output_key"],
+        }
+        validate_message("SavePrompt", payload)
+        return self._save_prompt(payload, actor, catalog)
+
+    def _save_prompt(self, payload: dict, actor: Actor, catalog: list[dict]) -> dict:
+        same_name = [
+            p for p in catalog if name_key(p["name"]) == name_key(payload["name"])
+        ]
         if same_name:
+            payload = {**payload, "name": same_name[0]["name"]}
             owner_id = same_name[0]["owner_id"]
             refusal = prompt_refusal(
                 actor,
@@ -178,6 +268,7 @@ class PipelineManagement:
             refusal = creation_refusal(actor)
         if refusal:
             raise NotAllowed(refusal)
+        prompt = PromptTemplate(**payload)
         existing = next(
             (p for p in catalog if p["prompt_id"] == prompt.prompt_id), None
         )
@@ -186,7 +277,7 @@ class PipelineManagement:
                 raise ValueError(
                     "Changing output format requires a new name or template text."
                 )
-            return existing
+            return {k: v for k, v in existing.items() if k != "registered_at"}
         register_prompts(self._rows(), [prompt], owner_id=owner_id)
         return {"prompt_id": prompt.prompt_id, **payload, "owner_id": owner_id}
 

@@ -33,12 +33,13 @@ from phases_v2.app.adapters.primary.SearchAPI import csv_document
 from phases_v2.app.contracts.pipeline_validation import validate_message
 from phases_v2.app.pipeline_management import MAX_UPLOAD_BYTES, ManagementUnavailable
 from phases_v2.app.service import PipelineAppService
-from phases_v2.ownership import NOBODY, SYSTEM, Actor, NotAllowed
+from phases_v2.ownership import NOBODY, SYSTEM, Actor, IdentityUnavailable, NotAllowed
 from phases_v2.requests.interfaces import RequestNotFound
 
 PREFIX = "/phases_v2/api"
 
-#: Who a Nexus session token belongs to; ``None`` when it cannot be told.
+#: Who a Nexus session token belongs to; ``None`` when Nexus refuses it.
+#: Raises :class:`IdentityUnavailable` when Nexus cannot answer.
 Identify = Callable[[str], Awaitable[Actor | None]]
 
 #: How long who a session token belongs to is kept, and for how many tokens.
@@ -53,9 +54,9 @@ def caller_dependency(service: PipelineAppService, identify: Identify):
     """A dependency giving each endpoint the caller, with no new auth scheme.
 
     The ABI API key acts as no user (:data:`SYSTEM`). Any other credential is
-    asked of Nexus; one it cannot place is :data:`NOBODY`, which may read but
-    change nothing. Whether a write is allowed in at all is still
-    ``require_abi_api_token``'s decision.
+    asked of Nexus; one it refuses is :data:`NOBODY`, which may read but
+    change nothing. When Nexus cannot answer, the request is a 503. Whether a
+    write is allowed in at all is still ``require_abi_api_token``'s decision.
 
     Who a token belongs to is kept for :data:`CALLER_SECONDS`, so the app's
     polling does not ask Nexus every time; only answers that name a user are
@@ -75,7 +76,10 @@ def caller_dependency(service: PipelineAppService, identify: Identify):
         cached = known.get(key)
         if cached is not None and now - cached[0] < CALLER_SECONDS:
             return cached[1]
-        actor = await identify(token)
+        try:
+            actor = await identify(token)
+        except IdentityUnavailable as unavailable:
+            raise HTTPException(status_code=503, detail=str(unavailable)) from None
         if actor is None:
             known.pop(key, None)
             return NOBODY

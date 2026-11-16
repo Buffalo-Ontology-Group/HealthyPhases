@@ -42,6 +42,21 @@ class NotAllowed(PermissionError):
     """The caller may not do this. The message says why and what to do instead."""
 
 
+class IdentityUnavailable(RuntimeError):
+    """Who is asking cannot be told right now: the sign-in service failed.
+
+    Not the caller's doing, so not a refusal: the HTTP API answers a 503
+    asking them to try again shortly.
+    """
+
+    def __init__(self, message: str = "") -> None:
+        super().__init__(
+            message
+            or "We could not check who you are just now, so nothing was done. "
+            "Try again in a few moments."
+        )
+
+
 @dataclass(frozen=True)
 class Actor:
     """Who is asking: a Nexus user, the ABI API key, or nobody known."""
@@ -136,6 +151,28 @@ def owner_view(
         else names.get(owner_id) or UNKNOWN_OWNER,
         "owned_by_you": owner_id is not None and is_mine(actor, owner_id),
         "shared": owner_id is None,
+    }
+
+
+def requester_view(
+    requested_by: str | None, actor: Actor, names: Mapping[str, str]
+) -> dict[str, Any]:
+    """What a run says about who requested it.
+
+    A user's run records their id, and runs the Assistant queued before
+    requesters were recorded by id name them by email: both read as the
+    person's name from ``names``. A run the API key queued keeps the label its
+    script gave, which is shown as it is; so is an email nobody recorded in
+    ``app_users`` yet. ``requested_by_name`` is ``None`` for a run that names
+    no requester.
+    """
+    if requested_by is None:
+        name = None
+    else:
+        name = names.get(requested_by) or requested_by
+    return {
+        "requested_by_name": name,
+        "requested_by_you": requested_by is not None and is_mine(actor, requested_by),
     }
 
 

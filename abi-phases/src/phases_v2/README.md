@@ -648,14 +648,17 @@ the Assistant all follow them.
 - **Only the owner** saves a new version of a prompt, and renames, describes, adds or
   removes members of, uploads PDFs into or archives a collection. Uploading into a
   collection includes `POST /documents` into its upload folder
-  (`<papers_root>/collections/<collection_id>` or beneath it), which is one of its members. Saved configurations are
+  (`<papers_root>/collections/<collection_id>` or beneath it), which is one of its members;
+  only the API key uploads into an archived collection's folder. Saved configurations are
   never changed once saved. **Anyone** opens anything, tries it, compares with it, uses a
   prompt in a run, runs on any collection, sees its results and searches within it, runs
   any saved configuration, and duplicates any prompt into one of their own.
 - **Prompt names are unique across users**, compared without case, so two people's
   histories never merge under one name. A name belongs to whoever saved its first version;
   saving under it as anyone else is refused, with a message suggesting another name or
-  Duplicate prompt. Every version under a name carries the name's owner.
+  Duplicate prompt. Every version under a name carries the name's owner and its stored
+  spelling: the owner of "Stress Prompt" saving "stress prompt" adds a version to "Stress
+  Prompt". A copy (`duplicate_prompt`) never takes a name already in use, in any case.
 - **The ABI API key** (scripts, automation) acts as no user: what it creates is shared, it
   keeps every right it had, and a run it queues keeps the `requested_by` it sends.
 
@@ -668,16 +671,22 @@ token (its `sub` is the Nexus user id), refuses a revoked one and reads the user
 name and email. Nexus runs in the ABI API process, so this needs no change upstream and no
 new auth scheme. Who a token belongs to is kept for a minute, under a digest of the
 token, so the app's polling does not ask Nexus every time; a token revoked meanwhile still
-names its user for at most that minute. A token Nexus cannot place acts as nobody: it reads, and every change is
-refused with "We could not tell who you are". The Assistant acts as the user Nexus sets on
+names its user for at most that minute. A token Nexus refuses acts as nobody: it reads,
+and every change is refused with "We could not tell who you are". When Nexus cannot answer
+at all (its database is down, it fails, or it cannot be imported in the API process, which
+is logged as an error), the request is a 503 asking the user to try again shortly, not to
+sign in again. The Assistant acts as the user Nexus sets on
 the request (`agent_user_id`, with `agent_user_name` and `agent_user_email`), the same id.
 
 **Naming people.** Lists name owners and requesters the way Nexus does: name, else email,
 else id. Each identified request records the person's name in `app_users`, written only
 when it changed and read again at most once a minute, so a name changed in Nexus shows from
 the person's next visit. Runs the Assistant queued before this recorded their requester by
-email; they still match that person and their name. When `app_users` cannot be read, lists
-still answer, naming owners "another user". The coverage report (`coverage/domain.py`) is
+email; they still match that person and their name. A requester that names nobody in
+`app_users` (a script's label sent with the API key, or the email of someone who has not
+used the app since) shows as recorded, and a run with no `requested_by` shows none. When
+`app_users` cannot be read, lists still answer, naming owners "another user" and showing
+requesters as recorded. The coverage report (`coverage/domain.py`) is
 for operators and prints requesters as recorded: Nexus user ids from now on.
 
 **The API.** `GET /prompts`, `/collections`, `/pipelines` and `/requests` take
