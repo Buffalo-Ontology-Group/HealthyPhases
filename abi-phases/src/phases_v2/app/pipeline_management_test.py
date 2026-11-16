@@ -27,6 +27,7 @@ from phases_v2.extraction.factory import extract, resolve_prompt
 from phases_v2.extraction.fakes import FakeModel
 from phases_v2.identity import paper_id
 from phases_v2.models.catalog import DECLARED_MODELS
+from phases_v2.ownership import SYSTEM
 from phases_v2.papers.adapters.secondary.PdfTextRenderer import PdfTextRenderer
 from phases_v2.papers.factory import ingest_papers
 from phases_v2.prompts.templates import declared_prompts
@@ -216,7 +217,8 @@ def test_write_endpoints_require_authentication(environment):
 def test_saved_pipeline_keeps_exact_prompt_version_and_runs_after_restart(environment):
     service, client, _ = environment
     first = service.management.save_prompt(
-        {"name": "Custom", "template": "First {chunk_text}", "output_key": "results"}
+        {"name": "Custom", "template": "First {chunk_text}", "output_key": "results"},
+        actor=SYSTEM,
     )
     original_inputs = inputs(first["prompt_id"])
     pipeline = client.post(
@@ -226,7 +228,8 @@ def test_saved_pipeline_keeps_exact_prompt_version_and_runs_after_restart(enviro
     assert pipeline.status_code == 201
     pipeline_id = pipeline.json()["pipeline_id"]
     service.management.save_prompt(
-        {"name": "Custom", "template": "Second {chunk_text}", "output_key": "results"}
+        {"name": "Custom", "template": "Second {chunk_text}", "output_key": "results"},
+        actor=SYSTEM,
     )
     restarted = PipelineAppService(service._requests, service._storage, service._rows)
     assert restarted.management.pipeline(pipeline_id)["inputs"] == original_inputs
@@ -257,7 +260,8 @@ def test_uploaded_collection_extracts_only_its_content_with_a_custom_prompt(
 ):
     service, _, engine = environment
     prompt = service.management.save_prompt(
-        {"name": "Custom", "template": "Claims {chunk_text}", "output_key": "results"}
+        {"name": "Custom", "template": "Claims {chunk_text}", "output_key": "results"},
+        actor=SYSTEM,
     )
     target, unrelated = pdf("Target evidence"), pdf("Unrelated evidence")
     service.management.upload("phases_v2/target", "same.pdf", target)

@@ -154,13 +154,16 @@ message the app shows.
   the user's 100 latest runs. The pickers that choose what to run on (prompts, collections)
   always offer everyone's.
 - **Who owns it.** `ownerLabel(item)` gives "You", the owner's name, or "Shared";
-  `requesterLabel(request)` gives "You", the name, or a dash.
+  `requesterLabel(request)` gives "You", the name, or a dash, in Runs and on a paper's page
+  in Results.
 - **Read-only.** A prompt name that is shared or someone else's disables both
   **Save as new version** buttons, says why under the editor and makes
   **Duplicate prompt** the main action, which proposes a free "<name> copy" name. Someone
   else's collection disables every control that changes it (`CHANGE_CONTROLS`), hides
   **Archive collection** and the members' **Remove**, and says why; running, results and
-  search stay. **Add to collection** offers only collections the user can change.
+  search stay. **Add to collection** offers only collections the user can change, and
+  **Upload PDFs to a folder** leaves out the upload folders of the collections they cannot
+  change (`uploadableFolder`).
 - **Empty Mine.** Each list says how to make one's own, or to show everyone's.
 
 ## Tests

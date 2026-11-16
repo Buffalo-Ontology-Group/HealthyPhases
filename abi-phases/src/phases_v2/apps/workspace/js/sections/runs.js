@@ -99,7 +99,7 @@ export function create(root, ctx) {
   const state = {
     active: false, view: 'list', ready: false, loading: null,
     prompts: [], models: [], chunkers: [], locations: [], collections: [], pipelines: [], pubmedQueries: [],
-    requests: [], requestId: '', requestsLoading: false, warningVersion: 0,
+    requests: [], requestId: '', requestsLoading: false, requestsVersion: 0, warningVersion: 0,
     pending: { collectionId: '', addPrompts: [], removePrompts: [] },
     owner: MINE, savedOwner: MINE,
   };
@@ -438,24 +438,26 @@ export function create(root, ctx) {
     }
   }
 
-  // Never overlaps: a slow refresh is not stacked behind another.
-  async function loadRequests() {
-    if (state.requestsLoading) return;
+  // A refresh (the poll, Refresh) is not stacked behind one still loading;
+  // `force` (a change of filter) asks at once. Only the latest load is shown,
+  // so an older answer never replaces a newer one.
+  async function loadRequests({ force = false } = {}) {
+    if (state.requestsLoading && !force) return;
+    const version = ++state.requestsVersion;
+    const latestLoad = () => version === state.requestsVersion;
     state.requestsLoading = true;
     try {
-      const owner = state.owner;
-      const requests = (await phases(`/requests?limit=100&owner=${owner}`)).requests;
-      // A change of filter while this was loading asks again.
-      if (owner !== state.owner) return;
+      const requests = (await phases(`/requests?limit=100&owner=${state.owner}`)).requests;
+      if (!latestLoad()) return;
       state.requests = requests;
       renderRequests();
       message('run-requests-message');
       $('run-updated').textContent = `Updated ${new Date().toLocaleTimeString()}. Refreshes every 10 seconds.`;
       await loadRequestDetail();
     } catch (error) {
-      message('run-requests-message', `Could not refresh runs: ${error.message}`, 'bad');
+      if (latestLoad()) message('run-requests-message', `Could not refresh runs: ${error.message}`, 'bad');
     } finally {
-      state.requestsLoading = false;
+      if (latestLoad()) state.requestsLoading = false;
     }
   }
 
@@ -463,8 +465,7 @@ export function create(root, ctx) {
   async function chooseOwner(owner) {
     state.owner = owner === EVERYONE ? EVERYONE : MINE;
     $('run-owner').value = state.owner;
-    state.requestsLoading = false;
-    return loadRequests();
+    return loadRequests({ force: true });
   }
 
   // ---- Wiring ----

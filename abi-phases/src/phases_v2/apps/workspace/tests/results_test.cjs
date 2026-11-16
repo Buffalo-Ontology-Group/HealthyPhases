@@ -57,7 +57,8 @@ const DETAIL = {
   },
   chunkers: [{ chunker_id: 'window', chunks: 3 }],
   ran: RESULTS.map(({ items, failures, template, ...summary }) => summary),
-  requests: [{ request_id: 'r-pubmed-1234', status: 'succeeded', model_id: 'model-a', requested_by: 'member@example.org', requested_at: '2026-04-01T00:00:00' }],
+  requests: [{ request_id: 'r-pubmed-1234', status: 'succeeded', model_id: 'model-a', requested_by: 'user-member', requested_by_name: 'Member Example', requested_by_you: false, requested_at: '2026-04-01T00:00:00' },
+    { request_id: 'r-mine', status: 'pending', model_id: 'model-a', requested_by: 'user-me', requested_by_name: 'Me Example', requested_by_you: true, requested_at: '2026-04-02T00:00:00' }],
   results: RESULTS,
   chunks: {
     c0: { chunk_id: 'c0', seq: 0, chunker_id: 'window', text: 'First chunk <text>' },
@@ -199,7 +200,10 @@ test('what ran lists each version and model with its counts and the runs behind 
   assert.match(rows, /<span class="bad">· 1 failed<\/span>/);
   assert.match(rows, /href="#\/runs\/r-pubmed-1234">r-pubmed<\/a>/);
   assert.match($('res-requests').innerHTML, /href="#\/runs\/r-pubmed-1234"/);
-  assert.match($('res-requests').innerHTML, /member@example.org/);
+  // The requester is named the way Nexus names them, or "You"; never by id.
+  assert.match($('res-requests').innerHTML, / · Member Example<\/li>/);
+  assert.match($('res-requests').innerHTML, / · You<\/li>/);
+  assert.doesNotMatch($('res-requests').innerHTML, /user-member|user-me/);
 });
 
 test('results show by chunk with the chunk itself, failures with their error, and relations as graphs', async () => {

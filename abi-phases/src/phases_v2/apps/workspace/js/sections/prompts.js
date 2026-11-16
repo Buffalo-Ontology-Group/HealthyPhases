@@ -38,13 +38,19 @@ export function readOnlyReason(name, prompts) {
   return taken && taken.can_change === false ? taken.read_only_reason || 'Only this prompt’s owner can save new versions of it.' : '';
 }
 
-// "<name> copy", numbered when that name is taken.
+// The longest prompt name the server accepts.
+export const MAX_NAME = 100;
+
+// "<name> copy", numbered when that name is taken. The name is cut so that the
+// suffix always fits in MAX_NAME.
 export function copyName(name, prompts) {
   const taken = new Set(prompts.map((p) => nameKey(p.name)));
-  const base = `${String(name || 'Prompt').slice(0, 95)} copy`;
-  let candidate = base;
-  for (let n = 2; taken.has(nameKey(candidate)); n += 1) candidate = `${base} ${n}`;
-  return candidate;
+  const base = String(name || 'Prompt');
+  for (let n = 1; ; n += 1) {
+    const suffix = n === 1 ? ' copy' : ` copy ${n}`;
+    const candidate = base.slice(0, MAX_NAME - suffix.length).trimEnd() + suffix;
+    if (!taken.has(nameKey(candidate))) return candidate;
+  }
 }
 
 export function formatExample(key) {

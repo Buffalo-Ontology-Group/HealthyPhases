@@ -430,3 +430,23 @@ def test_a_column_added_but_not_yet_recorded_is_recorded(dataset):
         c.name for c in dataset.describe("pipelines", namespace=NAMESPACE).columns
     }
     assert "owner_id" in described
+
+
+def test_a_table_with_other_drift_is_left_alone_and_named_in_an_error(
+    dataset, monkeypatch
+):
+    errors = []
+    monkeypatch.setattr(store.logger, "error", errors.append)
+    old = _as_before_owners(store._BY_NAME["pipelines"])
+    drifted = old.model_copy(
+        update={"columns": tuple(c for c in old.columns if c.name != "created_at")}
+    )
+    dataset.create(drifted)
+
+    assert store.add_missing_columns(dataset) == {}
+    [error] = errors
+    assert "owner_id was not added to 'pipelines'" in error
+    described = {
+        c.name for c in dataset.describe("pipelines", namespace=NAMESPACE).columns
+    }
+    assert "owner_id" not in described

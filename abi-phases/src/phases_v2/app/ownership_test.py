@@ -77,7 +77,10 @@ def env(store, monkeypatch):
         [lambda token, _request: token in SESSIONS or token == UNPLACED],
     )
 
+    identified = []
+
     async def identify(token):
+        identified.append(token)
         return SESSIONS.get(token)
 
     pubmed = PubmedCatalog(store.dataset)
@@ -103,6 +106,7 @@ def env(store, monkeypatch):
         bea=client("bea-session"),
         key=client(API_KEY),
         unplaced=client(UNPLACED),
+        identified=identified,
     )
 
 
@@ -535,3 +539,123 @@ def test_a_users_name_is_recorded_once_and_follows_a_change_in_nexus(env):
     env.service.users.remember(renamed)
     assert env.service.users.names()[ADA.user_id] == "Ada Renamed"
     env.service.users.remember(ADA)
+
+
+# -- uploads into a collection's own folder ------------------------------
+
+
+def upload_to_folder(client, location, name="b.pdf", content=b"%PDF-1.7 a paper"):
+    return client.post(
+        f"{PREFIX}/documents",
+        params={"location": location, "filename": name},
+        content=content,
+        headers={"Content-Type": "application/pdf"},
+    )
+
+
+def stored_under(env, folder):
+    return [p for p, _key in env.storage.files if p.startswith(folder)]
+
+
+def test_nobody_uploads_into_another_users_collection_folder(env):
+    adas = create_collection(env.ada, unique("Ada uploads"))
+    folder = f"phases_v2/collections/{adas['collection_id']}"
+
+    refused(upload_to_folder(env.bea, folder), "belongs to Ada Example")
+    refused(upload_to_folder(env.bea, f"{folder}/deeper"), "belongs to Ada Example")
+    refused(upload_to_folder(env.unplaced, folder), "could not tell who you are")
+    assert stored_under(env, folder) == []
+    with pytest.raises(NotAllowed):
+        env.service.upload_document(folder, "b.pdf", b"%PDF-1.7 x", BEA)
+
+    ok(upload_to_folder(env.ada, folder), 201)
+    assert stored_under(env, folder)
+    # Plain storage folders, and the API key, upload as before.
+    ok(upload_to_folder(env.bea, "phases_v2/bea-folder"), 201)
+    ok(upload_to_folder(env.key, folder, "scripted.pdf", b"%PDF-1.7 script"), 201)
+
+
+def test_a_shared_collections_folder_still_takes_uploads(env):
+    shared_id = str(uuid4())
+    now = datetime.now(UTC)
+    env.rows.write_rows(
+        "paper_collections",
+        [
+            {
+                "collection_id": shared_id,
+                "name": "Shared uploads",
+                "description": "",
+                "members": [],
+                "archived": False,
+                "created_at": now,
+                "updated_at": now,
+            }
+        ],
+    )
+    folder = f"phases_v2/collections/{shared_id}"
+
+    ok(upload_to_folder(env.bea, folder), 201)
+    assert stored_under(env, folder)
+
+
+# -- names, and when they cannot be read ---------------------------------
+
+
+def test_a_papers_page_names_who_requested_each_run(env, monkeypatch):
+    monkeypatch.setattr(
+        env.service.paper_results,
+        "paper",
+        lambda paper_id: {
+            "requests": [
+                {"request_id": "r1", "requested_by": ADA.user_id},
+                {"request_id": "r2", "requested_by": None},
+            ]
+        },
+    )
+    ok(env.ada.get(f"{PREFIX}/prompts"))  # Ada has used the app
+
+    requests = ok(env.bea.get(f"{PREFIX}/papers/p1"))["requests"]
+    assert [(r["requested_by_name"], r["requested_by_you"]) for r in requests] == [
+        ("Ada Example", False),
+        (None, False),
+    ]
+    mine = ok(env.ada.get(f"{PREFIX}/papers/p1"))["requests"][0]
+    assert mine["requested_by_you"] is True
+
+
+def test_listings_and_runs_still_work_when_names_cannot_be_read(env, monkeypatch):
+    collection = create_collection(env.ada, unique("Ada set"))
+
+    def unreadable():
+        raise RuntimeError("catalog unavailable")
+
+    monkeypatch.setattr(env.service.users, "_read", unreadable)
+    prompts = ok(env.bea.get(f"{PREFIX}/prompts"))["prompts"]
+    owned = [p for p in prompts if p["owner_id"] == ADA.user_id]
+    assert owned and {p["owner_name"] for p in owned} == {"another user"}
+    ok(env.bea.get(f"{PREFIX}/collections", params={"counts": "false"}))
+    ok(env.bea.get(f"{PREFIX}/pipelines"))
+    ok(env.bea.get(f"{PREFIX}/requests"))
+    ok(
+        env.bea.post(
+            f"{PREFIX}/requests", json=run_inputs(collection["collection_id"])
+        ),
+        201,
+    )
+
+
+def test_a_copy_of_a_long_prompt_name_fits(env):
+    name = "L" * 94 + uuid4().hex[:6]
+    ok(save_prompt(env.bea, name), 201)
+
+    first = env.service.duplicate_prompt(name, actor=ADA)
+    second = env.service.duplicate_prompt(name, actor=ADA)
+    assert first["name"] == name[:95] + " copy"
+    assert second["name"] == name[:93] + " copy 2"
+    assert len(first["name"]) == len(second["name"]) == 100
+
+
+def test_who_a_session_belongs_to_is_asked_of_nexus_once_a_minute(env):
+    for _ in range(3):
+        ok(env.ada.get(f"{PREFIX}/requests"))
+    assert env.identified.count("ada-session") == 1

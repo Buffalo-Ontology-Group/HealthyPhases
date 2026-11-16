@@ -28,7 +28,6 @@ from phases_v2.app.pipeline_management import ManagementUnavailable
 from phases_v2.ownership import (
     EVERYONE,
     NOBODY,
-    SYSTEM,
     Actor,
     NotAllowed,
     collection_refusal,
@@ -176,8 +175,12 @@ class AppResources:
             collection, **view, can_change=refusal is None, read_only_reason=refusal
         )
 
-    def _changeable(self, collection_id: str, actor: Actor) -> dict[str, Any]:
-        """The collection, when ``actor`` may change it; else :class:`NotAllowed`."""
+    def changeable(self, collection_id: str, actor: Actor) -> dict[str, Any]:
+        """The collection, when ``actor`` may change it; else :class:`NotAllowed`.
+
+        Raises :class:`ResourceNotFound` for a collection that does not exist or
+        was archived.
+        """
         current = self.collection(collection_id)
         owned = self.with_owner(current, actor)
         if not owned["can_change"]:
@@ -314,7 +317,7 @@ class AppResources:
     # -- changing -------------------------------------------------------
 
     def create_collection(
-        self, payload: dict[str, Any], actor: Actor = SYSTEM
+        self, payload: dict[str, Any], actor: Actor = NOBODY
     ) -> dict[str, Any]:
         """A new collection, owned by ``actor`` (shared when it is the API key)."""
         rows = self._writable()
@@ -344,11 +347,11 @@ class AppResources:
         return self.with_owner(self._view(row), actor)
 
     def update_collection(
-        self, collection_id: str, payload: dict[str, Any], actor: Actor = SYSTEM
+        self, collection_id: str, payload: dict[str, Any], actor: Actor = NOBODY
     ) -> dict[str, Any]:
         self._writable()
         command = validate_command("UpdateCollection", payload)
-        current = self._changeable(collection_id, actor)
+        current = self.changeable(collection_id, actor)
         name = command.name.strip()
         if self.upload_folder(collection_id) in current["locations"]:
             self._name_upload_folder(collection_id, name)
@@ -358,11 +361,11 @@ class AppResources:
         )
 
     def add_members(
-        self, collection_id: str, payload: dict[str, Any], actor: Actor = SYSTEM
+        self, collection_id: str, payload: dict[str, Any], actor: Actor = NOBODY
     ) -> dict[str, Any]:
         self._writable()
         command = validate_command("AddCollectionMembers", payload)
-        self._changeable(collection_id, actor)
+        self.changeable(collection_id, actor)
         added = self._members(self._commands(command), datetime.now(UTC))
         # Checking members reads storage and PubMed; re-read the collection only
         # now, so a change saved meanwhile is kept rather than overwritten.
@@ -372,18 +375,30 @@ class AppResources:
         return self.with_owner(self._save(current, members=members), actor)
 
     def remove_member(
-        self, collection_id: str, member_id: str, actor: Actor = SYSTEM
+        self, collection_id: str, member_id: str, actor: Actor = NOBODY
     ) -> dict[str, Any]:
         self._writable()
-        current = self._changeable(collection_id, actor)
+        current = self.changeable(collection_id, actor)
         kept = [m for m in current["members"] if m["member_id"] != member_id]
         if len(kept) == len(current["members"]):
             raise ResourceNotFound("That member is no longer in this collection.")
         return self.with_owner(self._save(current, members=kept), actor)
 
-    def archive_collection(self, collection_id: str, actor: Actor = SYSTEM) -> None:
+    def archive_collection(self, collection_id: str, actor: Actor = NOBODY) -> None:
         self._writable()
-        self._save(self._changeable(collection_id, actor), archived=True)
+        self._save(self.changeable(collection_id, actor), archived=True)
+
+    def upload_folder_owner(self, location: str) -> str | None:
+        """The collection whose upload folder holds ``location``, if any.
+
+        A collection's uploads live in ``<root>/collections/<collection_id>``,
+        which is one of its members: a PDF stored there joins the collection.
+        """
+        prefix = f"{self._root}/collections/"
+        location = location.strip().strip("/")
+        if not location.startswith(prefix):
+            return None
+        return location[len(prefix) :].split("/", 1)[0] or None
 
     def upload_folder(self, collection_id: str) -> str:
         """Where PDFs uploaded into the collection are stored."""
@@ -391,11 +406,11 @@ class AppResources:
         return f"{self._root}/collections/{collection_id}"
 
     def add_upload_folder(
-        self, collection_id: str, actor: Actor = SYSTEM
+        self, collection_id: str, actor: Actor = NOBODY
     ) -> dict[str, Any]:
         """Make the upload folder a member, and name it in the folder lists."""
         self._writable()
-        current = self._changeable(collection_id, actor)
+        current = self.changeable(collection_id, actor)
         prefix = self.upload_folder(collection_id)
         if prefix in current["locations"]:
             return current

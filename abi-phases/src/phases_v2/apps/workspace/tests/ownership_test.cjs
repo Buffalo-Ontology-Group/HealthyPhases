@@ -146,6 +146,16 @@ const detail = (c) => ({
   papers: [], paper_count: c.paper_count, status_counts: {}, unsupported: 0, truncated: false,
 });
 
+// The papers root first, as the server lists it, then folders and upload folders.
+const LOCATIONS = [
+  { prefix: 'phases_v2', name: 'phases_v2 (all)' },
+  { prefix: 'phases_v2/a', name: 'Folder A' },
+  { prefix: 'phases_v2/collections/c-ada', name: 'Ada set uploads' },
+  { prefix: 'phases_v2/collections/c-bea', name: 'Bea set uploads' },
+  { prefix: 'phases_v2/collections/c-old', name: 'Old folders uploads' },
+  { prefix: 'phases_v2/collections/c-archived', name: 'Archived uploads' },
+];
+
 async function collections(list = [COL_ADA, COL_BEA, COL_SHARED]) {
   const dom = install();
   const { href, parse } = await load('router.js');
@@ -154,7 +164,7 @@ async function collections(list = [COL_ADA, COL_BEA, COL_SHARED]) {
   const ctx = context({ href, confirm: confirmAction, sections: { runs } });
   const calls = [];
   globalThis.fetch = routeFetch({
-    '/phases_v2/api/locations': { locations: [{ prefix: 'phases_v2/a', name: 'Folder A' }] },
+    '/phases_v2/api/locations': { locations: LOCATIONS },
     '/phases_v2/api/collections': { collections: list },
     '/phases_v2/api/collections/c-ada': detail(COL_ADA),
     '/phases_v2/api/collections/c-bea': detail(COL_BEA),
@@ -340,4 +350,58 @@ test('with none saved by you, saved configurations say so and cannot be loaded',
 test('a collection someone else owns can be chosen for a run, labelled with its owner', async () => {
   const { $ } = await runs();
   assert.deepEqual($('run-collection').options.map((o) => o.textContent), ['Ada set · 1 member', 'Bea set · 1 member · Bea Example']);
+});
+
+test('Upload PDFs to a folder leaves out the upload folders of collections you cannot change', async () => {
+  const { $, section, parse } = await collections();
+  await section.show(parse('#/collections'));
+  await settle(10);
+
+  assert.deepEqual($('col-folder-upload-location').options.map((o) => o.textContent), [
+    'phases_v2 (all)', 'Folder A', 'Ada set uploads', 'Old folders uploads',
+  ]);
+  // Adding a folder to your own collection reads it, so every folder is offered there.
+  assert.equal($('col-folder').options.length, LOCATIONS.length);
+});
+
+test('a copy of a long prompt name still fits in 100 characters', async () => {
+  install();
+  const { copyName, MAX_NAME } = await load('sections/prompts.js');
+  const long = 'L'.repeat(100);
+  const taken = [{ name: long }, { name: `${'L'.repeat(95)} copy` }];
+  const copy = copyName(long, taken);
+  assert.equal(copy, `${'L'.repeat(93)} copy 2`);
+  assert.equal(copy.length, MAX_NAME);
+  assert.equal(copyName('Short', []), 'Short copy');
+  assert.equal(copyName('Short', [{ name: 'short COPY' }]), 'Short copy 2');
+});
+
+test('an older requests answer never replaces a newer one', async () => {
+  const { $, a, calls } = await runs();
+  const answers = [];
+  globalThis.fetch = routeFetch({
+    '/phases_v2/api/requests': (url) => new Promise((resolve) => answers.push({ url, resolve })),
+    '/phases_v2/api/sources/pubmed': { available: true, queries: [] },
+  }, calls);
+
+  const slow = a.loadRequests();
+  await settle();
+  // The 10-second poll does not stack a second load behind the first.
+  a.loadRequests();
+  await settle();
+  assert.equal(answers.length, 1);
+  const fresh = a.chooseOwner('all');
+  await settle();
+  assert.equal(answers.length, 2, 'a change of filter asks at once');
+
+  answers[1].resolve({ requests: REQUESTS.all });
+  await fresh;
+  answers[0].resolve({ requests: REQUESTS.mine });
+  await slow;
+  assert.equal($('run-requests').children.length, 3, 'everyone’s, the latest asked for');
+  assert.equal($('run-owner').value, 'all');
+  // Loading is over, so the next poll loads again.
+  a.loadRequests();
+  await settle();
+  assert.equal(answers.length, 3);
 });

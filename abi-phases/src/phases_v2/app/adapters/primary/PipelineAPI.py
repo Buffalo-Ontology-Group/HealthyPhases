@@ -14,8 +14,10 @@ user, or nobody known. The services decide what that caller may do; a refusal
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
+import time
 from collections.abc import Awaitable, Callable
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request
@@ -39,6 +41,10 @@ PREFIX = "/phases_v2/api"
 #: Who a Nexus session token belongs to; ``None`` when it cannot be told.
 Identify = Callable[[str], Awaitable[Actor | None]]
 
+#: How long who a session token belongs to is kept, and for how many tokens.
+CALLER_SECONDS = 60.0
+CALLER_TOKENS = 1024
+
 #: Lists show the caller's own items (``mine``) or everyone's (``all``).
 OWNER = Query(default="all", pattern="^(mine|all)$")
 
@@ -50,7 +56,13 @@ def caller_dependency(service: PipelineAppService, identify: Identify):
     asked of Nexus; one it cannot place is :data:`NOBODY`, which may read but
     change nothing. Whether a write is allowed in at all is still
     ``require_abi_api_token``'s decision.
+
+    Who a token belongs to is kept for :data:`CALLER_SECONDS`, so the app's
+    polling does not ask Nexus every time; only answers that name a user are
+    kept, under a digest of the token. A token revoked meanwhile still names
+    its user for at most that long.
     """
+    known: dict[str, tuple[float, Actor]] = {}
 
     async def caller(request: Request) -> Actor:
         token = extract_abi_api_token(request)
@@ -58,9 +70,23 @@ def caller_dependency(service: PipelineAppService, identify: Identify):
             return SYSTEM
         if not token:
             return NOBODY
+        key = hashlib.sha256(token.encode()).hexdigest()
+        now = time.monotonic()
+        cached = known.get(key)
+        if cached is not None and now - cached[0] < CALLER_SECONDS:
+            return cached[1]
         actor = await identify(token)
         if actor is None:
+            known.pop(key, None)
             return NOBODY
+        if len(known) >= CALLER_TOKENS:
+            for stale in [
+                k for k, (at, _) in known.items() if now - at >= CALLER_SECONDS
+            ]:
+                del known[stale]
+            if len(known) >= CALLER_TOKENS:
+                known.clear()
+        known[key] = (now, actor)
         await run_in_threadpool(service.users.remember, actor)
         return actor
 
@@ -310,10 +336,10 @@ def build_router(
         return management_call(service.paper_list, query)
 
     @router.get("/papers/{paper_id}")
-    def paper(paper_id: str):
+    def paper(paper_id: str, actor: Actor = Depends(caller)):
         """One paper: its records, what ran on it, and every result grouped by
         prompt version and model."""
-        return management_call(service.paper_results.paper, paper_id)
+        return management_call(service.paper, paper_id, actor)
 
     @router.get("/papers/{paper_id}/export")
     def export_paper(paper_id: str, prompt_id: str = "", model_id: str | None = None):
@@ -352,14 +378,19 @@ def build_router(
     @router.post(
         "/documents", status_code=201, dependencies=[Depends(require_abi_api_token)]
     )
-    async def upload_document(request: Request, location: str, filename: str):
+    async def upload_document(
+        request: Request, location: str, filename: str, actor: Actor = Depends(caller)
+    ):
+        """Upload into a storage folder; a collection's upload folder only for
+        who may change that collection."""
         content = await _read_pdf(request)
         return await run_in_threadpool(
             management_call,
-            service.management.upload,
+            service.upload_document,
             location,
             filename,
             content,
+            actor,
         )
 
     @router.get("/pipelines")
