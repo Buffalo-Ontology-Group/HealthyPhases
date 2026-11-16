@@ -22,10 +22,10 @@ from phases_v2.models.catalog import DECLARED_MODELS
 from phases_v2.ownership import (
     EVERYONE,
     NOBODY,
-    SYSTEM,
     Actor,
     NotAllowed,
     check_filter,
+    creation_refusal,
     owner_view,
 )
 from phases_v2.paper_collections.interfaces import Resolution
@@ -131,6 +131,16 @@ class PipelineAppService:
             offset=query.get("offset", 0),
         )
 
+    def paper(self, paper_id: str, actor: Actor = NOBODY) -> dict[str, Any]:
+        """One paper's page, each run that covered it naming its requester."""
+        detail = self.paper_results.paper(paper_id)
+        people = self.users.names()
+        for request in detail.get("requests", []):
+            view = owner_view(request.get("requested_by"), actor, people)
+            request["requested_by_name"] = view["owner_name"]
+            request["requested_by_you"] = view["owned_by_you"]
+        return detail
+
     # -- collections ----------------------------------------------------
 
     def upload_to_collection(
@@ -138,22 +148,35 @@ class PipelineAppService:
         collection_id: str,
         filename: str,
         content: bytes,
-        actor: Actor = SYSTEM,
+        actor: Actor = NOBODY,
     ) -> dict[str, Any]:
         """Store a PDF in the collection's own folder, which joins it as a member.
 
         Only who may change the collection uploads into it, checked before
         anything is stored.
         """
-        owned = self.resources.with_owner(
-            self.resources.collection(collection_id), actor
-        )
-        if not owned["can_change"]:
-            raise NotAllowed(owned["read_only_reason"])
+        self.resources.changeable(collection_id, actor)
         location = self.resources.upload_folder(collection_id)
         uploaded = self.management.upload(location, filename, content)
         self.resources.add_upload_folder(collection_id, actor)
         return uploaded
+
+    def upload_document(
+        self, location: str, filename: str, content: bytes, actor: Actor = NOBODY
+    ) -> dict[str, Any]:
+        """Store a PDF in a storage folder, as a known caller.
+
+        A collection's upload folder is one of its members, so a PDF stored
+        there joins that collection: only who may change the collection uploads
+        into it, checked before anything is stored.
+        """
+        if refusal := creation_refusal(actor):
+            raise NotAllowed(refusal)
+        location = self.management.location(location)
+        collection_id = self.resources.upload_folder_owner(location)
+        if collection_id is not None:
+            self.resources.changeable(collection_id, actor)
+        return self.management.upload(location, filename, content)
 
     def collection_run_scope(
         self, collection_id: str
@@ -227,7 +250,7 @@ class PipelineAppService:
             requested_by=requested_by,
         )
 
-    def submit_pubmed(self, payload, actor: Actor = SYSTEM):
+    def submit_pubmed(self, payload, actor: Actor = NOBODY):
         if self._pubmed is None or self._rows is None:
             raise ValueError("PubMed publication dataset is unavailable")
         from phases_v2.app.contracts.app_validation import validate_command
@@ -250,7 +273,7 @@ class PipelineAppService:
         name: str,
         new_name: str = "",
         prompt_id: str = "",
-        actor: Actor = SYSTEM,
+        actor: Actor = NOBODY,
     ) -> dict[str, Any]:
         """A copy of a prompt version under a new name, owned by ``actor``.
 
@@ -266,15 +289,9 @@ class PipelineAppService:
         if source is None:
             raise ValueError(f"{prompt_id} is not a version of “{name}”.")
         if not new_name.strip():
-            from phases_v2.app.pipeline_management import name_key
+            from phases_v2.app.pipeline_management import prompt_catalog
 
-            taken = {name_key(p["name"]) for p in self.management.prompts()}
-            base = f"{name[:95]} copy"
-            new_name = base
-            number = 2
-            while name_key(new_name) in taken:
-                new_name = f"{base} {number}"
-                number += 1
+            new_name = copy_name(name, [p["name"] for p in prompt_catalog(self._rows)])
         return self.management.save_prompt(
             {
                 "name": new_name.strip(),
@@ -466,7 +483,7 @@ class PipelineAppService:
     # -- submitting -----------------------------------------------------
 
     def submit_inputs(
-        self, inputs: dict[str, Any], actor: Actor = SYSTEM
+        self, inputs: dict[str, Any], actor: Actor = NOBODY
     ) -> RunRequest:
         """Queue a run from ``PipelineInputs``: storage folders or a collection.
 
@@ -614,6 +631,27 @@ def _collection_of(request: RunRequest) -> str | None:
         if location.startswith(COLLECTION_SOURCE):
             return location[len(COLLECTION_SOURCE) :]
     return None
+
+
+#: The longest prompt name ``SavePrompt`` accepts.
+MAX_PROMPT_NAME = 100
+
+
+def copy_name(name: str, taken: list[str]) -> str:
+    """ "<name> copy", then "<name> copy 2" and on, whichever is free.
+
+    The name is cut so that the suffix always fits in :data:`MAX_PROMPT_NAME`.
+    """
+    from phases_v2.app.pipeline_management import name_key
+
+    used = {name_key(t) for t in taken}
+    number = 1
+    while True:
+        suffix = " copy" if number == 1 else f" copy {number}"
+        candidate = name[: MAX_PROMPT_NAME - len(suffix)].rstrip() + suffix
+        if name_key(candidate) not in used:
+            return candidate
+        number += 1
 
 
 def _requested_by(inputs: dict[str, Any], actor: Actor) -> dict[str, Any]:

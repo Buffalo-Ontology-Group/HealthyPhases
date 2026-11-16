@@ -11,7 +11,6 @@ from phases_v2.models.catalog import DECLARED_MODELS
 from phases_v2.ownership import (
     EVERYONE,
     NOBODY,
-    SYSTEM,
     Actor,
     NotAllowed,
     creation_refusal,
@@ -155,7 +154,7 @@ class PipelineManagement:
             )
         return keep(listed, actor, owner)
 
-    def save_prompt(self, payload: dict, actor: Actor = SYSTEM) -> dict:
+    def save_prompt(self, payload: dict, actor: Actor = NOBODY) -> dict:
         """Save a version under the payload's name.
 
         A new name becomes the caller's. Under an existing name, only its owner
@@ -270,7 +269,8 @@ class PipelineManagement:
             raise ValueError("Unknown model_id")
         if self.is_model_available and not self.is_model_available(inputs["model_id"]):
             raise ValueError("The selected model_id is unavailable on this deployment")
-        known = {p["prompt_id"] for p in self.prompts()}
+        # The catalog alone: whose a prompt is never decides whether it can run.
+        known = {p["prompt_id"] for p in prompt_catalog(self.rows)}
         if set(inputs["prompt_ids"]) - known:
             raise ValueError("Unknown prompt_ids; reload the prompt catalog")
 
@@ -287,7 +287,7 @@ class PipelineManagement:
             owner,
         )
 
-    def save_pipeline(self, payload: dict, actor: Actor = SYSTEM) -> dict:
+    def save_pipeline(self, payload: dict, actor: Actor = NOBODY) -> dict:
         """Save a configuration. It belongs to the caller; nobody changes it."""
         validate_message("SavePipeline", payload)
         if refusal := creation_refusal(actor):

@@ -69,10 +69,17 @@ class AppUsers:
         """Each recorded user's name, by user id and by email.
 
         By email too because runs the Assistant queued before owners were
-        recorded name their requester by email.
+        recorded name their requester by email. When the table cannot be read,
+        the failure is logged and nobody is named, so lists still answer, with
+        owners shown as "another user".
         """
+        try:
+            known = self._read()
+        except Exception:
+            logger.exception("Could not read the names of the app's users")
+            return {}
         found: dict[str, str] = {}
-        for user_id, (name, email) in self._read().items():
+        for user_id, (name, email) in known.items():
             found[user_id] = name
             if email:
                 found.setdefault(email, name)

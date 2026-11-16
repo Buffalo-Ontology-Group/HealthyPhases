@@ -11,6 +11,10 @@ What stays exactly as it was: the template (it is what the model received, so
 the new prompt carries the stored text, not a rewrite of it), every
 extraction's ``response`` and ``raw_response``, and its model, run and
 timestamps. What changes: the prompt's name, and every id derived from it.
+The re-keyed versions are registered with no owner: they join a built-in
+prompt's name, which is shared whoever saved a version under it (see
+:mod:`phases_v2.ownership`). Reusing this script for a name a user owns would
+make that prompt shared; pass its ``owner_id`` to ``register_prompts`` then.
 
 The vector collection and the graph are projections, so they are not re-keyed.
 The old points, the old extractions' and items' triples, and their ledger

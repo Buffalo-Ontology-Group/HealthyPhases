@@ -646,7 +646,9 @@ the Assistant all follow them.
   to users (they change one by duplicating it); shared collections stay editable by
   everyone.
 - **Only the owner** saves a new version of a prompt, and renames, describes, adds or
-  removes members of, uploads PDFs into or archives a collection. Saved configurations are
+  removes members of, uploads PDFs into or archives a collection. Uploading into a
+  collection includes `POST /documents` into its upload folder
+  (`<papers_root>/collections/<collection_id>` or beneath it), which is one of its members. Saved configurations are
   never changed once saved. **Anyone** opens anything, tries it, compares with it, uses a
   prompt in a run, runs on any collection, sees its results and searches within it, runs
   any saved configuration, and duplicates any prompt into one of their own.
@@ -664,7 +666,9 @@ asks Nexus who the token belongs to, the way Nexus's own endpoints do
 (`get_current_user_released`, in `app/adapters/secondary/NexusUsers.py`): it decodes the
 token (its `sub` is the Nexus user id), refuses a revoked one and reads the user with their
 name and email. Nexus runs in the ABI API process, so this needs no change upstream and no
-new auth scheme. A token Nexus cannot place acts as nobody: it reads, and every change is
+new auth scheme. Who a token belongs to is kept for a minute, under a digest of the
+token, so the app's polling does not ask Nexus every time; a token revoked meanwhile still
+names its user for at most that minute. A token Nexus cannot place acts as nobody: it reads, and every change is
 refused with "We could not tell who you are". The Assistant acts as the user Nexus sets on
 the request (`agent_user_id`, with `agent_user_name` and `agent_user_email`), the same id.
 
@@ -672,14 +676,16 @@ the request (`agent_user_id`, with `agent_user_name` and `agent_user_email`), th
 else id. Each identified request records the person's name in `app_users`, written only
 when it changed and read again at most once a minute, so a name changed in Nexus shows from
 the person's next visit. Runs the Assistant queued before this recorded their requester by
-email; they still match that person and their name.
+email; they still match that person and their name. When `app_users` cannot be read, lists
+still answer, naming owners "another user". The coverage report (`coverage/domain.py`) is
+for operators and prints requesters as recorded: Nexus user ids from now on.
 
 **The API.** `GET /prompts`, `/collections`, `/pipelines` and `/requests` take
 `owner=mine|all` (default `all`, as before; the app asks for `mine` first). Prompts,
 collections and configurations carry `owner_id`, `owner_name` (`null` when shared),
 `owned_by_you` and `shared`; prompts and collections add `can_change` and, when it is
 false, `read_only_reason`. Requests carry `requested_by`, `requested_by_name` and
-`requested_by_you`. A user's run records them as `requested_by`, whatever the body says.
+`requested_by_you`, as do the requests on a paper's page (`GET /papers/<paper_id>`). A user's run records them as `requested_by`, whatever the body says.
 A refusal is a 403 whose `detail` says why and what to do instead. The contracts did not
 change: the filter is a query parameter and the new fields are in responses only.
 

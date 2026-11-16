@@ -98,6 +98,14 @@ def add_missing_columns(
         if not missing:
             continue
         if sorted(recorded + missing) != sorted(declared):
+            # Reads of this table name the new columns, so they fail until it
+            # is fixed: say so where a deploy shows it, not only as drift.
+            logger.error(
+                f"phases_v2: {', '.join(missing)} was not added to {name!r}, whose "
+                "schema also differs in other ways (see the drift warning). "
+                f"Listings that read {name} will fail until its schema matches "
+                "phases_v2.datasets.schemas."
+            )
             continue
         for column in missing:
             _add_column(dataset, name, column)

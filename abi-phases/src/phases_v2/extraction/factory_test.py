@@ -20,6 +20,7 @@ from phases_v2.datasets.store import ensure_datasets
 from phases_v2.extraction.factory import extract, resolve_prompt
 from phases_v2.extraction.fakes import FakeModel
 from phases_v2.models.catalog import DECLARED_MODELS, UnknownModelError
+from phases_v2.ownership import SYSTEM
 from phases_v2.prompts.templates import declared_prompts
 
 MODEL_ID = DECLARED_MODELS[0].model_id
@@ -214,7 +215,8 @@ def test_a_prompt_saved_in_the_app_is_executed_and_recorded(engine):
             "name": "Custom research prompt",
             "template": "Extract research claims: {chunk_text}",
             "output_key": PROMPT.output_key,
-        }
+        },
+        actor=SYSTEM,
     )
     report = extract(
         engine,

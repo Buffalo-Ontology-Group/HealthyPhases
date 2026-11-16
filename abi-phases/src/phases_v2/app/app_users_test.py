@@ -74,3 +74,15 @@ def test_without_storage_nobody_is_named():
     users = AppUsers(None)
     users.remember(ADA)
     assert users.names() == {}
+
+
+class Unreadable(Rows):
+    def query(self, sql):
+        raise RuntimeError("catalog unavailable")
+
+
+def test_an_unreadable_table_names_nobody_rather_than_failing():
+    users = AppUsers(Unreadable())
+
+    assert users.names() == {}
+    users.remember(ADA)  # logged, not raised

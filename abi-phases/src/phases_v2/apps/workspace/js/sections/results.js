@@ -6,7 +6,7 @@
 
 import { fetchBlob, phases, PREFIXES, saveBlob } from '../api.js';
 import {
-  $, action, emptyRow, esc, fill, formatDate, formatNumber, helpHref, latest, learnMore, message, pagination, plural, tableHtml,
+  $, action, emptyRow, esc, fill, formatDate, formatNumber, helpHref, latest, learnMore, message, pagination, plural, requesterLabel, tableHtml,
 } from '../ui.js';
 import {
   compareHtml, groupHtml, groupKey, groupLabel, headerHtml, ranRows,
@@ -255,7 +255,7 @@ export function create(root, ctx) {
     const ran = ranRows(detail, { modelName, href: ctx.href });
     $('res-ran').innerHTML = ran.length ? ran.join('') : emptyRow(5, 'Nothing has been run on this paper yet.');
     $('res-requests').innerHTML = detail.requests.length
-      ? `<ul>${detail.requests.map((r) => `<li><a href="${esc(ctx.href('runs', [r.request_id]))}">${esc(formatDate(r.requested_at))}</a> · ${esc(r.status)} · ${esc(modelName(r.model_id))}${r.requested_by ? ` · ${esc(r.requested_by)}` : ''}</li>`).join('')}</ul>`
+      ? `<ul>${detail.requests.map((r) => `<li><a href="${esc(ctx.href('runs', [r.request_id]))}">${esc(formatDate(r.requested_at))}</a> · ${esc(r.status)} · ${esc(modelName(r.model_id))}${r.requested_by ? ` · ${esc(requesterLabel(r))}` : ''}</li>`).join('')}</ul>`
       : '<p class="muted">No recorded run included this paper.</p>';
     $('res-csv').disabled = !groups().length;
     const options = groups().map((g) => ({ key: groupKey(g), label: `${groupLabel(g, modelName)} · ${plural(g.item_count, 'item')}` }));

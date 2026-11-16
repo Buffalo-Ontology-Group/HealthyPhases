@@ -172,7 +172,7 @@ const collections = {
           `<strong>Someone else’s:</strong> it opens read-only, and the line under its name says whose it is. You can still ${ui('Run on this collection')}, open ${ui('Results of this collection')} and ${ui('Search this collection')}. To gather the same papers your way, create a collection of your own.`,
           `<strong>${term('shared', 'Shared')}:</strong> collections made before collections had owners. Everyone can still change them.`,
         ])
-        + p(`${ui('Add to collection')} in the Library offers only collections you can change.`),
+        + p(`${ui('Add to collection')} in the Library offers only collections you can change, and ${ui('Upload PDFs to a folder')} leaves out the upload folders of collections you can’t change.`),
     },
     {
       id: 'add-papers',

@@ -40,6 +40,17 @@ export function collectionSummary(c) {
 // Whether the user may change `collection`: theirs or shared, as the server says.
 export const changeable = (collection) => !collection || collection.can_change !== false;
 
+// A storage folder you may upload into. A collection's uploads live in
+// "<root>/collections/<collection_id>", which is one of its members, so only
+// who may change that collection uploads there; `root` is the papers root.
+export function uploadableFolder(prefix, root, collections) {
+  const start = `${root}/collections/`;
+  if (!root || !String(prefix).startsWith(start)) return true;
+  const id = String(prefix).slice(start.length).split('/')[0];
+  const collection = collections.find((c) => c.collection_id === id);
+  return Boolean(collection) && changeable(collection);
+}
+
 // The controls that change a saved collection, disabled on a read-only one.
 export const CHANGE_CONTROLS = [
   'col-name', 'col-description', 'col-save', 'col-upload-files', 'col-upload', 'col-pubmed', 'col-add-pubmed',
@@ -170,7 +181,10 @@ export function create(root, ctx) {
 
   function fillChoices() {
     fill($('col-folder'), state.locations, 'prefix', (l) => l.name, [$('col-folder').value]);
-    fill($('col-folder-upload-location'), state.locations, 'prefix', (l) => l.name, [$('col-folder-upload-location').value]);
+    // The papers root is the first location the server lists.
+    const root = state.locations[0]?.prefix || '';
+    const uploadable = state.locations.filter((l) => uploadableFolder(l.prefix, root, state.collections));
+    fill($('col-folder-upload-location'), uploadable, 'prefix', (l) => l.name, [$('col-folder-upload-location').value]);
     const searches = state.pubmedQueries.length ? state.pubmedQueries : [{ query_id: '', query: 'No saved PubMed searches yet' }];
     fill($('col-pubmed'), searches, 'query_id', (q) => (q.query_id ? `${q.query} · ${plural(q.published_paper_count ?? 0, 'downloaded paper')}` : q.query), [$('col-pubmed').value]);
     $('col-add-pubmed').disabled = !state.pubmedQueries.length || readOnly();
