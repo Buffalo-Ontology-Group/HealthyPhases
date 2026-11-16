@@ -5,6 +5,12 @@ Collections are stored in ``paper_collections``. Rows first stored in
 members, so they keep listing, editing and running; the first change writes
 one to ``paper_collections`` under the same id, which takes precedence from
 then on. Nothing is ever deleted: archiving is a flag.
+
+A collection belongs to the user who created it (``owner_id``), and only they
+change it. One without an owner, including every collection that existed
+before owners were recorded, is shared and stays editable by everyone. Anyone
+may read any collection, run on it and search within it. See
+:mod:`phases_v2.ownership`.
 """
 
 from __future__ import annotations
@@ -19,6 +25,17 @@ from google.protobuf.json_format import MessageToDict
 
 from phases_v2.app.contracts.app_validation import validate_command
 from phases_v2.app.pipeline_management import ManagementUnavailable
+from phases_v2.ownership import (
+    EVERYONE,
+    NOBODY,
+    SYSTEM,
+    Actor,
+    NotAllowed,
+    collection_refusal,
+    creation_refusal,
+    keep,
+    owner_view,
+)
 from phases_v2.paper_collections.domain import (
     add_members,
     folder_member,
@@ -89,8 +106,11 @@ class AppResources:
         papers_root: str,
         sources: CollectionCatalog | None = None,
         supported: Callable[[str], bool] | None = None,
+        users=None,
     ):
         self._rows = rows
+        #: Names owners the way Nexus does; see ``AppUsers``.
+        self._users = users
         self._root = papers_root.strip("/")
         self._sources = sources
         #: Whether a file name is a document a run can read.
@@ -124,6 +144,7 @@ class AppResources:
                 "archived": bool(row["archived"]),
                 "created_at": None,
                 "updated_at": None,
+                "owner_id": None,
             }
             for row in self._rows.query("SELECT * FROM input_collections")
         }
@@ -135,6 +156,33 @@ class AppResources:
                 archived=bool(row["archived"]),
             )
         return found
+
+    def _names(self) -> dict[str, str]:
+        return self._users.names() if self._users is not None else {}
+
+    def with_owner(
+        self,
+        collection: dict[str, Any],
+        actor: Actor,
+        names: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
+        """``collection`` with its owner and whether ``actor`` may change it."""
+        names = self._names() if names is None else names
+        view = owner_view(collection.get("owner_id"), actor, names)
+        refusal = collection_refusal(
+            actor, collection["name"], view["owner_id"], view["owner_name"]
+        )
+        return dict(
+            collection, **view, can_change=refusal is None, read_only_reason=refusal
+        )
+
+    def _changeable(self, collection_id: str, actor: Actor) -> dict[str, Any]:
+        """The collection, when ``actor`` may change it; else :class:`NotAllowed`."""
+        current = self.collection(collection_id)
+        owned = self.with_owner(current, actor)
+        if not owned["can_change"]:
+            raise NotAllowed(owned["read_only_reason"])
+        return current
 
     @staticmethod
     def _view(collection: dict[str, Any]) -> dict[str, Any]:
@@ -163,9 +211,17 @@ class AppResources:
             raise ResourceNotFound("Collection not found. It may have been archived.")
         return self._view(found)
 
-    def summaries(self, counts: bool = True) -> list[dict[str, Any]]:
-        """Every collection; with ``counts``, how many papers each resolves to."""
-        listed = self.collections()
+    def summaries(
+        self, counts: bool = True, actor: Actor = NOBODY, owner: str = EVERYONE
+    ) -> list[dict[str, Any]]:
+        """Every collection, with its owner; with ``counts``, how many papers
+        each resolves to. ``owner="mine"`` keeps the caller's own."""
+        names = self._names()
+        listed = keep(
+            (self.with_owner(c, actor, names) for c in self.collections()),
+            actor,
+            owner,
+        )
         if not counts or self._sources is None:
             return listed
         sources = _Memo(self._sources)
@@ -201,10 +257,14 @@ class AppResources:
         return resolution.paper_ids()
 
     def detail(
-        self, collection_id: str, limit: int = DETAIL_PAPER_LIMIT
+        self,
+        collection_id: str,
+        limit: int = DETAIL_PAPER_LIMIT,
+        actor: Actor = NOBODY,
     ) -> dict[str, Any]:
-        """A collection with its members and the papers they resolve to now."""
-        collection = self.collection(collection_id)
+        """A collection with its owner, its members and the papers they resolve
+        to now."""
+        collection = self.with_owner(self.collection(collection_id), actor)
         sources = _Memo(self._catalog())
         resolution = resolve(collection["members"], sources, self._supported)
         labels = sources.labels(collection["members"])
@@ -253,9 +313,14 @@ class AppResources:
 
     # -- changing -------------------------------------------------------
 
-    def create_collection(self, payload: dict[str, Any]) -> dict[str, Any]:
+    def create_collection(
+        self, payload: dict[str, Any], actor: Actor = SYSTEM
+    ) -> dict[str, Any]:
+        """A new collection, owned by ``actor`` (shared when it is the API key)."""
         rows = self._writable()
         command = validate_command("CreateCollection", payload)
+        if refusal := creation_refusal(actor):
+            raise NotAllowed(refusal)
         now = datetime.now(UTC)
         members = add_members(
             [],
@@ -273,56 +338,64 @@ class AppResources:
             "archived": False,
             "created_at": now,
             "updated_at": now,
+            "owner_id": actor.owner_id,
         }
         rows.write_rows("paper_collections", [row])
-        return self._view(row)
+        return self.with_owner(self._view(row), actor)
 
     def update_collection(
-        self, collection_id: str, payload: dict[str, Any]
+        self, collection_id: str, payload: dict[str, Any], actor: Actor = SYSTEM
     ) -> dict[str, Any]:
         self._writable()
         command = validate_command("UpdateCollection", payload)
-        current = self.collection(collection_id)
+        current = self._changeable(collection_id, actor)
         name = command.name.strip()
         if self.upload_folder(collection_id) in current["locations"]:
             self._name_upload_folder(collection_id, name)
-        return self._save(current, name=name, description=command.description.strip())
+        return self.with_owner(
+            self._save(current, name=name, description=command.description.strip()),
+            actor,
+        )
 
     def add_members(
-        self, collection_id: str, payload: dict[str, Any]
+        self, collection_id: str, payload: dict[str, Any], actor: Actor = SYSTEM
     ) -> dict[str, Any]:
         self._writable()
         command = validate_command("AddCollectionMembers", payload)
-        self.collection(collection_id)
+        self._changeable(collection_id, actor)
         added = self._members(self._commands(command), datetime.now(UTC))
         # Checking members reads storage and PubMed; re-read the collection only
         # now, so a change saved meanwhile is kept rather than overwritten.
         current = self.collection(collection_id)
         members = add_members(current["members"], added)
         self._limit(members)
-        return self._save(current, members=members)
+        return self.with_owner(self._save(current, members=members), actor)
 
-    def remove_member(self, collection_id: str, member_id: str) -> dict[str, Any]:
+    def remove_member(
+        self, collection_id: str, member_id: str, actor: Actor = SYSTEM
+    ) -> dict[str, Any]:
         self._writable()
-        current = self.collection(collection_id)
+        current = self._changeable(collection_id, actor)
         kept = [m for m in current["members"] if m["member_id"] != member_id]
         if len(kept) == len(current["members"]):
             raise ResourceNotFound("That member is no longer in this collection.")
-        return self._save(current, members=kept)
+        return self.with_owner(self._save(current, members=kept), actor)
 
-    def archive_collection(self, collection_id: str) -> None:
+    def archive_collection(self, collection_id: str, actor: Actor = SYSTEM) -> None:
         self._writable()
-        self._save(self.collection(collection_id), archived=True)
+        self._save(self._changeable(collection_id, actor), archived=True)
 
     def upload_folder(self, collection_id: str) -> str:
         """Where PDFs uploaded into the collection are stored."""
         self.collection(collection_id)
         return f"{self._root}/collections/{collection_id}"
 
-    def add_upload_folder(self, collection_id: str) -> dict[str, Any]:
+    def add_upload_folder(
+        self, collection_id: str, actor: Actor = SYSTEM
+    ) -> dict[str, Any]:
         """Make the upload folder a member, and name it in the folder lists."""
         self._writable()
-        current = self.collection(collection_id)
+        current = self._changeable(collection_id, actor)
         prefix = self.upload_folder(collection_id)
         if prefix in current["locations"]:
             return current
@@ -366,6 +439,7 @@ class AppResources:
                 "members",
                 "archived",
                 "created_at",
+                "owner_id",
             )
         }
         row.update(changes, updated_at=datetime.now(UTC))

@@ -11,9 +11,9 @@ from phases_v2.assistant.confirmations import (
 )
 
 PARAMS = {"collection_id": "c1", "prompt_ids": ["p1"], "model_id": "m1"}
-ASKED = RequestContext(conversation="chat-1", user="jeremy@naas.ai", turn="t1")
+ASKED = RequestContext(conversation="chat-1", user="ada@example.org", turn="t1")
 ANSWERED = RequestContext(
-    conversation="chat-1", user="jeremy@naas.ai", turn="t2", previous_turn="t1"
+    conversation="chat-1", user="ada@example.org", turn="t2", previous_turn="t1"
 )
 
 
@@ -107,10 +107,10 @@ def test_a_token_for_another_action_or_other_parameters_is_refused(
     "context",
     [
         RequestContext(
-            conversation="chat-2", user="jeremy@naas.ai", turn="t2", previous_turn="t1"
+            conversation="chat-2", user="ada@example.org", turn="t2", previous_turn="t1"
         ),
         RequestContext(
-            conversation="chat-1", user="maxime@naas.ai", turn="t2", previous_turn="t1"
+            conversation="chat-1", user="bea@example.org", turn="t2", previous_turn="t1"
         ),
     ],
 )
@@ -134,7 +134,7 @@ def test_a_yes_only_counts_as_the_reply_right_after_the_summary(guard):
     """Asked in turn 1, an unrelated question in turn 2, "ok thanks" in turn 3."""
     token = guard.issue("run", PARAMS, ASKED).token
     later = RequestContext(
-        conversation="chat-1", user="jeremy@naas.ai", turn="t3", previous_turn="t2"
+        conversation="chat-1", user="ada@example.org", turn="t3", previous_turn="t2"
     )
 
     with pytest.raises(ConfirmationRefused, match="more than once since"):
@@ -145,7 +145,7 @@ def test_a_yes_only_counts_as_the_reply_right_after_the_summary(guard):
 
 
 def test_without_a_known_turn_nothing_is_executed(guard):
-    unknown = RequestContext(conversation="chat-1", user="jeremy@naas.ai", turn=None)
+    unknown = RequestContext(conversation="chat-1", user="ada@example.org", turn=None)
     token = guard.issue("run", PARAMS, unknown).token
 
     with pytest.raises(ConfirmationRefused, match="has not answered yet"):
@@ -173,7 +173,7 @@ def test_preparing_again_supersedes_the_earlier_summary(guard):
     changed = dict(PARAMS, model_id="m2")
     latest = guard.issue("run", changed, ANSWERED).token
     yes = RequestContext(
-        conversation="chat-1", user="jeremy@naas.ai", turn="t3", previous_turn="t2"
+        conversation="chat-1", user="ada@example.org", turn="t3", previous_turn="t2"
     )
 
     with pytest.raises(ConfirmationRefused, match="was replaced"):
@@ -184,7 +184,7 @@ def test_preparing_again_supersedes_the_earlier_summary(guard):
 def test_only_the_same_action_in_the_same_conversation_is_superseded(guard):
     run = guard.issue("run", PARAMS, ASKED).token
     guard.issue("pubmed_schedule", {"search_id": "s"}, ASKED)
-    elsewhere = RequestContext(conversation="chat-2", user="jeremy@naas.ai", turn="t1")
+    elsewhere = RequestContext(conversation="chat-2", user="ada@example.org", turn="t1")
     guard.issue("run", PARAMS, elsewhere)
 
     guard.redeem(run, "run", PARAMS, ANSWERED)

@@ -106,6 +106,10 @@ Namespace `phases_v2`. Every one is keyed and written only with `mode="upsert"`.
 | `paper_collections` | collection of papers | `collection_id` |
 | `paper_paths` | storage path a paper was read from | `path` |
 | `source_manifests` | exact artifacts a manifest-sourced request reads | `request_id` |
+| `app_users` | person who used the app, named as Nexus names them | `user_id` |
+
+`prompts`, `paper_collections` and `pipelines` carry an `owner_id`, and `run_requests` a
+`requested_by`: see [Owners](#owners).
 
 `extractions` keeps the model's output twice: `response` is a queryable JSON column, `raw_response`
 the verbatim text. The JSON column *rejects* unparseable output — which is exactly the case where
@@ -177,6 +181,7 @@ domain's `domain.py`.
 phases_v2/
 ├── identity.py             # every id derivation, in one place
 ├── sql.py                  # SQL literal escaping (the dataset port takes no parameters)
+├── ownership.py            # who owns what, and who may change it
 ├── datasets/
 │   ├── schemas.py          # every DatasetSpec
 │   └── store.py            # the ONLY code that writes to a dataset
@@ -470,7 +475,9 @@ The `input_locations` dataset stores named prefixes, including empty collections
 The `pipelines` dataset stores named configurations and their input JSON. Both are
 created at module initialization using the existing dataset service; no existing
 schema migration is required. Restart the ABI API and Dagster processes after upgrading.
-These catalogs share the existing module storage scope; they are not per-user workspaces.
+Prompts, collections and saved configurations each belong to the user who created them,
+and only that user changes them; everyone can see, try, run and duplicate them. See
+[Owners](#owners).
 
 Full pipeline runs pass the IDs of successfully ingested or already-ingested selected
 papers through chunking and extraction. An empty collection remains an empty scope;
@@ -485,7 +492,8 @@ and PDF header; full PDF rendering happens during ingestion.
 
 New endpoints under `/phases_v2/api`:
 
-- `POST /prompts`: save `{name, template, output_key}` as a prompt version.
+- `POST /prompts`: save `{name, template, output_key}` as a prompt version. Under a name
+  that is shared or someone else's, a user gets a 403 that says why.
 - `POST /locations`: create `{name}` beneath the configured papers root.
 - `POST /documents?location=...&filename=...`: upload raw PDF bytes.
 - `GET /pipelines` and `POST /pipelines`: list/save `{name, inputs}` configurations.
@@ -623,6 +631,66 @@ up to 20 item IDs/errors), left untouched, and retried by later runs. The backfi
 never rewrites source extractions or calls a model. API startup only creates the
 empty dataset; it does not run a potentially large backfill during startup.
 
+## Owners
+
+Each researcher keeps their own prompts and collections, and everyone can still see and
+use everyone's. The rules live in `ownership.py` and are applied by the services
+(`PipelineManagement`, `AppResources`, `PipelineAppService`), so the app, the HTTP API and
+the Assistant all follow them.
+
+- **Owned, visible to all.** A prompt (its name with all its versions), a collection and a
+  saved configuration record their owner (`owner_id`), the Nexus user who created them. A
+  run records who requested it (`requested_by`), from the app or the Assistant.
+- **Shared** items have no owner: the 8 declared prompts, everything that existed before
+  owners were recorded, and whatever the ABI API key creates. Shared prompts are read-only
+  to users (they change one by duplicating it); shared collections stay editable by
+  everyone.
+- **Only the owner** saves a new version of a prompt, and renames, describes, adds or
+  removes members of, uploads PDFs into or archives a collection. Saved configurations are
+  never changed once saved. **Anyone** opens anything, tries it, compares with it, uses a
+  prompt in a run, runs on any collection, sees its results and searches within it, runs
+  any saved configuration, and duplicates any prompt into one of their own.
+- **Prompt names are unique across users**, compared without case, so two people's
+  histories never merge under one name. A name belongs to whoever saved its first version;
+  saving under it as anyone else is refused, with a message suggesting another name or
+  Duplicate prompt. Every version under a name carries the name's owner.
+- **The ABI API key** (scripts, automation) acts as no user: what it creates is shared, it
+  keeps every right it had, and a run it queues keeps the `requested_by` it sends.
+
+**Who is asking.** The app sends the user's Nexus session token, which
+`require_abi_api_token` accepts through the validator Nexus registers; that validator only
+says yes or no. The endpoints' `caller` dependency (`app/adapters/primary/PipelineAPI.py`)
+asks Nexus who the token belongs to, the way Nexus's own endpoints do
+(`get_current_user_released`, in `app/adapters/secondary/NexusUsers.py`): it decodes the
+token (its `sub` is the Nexus user id), refuses a revoked one and reads the user with their
+name and email. Nexus runs in the ABI API process, so this needs no change upstream and no
+new auth scheme. A token Nexus cannot place acts as nobody: it reads, and every change is
+refused with "We could not tell who you are". The Assistant acts as the user Nexus sets on
+the request (`agent_user_id`, with `agent_user_name` and `agent_user_email`), the same id.
+
+**Naming people.** Lists name owners and requesters the way Nexus does: name, else email,
+else id. Each identified request records the person's name in `app_users`, written only
+when it changed and read again at most once a minute, so a name changed in Nexus shows from
+the person's next visit. Runs the Assistant queued before this recorded their requester by
+email; they still match that person and their name.
+
+**The API.** `GET /prompts`, `/collections`, `/pipelines` and `/requests` take
+`owner=mine|all` (default `all`, as before; the app asks for `mine` first). Prompts,
+collections and configurations carry `owner_id`, `owner_name` (`null` when shared),
+`owned_by_you` and `shared`; prompts and collections add `can_change` and, when it is
+false, `read_only_reason`. Requests carry `requested_by`, `requested_by_name` and
+`requested_by_you`. A user's run records them as `requested_by`, whatever the body says.
+A refusal is a 403 whose `detail` says why and what to do instead. The contracts did not
+change: the filter is a query parameter and the new fields are in responses only.
+
+**Existing data.** On start, `ensure_datasets` adds `owner_id` (`VARCHAR`, nullable) to
+`prompts`, `paper_collections` and `pipelines` where it is missing
+(`store.ADDED_COLUMNS`): `ALTER TABLE ... ADD COLUMN`, then the table comment where the
+dataset service keeps the schema it checks writes against. Rows are not touched, so every
+existing prompt, collection and configuration reads `NULL`, which is shared. Each step
+checks first, so a second start, or a second process starting at the same time, finds
+nothing to do. `app_users` is a new dataset, created like any other.
+
 ## HealthyPhases workspace app
 
 `apps/workspace/` is the one Nexus app of this project. It replaced the Phases Pipeline,
@@ -641,23 +709,31 @@ Search app; their HTTP APIs are unchanged. Its sections, in the left navigation:
   many papers each brings, and the papers themselves, each once, marked not ingested yet,
   ingested, or with results. Rename it, describe it, remove members, archive it, run the
   pipeline on it or search within it. Archiving and removing ask first and delete nothing.
+  The list shows the user's own collections, or everyone's (**Show**), each with its owner;
+  someone else's collection opens read-only, with running, results and search still open.
   Library rows with a downloaded PDF, and whole saved searches, have **Add to collection**.
   Storage folders can still be created and uploaded into from this page.
 - **Prompts**: browse full prompt text, create prompts, and save edits as
   new versions. Prompt text must contain `{chunk_text}` and use one of the supported
   extraction output schemas. Old versions remain selectable and resolvable by workers.
+  The library shows the user's own prompts, or everyone's, each with its owner. A shared
+  or someone else's prompt cannot take a new version, and says why; **Duplicate prompt**
+  copies it under a free name the user owns.
 - **Runs**: **New run** selects a collection, storage folders or a PubMed search,
   previews documents, saves the selected folders as a collection, chooses prompt versions,
   and queues a run; saved pipeline configurations can be saved, loaded, and run here.
   **Requests** filters the latest 100 requests by status and opens one to inspect
   timestamps, sources, all selected prompts, execution IDs, counts, and errors. The list
-  refreshes every 10 seconds while it is visible.
+  refreshes every 10 seconds while it is visible. Requests and saved configurations show
+  the user's own, or everyone's, with who requested or saved each.
 - **Search**: semantic, keyword and effects search over extracted items (see
   [Reverse search](#reverse-search)), optionally limited to one collection.
 - **Help**: Getting started (signing in at Nexus with an emailed code, opening the app,
   the four steps), a page per section above, a glossary, a page on the Assistant and an
   FAQ (a missing sign-in code, papers not ingested, failed or pending runs, papers without
-  results, older prompt versions, uploading PDFs). Pages and their entries are deep links
+  results, older prompt versions, a prompt that cannot take a new version, uploading
+  PDFs). The section pages, the Glossary (owner, shared, You) and the Assistant's page
+  describe who owns what. Pages and their entries are deep links
   (`#/help/faq/run-failed`). Every section's page head has a **Learn more** link to its
   page, and empty states link to the entry that says what to do next. Tests keep the
   help's labels, the app's labels and the Assistant's instructions in step (see
@@ -729,8 +805,8 @@ Collection commands and manifests are defined in
 run inputs and search queries in `pipeline_management.proto` and `search.proto`.
 The checked-in descriptors are packaged with the module. `make proto` regenerates them
 using the existing extraction descriptor's pinned validation dependency. Resource
-endpoints inherit the ABI API's existing access controls; no separate role model
-is introduced.
+endpoints inherit the ABI API's existing access controls, and only an item's owner
+changes it ([Owners](#owners)); no separate role model is introduced.
 
 Run backend and browser-logic regressions with `make test` (or run
 `uv run pytest src/phases_v2/app` and `make test-app` individually).
@@ -821,8 +897,12 @@ services when those modules are loaded. It never calls the HTTP API.
   downloads, schedules and enrichments, saved configurations, papers and a paper's
   results, and searches findings by meaning or keyword.
 - **Acts freely**: searches PubMed (saving the search), creates a collection, renames or
-  describes it, adds members, saves a prompt version, tries a prompt (at most 10 chunks,
-  writing nothing) and saves a run configuration.
+  describes it, adds members, saves a version of the user's own prompt, duplicates any
+  prompt into one of the user's own, tries a prompt (at most 10 chunks, writing nothing)
+  and saves a run configuration.
+- **Acts as its user** ([Owners](#owners)): what it creates is theirs, it is refused what
+  they could not do, with the reason and what to do instead, and its list tools take
+  `owner="mine"` for "my prompts", "my collections", "my runs" or "my configurations".
 - **Acts after a yes**: queuing a run on a collection, downloading a PubMed search's
   papers (previewed ones, or all it matches as a full ingestion), creating a PubMed
   schedule and queuing OpenAlex enrichment. Each is a `prepare_*` tool, which checks what
@@ -843,7 +923,8 @@ the exact papers the collection resolved to (`PipelineAppService.collection_run_
 also used to submit that same resolution), a previewed download to its PMIDs (passed to
 the publisher by name), an enrichment to its paper count. If that changed, the action is
 prepared again. Tokens live in the API process, which is a single one; a restart only
-means preparing again. A queued run records the user as `requested_by`; PubMed downloads,
+means preparing again. A queued run records the user's Nexus id as `requested_by`, as the
+app does; PubMed downloads,
 schedules and OpenAlex requests have no such field.
 
 Nexus builds every agent when it starts, and one failing stops the rest loading, so the

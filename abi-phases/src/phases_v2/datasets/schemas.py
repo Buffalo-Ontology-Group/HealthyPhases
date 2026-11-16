@@ -87,6 +87,10 @@ PROMPTS = _spec(
         ("template", "string"),
         ("output_key", "string"),
         ("registered_at", "timestamp"),
+        # The Nexus user who created the prompt's name; NULL: shared. Every
+        # version under one name carries the same owner. Added after the
+        # table existed: see ``store.ADDED_COLUMNS``.
+        ("owner_id", "string"),
     ),
     primary_key=("prompt_id",),
 )
@@ -225,6 +229,8 @@ PIPELINES = _spec(
         ("name", "string"),
         ("inputs", "json"),
         ("created_at", "timestamp"),
+        # Who saved the configuration; NULL: shared.
+        ("owner_id", "string"),
     ),
     primary_key=("pipeline_id",),
 )
@@ -257,6 +263,8 @@ PAPER_COLLECTIONS = _spec(
         ("archived", "boolean"),
         ("created_at", "timestamp"),
         ("updated_at", "timestamp"),
+        # Who created the collection; NULL: shared, editable by everyone.
+        ("owner_id", "string"),
     ),
     primary_key=("collection_id",),
 )
@@ -278,6 +286,19 @@ SOURCE_MANIFESTS = _spec(
     primary_key=("request_id",),
 )
 
+# The people who used the app, as Nexus names them, so lists can name the owner
+# of an item and the requester of a run. Recorded when they use the app.
+APP_USERS = _spec(
+    "app_users",
+    (
+        ("user_id", "string"),
+        ("name", "string"),
+        ("email", "string"),
+        ("seen_at", "timestamp"),
+    ),
+    primary_key=("user_id",),
+)
+
 DATASETS: tuple[DatasetSpec, ...] = (
     SOURCE_MANIFESTS,
     INPUT_COLLECTIONS,
@@ -296,4 +317,5 @@ DATASETS: tuple[DatasetSpec, ...] = (
     RUN_REQUESTS,
     INPUT_LOCATIONS,
     PIPELINES,
+    APP_USERS,
 )

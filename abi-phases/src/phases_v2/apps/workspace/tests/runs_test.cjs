@@ -18,7 +18,7 @@ const CHOICES = {
     members: [{ member_id: 'm1', kind: 'pubmed_query', label: 'solitude', paper_count: 2 }],
     papers: [{ name: '<b>Bold</b> study', path: 'pubmed/papers/1.pdf', status: 'results' }, { name: 'new.pdf', path: 'phases_v2/b/new.pdf', status: 'not_ingested' }],
   },
-  '/phases_v2/api/pipelines': { pipelines: [{ pipeline_id: 'p1', name: 'Weekly', created_at: '2026-09-01T10:00:00Z', inputs: { locations: ['phases_v2/a'], prompt_ids: ['causes-cccccccc'], model_id: 'model', chunker_id: 'chunker' } }] },
+  '/phases_v2/api/pipelines': { pipelines: [{ owned_by_you: true, pipeline_id: 'p1', name: 'Weekly', created_at: '2026-09-01T10:00:00Z', inputs: { locations: ['phases_v2/a'], prompt_ids: ['causes-cccccccc'], model_id: 'model', chunker_id: 'chunker' } }] },
   '/phases_v2/api/chunker-warning': { warning: null },
   '/phases_v2/api/documents': { documents: [], total: 0, ingestable: 0, already_ingested: 0, unsupported: 0 },
   '/phases_v2/api/sources/pubmed': { available: true, queries: [{ query_id: 'q1', query: 'solitude', published_paper_count: 3, last_ingested_at: '' }] },
@@ -361,7 +361,7 @@ test('the Manage collections link follows a collection chosen by saving, by a ha
 
 // ---- Collections ----
 
-const ON_COLLECTION = { pipeline_id: 'p3', name: 'On research', created_at: '2026-09-02T10:00:00Z', inputs: { collection_id: 'c1', prompt_ids: ['causes-cccccccc'], model_id: 'model', chunker_id: 'chunker' } };
+const ON_COLLECTION = { owned_by_you: true, pipeline_id: 'p3', name: 'On research', created_at: '2026-09-02T10:00:00Z', inputs: { collection_id: 'c1', prompt_ids: ['causes-cccccccc'], model_id: 'model', chunker_id: 'chunker' } };
 
 test('a configuration can target a collection: saved with its id, loaded back and run after naming it', async () => {
   const { $, a, calls } = await runs({

@@ -160,7 +160,19 @@ const collections = {
     {
       id: 'create',
       title: 'Create a collection',
-      body: p(`Choose ${ui('New collection')}, fill in ${ui('Collection name')} and, if you like, a description, add papers, then choose ${ui('Create collection')}. Until then, what you add waits on the page. On a saved collection every addition is saved straight away, and ${ui('Save name and description')} renames it.`),
+      body: p(`Choose ${ui('New collection')}, fill in ${ui('Collection name')} and, if you like, a description, add papers, then choose ${ui('Create collection')}. Until then, what you add waits on the page. On a saved collection every addition is saved straight away, and ${ui('Save name and description')} renames it.`)
+        + p(`A collection you create is yours: only you change it. See ${page('collections', 'owners', 'Yours, shared and others’ collections')}.`),
+    },
+    {
+      id: 'owners',
+      title: 'Yours, shared and others’ collections',
+      body: p(`Every collection has an ${term('owner')}: whoever created it. The list shows ${ui('Your collections')} at first; in ${ui('Show')}, choose ${ui('Everyone’s')} to see ${ui('Everyone’s collections')}, then ${ui('Mine')} to go back. Each row ends with its owner: ${ui('You')}, the owner’s name, or ${ui('Shared')}.`)
+        + list([
+          '<strong>Yours:</strong> only you rename it, describe it, add or remove papers, upload PDFs into it or archive it.',
+          `<strong>Someone else’s:</strong> it opens read-only, and the line under its name says whose it is. You can still ${ui('Run on this collection')}, open ${ui('Results of this collection')} and ${ui('Search this collection')}. To gather the same papers your way, create a collection of your own.`,
+          `<strong>${term('shared', 'Shared')}:</strong> collections made before collections had owners. Everyone can still change them.`,
+        ])
+        + p(`${ui('Add to collection')} in the Library offers only collections you can change.`),
     },
     {
       id: 'add-papers',
@@ -209,7 +221,7 @@ const collections = {
     {
       id: 'archive',
       title: 'Archive collection',
-      body: p(`${ui('Archive collection')} asks first, then takes the collection off this list, off new runs and off search filters. Its papers, storage folders and queued runs are kept.`),
+      body: p(`${ui('Archive collection')} asks first, then takes the collection off this list, off new runs and off search filters. Its papers, storage folders and queued runs are kept. Only who can change the collection can archive it.`),
     },
   ],
 };
@@ -223,7 +235,18 @@ const prompts = {
     {
       id: 'library',
       title: 'The prompt library',
-      body: p(`The ${ui('Prompt library')} lists every prompt version. Versions share their prompt’s name; when there are several, a short code tells them apart. ${ui('Find a prompt')} filters by name, and ${ui('New prompt')} opens an empty editor.`),
+      body: p(`The ${ui('Prompt library')} lists prompt versions, with their owner after the output format. Versions share their prompt’s name; when there are several, a short code tells them apart. ${ui('Find a prompt')} filters by name, and ${ui('New prompt')} opens an empty editor.`)
+        + p(`It lists your own prompts at first. In ${ui('Show')}, choose ${ui('Everyone’s')} for every prompt, the built-in ones included: see ${page('prompts', 'owners', 'Yours, shared and others’ prompts')}.`),
+    },
+    {
+      id: 'owners',
+      title: 'Yours, shared and others’ prompts',
+      body: p(`A prompt, with all its versions, belongs to whoever created its name: its ${term('owner')}. Each prompt in the library ends with ${ui('You')}, the owner’s name, or ${ui('Shared')}. ${ui('Show')} switches between ${ui('Mine')} and ${ui('Everyone’s')}.`)
+        + list([
+          '<strong>Yours:</strong> only you save new versions of it.',
+          `<strong>Someone else’s, and ${term('shared', 'shared')} ones</strong> (the built-in prompts, and those from before prompts had owners): read-only. ${ui('Save as new version')} is disabled, and the line under the editor says why. Use ${ui('Duplicate prompt')} to get your own copy, then change that.`,
+        ])
+        + p(`Anyone can open any prompt, ${ui('Try it')}, ${ui('Compare with')} it and ${ui('Use in new run')}. Names are unique across everyone: a name someone else has, in any capitals, cannot be yours too.`),
     },
     {
       id: 'editor',
@@ -237,18 +260,19 @@ const prompts = {
     {
       id: 'built-in',
       title: 'Built in',
-      body: p(`The prompts that come with the app are marked ${ui('Built in')} in ${page('prompts', 'versions', 'Versions')}. Open one and save changed text to make a version of your own; the built-in text stays as it is.`),
+      body: p(`The prompts that come with the app are marked ${ui('Built in')} in ${page('prompts', 'versions', 'Versions')}. They are ${term('shared', 'shared')}, so they are read-only: to change one, open it, use ${ui('Duplicate prompt')}, and save your copy under its new name. The built-in text stays as it is.`),
     },
     {
       id: 'save',
       title: 'Save as new version',
       body: p(`${ui('Save as new version')} saves the text as a new version of the prompt. The version it was edited from stays, with its results, for the runs that used it. Saving text that is already saved gives back that same version.`)
-        + p('The saved version is selected for your next run, in place of the one it was edited from.'),
+        + p('The saved version is selected for your next run, in place of the one it was edited from.')
+        + p(`Only the prompt’s owner saves new versions. Under a new name, saving creates a prompt of your own. Disabled? See ${page('faq', 'cannot-save-version', 'Why can’t I save a new version of this prompt?')}`),
     },
     {
       id: 'duplicate',
       title: 'Duplicate prompt',
-      body: p(`${ui('Duplicate prompt')} starts a new prompt from the open one, named the same with “copy” added. Change the name and the text, then save it.`),
+      body: p(`${ui('Duplicate prompt')} starts a new prompt from the open one, named the same with “copy” added (and a number when that name is taken). Change the name and the text, then save it: the copy is yours. It works on every prompt, and it is how you change a shared prompt or someone else’s.`),
     },
     {
       id: 'use',
@@ -290,7 +314,13 @@ const runs = {
     {
       id: 'requests',
       title: 'Requests',
-      body: p(`${ui('Requests')} lists the 100 latest runs with their papers, status, prompts and model; ${ui('Status')} filters them. The list refreshes every 10 seconds while it is open.`),
+      body: p(`${ui('Requests')} lists the 100 latest runs with their papers, status, prompts, model and who requested them (${ui('Requested by')}); ${ui('Status')} filters them. The list refreshes every 10 seconds while it is open.`),
+    },
+    {
+      id: 'requested-by',
+      title: 'Your runs and everyone’s',
+      body: p(`Every run records who requested it, from the app or through the Assistant. ${ui('Requests')} shows your own runs at first: in ${ui('Show')}, choose ${ui('Everyone’s')} for everyone’s 100 latest, and ${ui('Mine')} to go back. ${ui('Requested by')} says ${ui('You')}, or the person’s name; a dash means a run from before runs recorded it, or from a script.`)
+        + p('Anyone can open any run and its results, and run again with the same choices.'),
     },
     {
       id: 'statuses',
@@ -314,7 +344,8 @@ const runs = {
     {
       id: 'saved-configurations',
       title: 'Saved configurations',
-      body: p(`In ${ui('New run')}, name your choices and choose ${ui('Save configuration')} to keep them (a PubMed search source cannot be saved). Under ${ui('Saved configurations')}, ${ui('Load into the form')} brings them back to change them, and ${ui('Run saved configuration')} queues them as they are, after asking. On a collection it takes the collection’s papers as they are then.`),
+      body: p(`In ${ui('New run')}, name your choices and choose ${ui('Save configuration')} to keep them (a PubMed search source cannot be saved). Under ${ui('Saved configurations')}, ${ui('Load into the form')} brings them back to change them, and ${ui('Run saved configuration')} queues them as they are, after asking. On a collection it takes the collection’s papers as they are then.`)
+        + p(`A configuration you save is yours, and none can be changed once saved. The list shows yours at first; ${ui('Show')} → ${ui('Everyone’s')} lists everyone’s, each with its owner. Anyone can load or run any of them.`),
     },
     {
       id: 'run-page',
@@ -429,6 +460,9 @@ const glossary = {
     { id: 'collection', title: 'Collection', body: p(`A named set of papers that runs and searches work on, built from uploads, saved PubMed searches, storage folders and library papers. Made in ${page('collections', 'create', 'Collections')}.`) },
     { id: 'collection-member', title: 'Collection member', body: p(`One thing added to a collection: uploaded PDFs, a saved search, a folder or a single paper. Each brings its papers. Listed in ${page('collections', 'members', 'Members')}.`) },
     { id: 'saved-search', title: 'Saved search', body: p(`A PubMed search with its query, dates and result limit, saved when you run it. It can be opened again, scheduled, enriched and added to a collection. Made in ${page('library', 'search', 'Search PubMed')}.`) },
+    { id: 'owner', title: 'Owner', body: p(`The person who created a prompt, a collection or a saved configuration. Only the owner saves new versions of their prompt and changes their collection; everyone can see, try, run and duplicate it. Lists show your own (${ui('Mine')}) at first. See ${page('prompts', 'owners', 'Prompts')} and ${page('collections', 'owners', 'Collections')}.`) },
+    { id: 'shared', title: 'Shared', body: p(`An item with no owner: the built-in prompts, and everything made before items had owners. Shared prompts are read-only, so you change one by duplicating it; shared collections can be changed by everyone. Lists label them ${ui('Shared')} and show them under ${ui('Everyone’s')}.`) },
+    { id: 'you', title: 'You', body: p(`What lists show in place of your name, for your own prompts, collections and configurations and for the runs you requested (${ui('Requested by')}).`) },
     { id: 'orchestrator', title: 'Orchestrator', body: p(`The background service that carries out runs, downloads and enrichment. It picks up what you queue on its own; see ${page('runs', 'statuses', 'Statuses')}.`) },
   ],
 };
@@ -455,10 +489,16 @@ const assistant = {
       body: p('It looks up your collections, saved searches, prompts and versions, runs, papers and their results, and searches the findings. When you ask, it also, without asking again:')
         + list([
           'searches PubMed, which saves the search and downloads nothing;',
-          'creates a collection, renames it or changes its description, and adds papers to it;',
-          'saves a prompt version, and tries a prompt on up to 10 chunks of a paper;',
+          'creates a collection, renames it or changes its description, and adds papers to it (yours, or a shared one);',
+          'saves a version of one of your prompts, duplicates any prompt into one of your own, and tries a prompt on up to 10 chunks of a paper;',
           'saves a run configuration.',
         ]),
+    },
+    {
+      id: 'as-you',
+      title: 'It acts as you',
+      body: p(`What it creates is yours, as if you had made it in the app: collections, prompts, run configurations and the runs it queues. It follows your ${page('glossary', 'owner', 'owner')} rules: it cannot save a version of a shared prompt or of someone else’s, or change someone else’s collection. When it can’t, it says why and offers what you can do instead, such as duplicating the prompt into one of your own.`)
+        + p('Ask it for “my collections” or “my runs” to see only yours, or for everyone’s.'),
     },
     {
       id: 'needs-yes',
@@ -547,6 +587,17 @@ const faq = {
           `${page('prompts', 'versions', 'Versions')} shows how many findings each version made and which runs used it.`,
           `In Search, a prompt filter covers every version of that prompt; ${ui('View extraction prompt')} shows which one made each match.`,
         ]),
+    },
+    {
+      id: 'cannot-save-version',
+      title: 'Why can’t I save a new version of this prompt?',
+      body: p(`Only a prompt’s ${term('owner')} saves new versions of it. When ${ui('Save as new version')} is disabled, the line under the editor says why:`)
+        + list([
+          `It is a ${term('shared', 'shared')} prompt, such as a ${page('prompts', 'built-in', 'built-in')} one. Shared prompts are read-only for everyone.`,
+          'It belongs to someone else.',
+          'You typed a name someone else already has. Choose another name.',
+        ])
+        + p(`Use ${ui('Duplicate prompt')}: it copies the open prompt under a new name, which is yours. Change the copy and save it. The original and its results stay as they are, and you can still ${ui('Try it')} or use it in a run. See ${page('prompts', 'owners', 'Yours, shared and others’ prompts')}.`),
     },
     {
       id: 'upload-pdfs',

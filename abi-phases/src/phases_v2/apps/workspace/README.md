@@ -17,7 +17,7 @@ workspace/
 │   ├── shell.js          # mounts sections, follows the route, refreshes on focus/visibility
 │   ├── router.js         # hash routes and deep links; restores the last route after a reload
 │   ├── api.js            # the only module that calls fetch: base URL, auth, errors
-│   ├── ui.js             # escaping, messages, pills, empty states, pagination, toasts, confirmation
+│   ├── ui.js             # escaping, messages, pills, empty states, pagination, toasts, confirmation, owners
 │   ├── documents.js      # previews of what a run reads (folders, a PubMed search, a collection)
 │   ├── diff.js           # line diff of two prompt texts
 │   ├── help/topics.js    # the help pages: one per section, Getting started, Glossary, The Assistant, FAQ
@@ -138,6 +138,30 @@ collection member, deleting a
 schedule, starting a full ingestion, queueing OpenAlex enrichment and running a saved
 configuration. While the confirmed action is being sent, Cancel and Escape are held
 back, so the dialog only ever reports what actually happened.
+
+## Owners
+
+Prompts, collections and saved configurations belong to whoever created them, and runs
+record who requested them (module README, "Owners"). The API gives each row `owner_name`,
+`owned_by_you` and `shared` (runs: `requested_by_name`, `requested_by_you`), and prompts
+and collections `can_change` with a `read_only_reason`. The app decides nothing on its
+own: it shows what these say, and the server refuses anything else with a 403 whose
+message the app shows.
+
+- **Mine / Everyone's.** `ownerFilter(id, about)` in `ui.js` renders the **Show** choice,
+  Mine first. Prompts, Collections and Saved configurations filter the lists they already
+  load (`shownFor`); Requests asks the server (`/requests?limit=100&owner=mine`), so Mine is
+  the user's 100 latest runs. The pickers that choose what to run on (prompts, collections)
+  always offer everyone's.
+- **Who owns it.** `ownerLabel(item)` gives "You", the owner's name, or "Shared";
+  `requesterLabel(request)` gives "You", the name, or a dash.
+- **Read-only.** A prompt name that is shared or someone else's disables both
+  **Save as new version** buttons, says why under the editor and makes
+  **Duplicate prompt** the main action, which proposes a free "<name> copy" name. Someone
+  else's collection disables every control that changes it (`CHANGE_CONTROLS`), hides
+  **Archive collection** and the members' **Remove**, and says why; running, results and
+  search stay. **Add to collection** offers only collections the user can change.
+- **Empty Mine.** Each list says how to make one's own, or to show everyone's.
 
 ## Tests
 

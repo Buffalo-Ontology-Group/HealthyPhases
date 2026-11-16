@@ -6,9 +6,9 @@ const { context, fire, install, load, response, routeFetch, settle } = require('
 const SHA = (c) => c.repeat(64);
 const LOCATIONS = { locations: [{ prefix: 'phases_v2', name: 'phases_v2 (all)' }, { prefix: 'phases_v2/a', name: 'Folder A' }] };
 const SUMMARIES = { collections: [
-  { collection_id: 'c1', name: 'Research', description: 'Solitude studies', member_count: 2, paper_count: 3, updated_at: '2026-10-01T10:00:00+00:00', locations: ['phases_v2/a'] },
+  { owned_by_you: true, collection_id: 'c1', name: 'Research', description: 'Solitude studies', member_count: 2, paper_count: 3, updated_at: '2026-10-01T10:00:00+00:00', locations: ['phases_v2/a'] },
   // A collection first stored as folders only: no description and no dates.
-  { collection_id: 'c2', name: 'Old folders', description: '', member_count: 1, paper_count: 1, updated_at: null, locations: ['phases_v2'] },
+  { owned_by_you: true, collection_id: 'c2', name: 'Old folders', description: '', member_count: 1, paper_count: 1, updated_at: null, locations: ['phases_v2'] },
 ] };
 const DETAIL = {
   ...SUMMARIES.collections[0],
@@ -304,7 +304,7 @@ test('coming back to Collections lists one created elsewhere and keeps an open e
   $('col-name').value = 'Edited but not saved';
   globalThis.fetch = routeFetch({
     '/phases_v2/api/locations': LOCATIONS, '/phases_v2/api/sources/pubmed': PUBMED, '/phases_v2/api/collections/c1': DETAIL,
-    '/phases_v2/api/collections': { collections: [...SUMMARIES.collections, { collection_id: 'c9', name: 'Made in Library', member_count: 1 }] },
+    '/phases_v2/api/collections': { collections: [...SUMMARIES.collections, { owned_by_you: true, collection_id: 'c9', name: 'Made in Library', member_count: 1 }] },
   });
   await section.show(parse('#/collections/c1'), { entering: true });
   assert.equal($('col-name').value, 'Edited but not saved');

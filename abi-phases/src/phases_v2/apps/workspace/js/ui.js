@@ -88,6 +88,37 @@ export function learnMore(topic, entry = '', about = '') {
   return `<a class="learn-more" href="${helpHref(topic, entry)}"${label}>Learn more</a>`;
 }
 
+// ---- Owners ----
+// Prompts, collections, saved configurations and runs carry their owner (or
+// requester) from the API: owner_name, owned_by_you and shared. Lists show the
+// user's own (Mine) by default, or everyone's.
+
+export const MINE = 'mine';
+export const EVERYONE = 'all';
+export const OWNER_CHOICES = [[MINE, 'Mine'], [EVERYONE, 'Everyone’s']];
+
+// A "Show" choice between Mine and Everyone's, Mine first.
+export function ownerFilter(id, about) {
+  const options = OWNER_CHOICES.map(([value, label]) => `<option value="${value}">${label}</option>`).join('');
+  return `<label for="${id}" class="inline">Show</label><select id="${id}" class="auto" aria-label="Show ${esc(about)}">${options}</select>`;
+}
+
+// "You" for the user's own items, the owner's name for someone else's, "Shared" for shared ones.
+export function ownerLabel(item) {
+  if (item?.owned_by_you) return 'You';
+  if (item?.shared || !item?.owner_name) return 'Shared';
+  return item.owner_name;
+}
+
+// Who requested a run: "You", their name, or a dash when nobody was recorded.
+export function requesterLabel(request) {
+  if (request?.requested_by_you) return 'You';
+  return request?.requested_by_name || '—';
+}
+
+// Whether `item` shows under the owner filter `filter`.
+export const shownFor = (filter, item) => filter !== MINE || Boolean(item?.owned_by_you);
+
 // `scroll` caps the height for long secondary lists, such as document previews.
 export function tableHtml(bodyId, headers, caption = '', scroll = false) {
   return `<div class="table-wrap${scroll ? ' scroll' : ''}"><table>${caption ? `<caption class="sr-only">${esc(caption)}</caption>` : ''}<thead><tr>${headers.map((h) => `<th scope="col">${esc(h)}</th>`).join('')}</tr></thead><tbody id="${bodyId}"></tbody></table></div>`;

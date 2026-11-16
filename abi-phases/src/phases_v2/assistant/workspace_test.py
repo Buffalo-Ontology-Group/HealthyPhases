@@ -40,6 +40,7 @@ from phases_v2.datasets.schemas import DATASETS
 from phases_v2.datasets.store import ensure_datasets
 from phases_v2.extraction.fakes import FakeModel
 from phases_v2.models.catalog import DECLARED_MODELS
+from phases_v2.ownership import NOBODY, Actor, NotAllowed
 from phases_v2.paper_collections.adapters.secondary.StoredMemberSources import (
     StoredMemberSources,
 )
@@ -122,6 +123,8 @@ def _seed(rows, storage):
                 "template": CLAIMS.template,
                 "output_key": CLAIMS.output_key,
                 "registered_at": datetime(2026, 1, 1, tzinfo=UTC),
+                # The prompt of the user the assistant acts for, Ada.
+                "owner_id": "user-ada",
             }
         ],
     )
@@ -186,11 +189,19 @@ def build_store(path):
     )
 
 
-def build_env(store, *, search=True, pubmed=True, openalex=True, context=None):
+#: The users tests act as. Ada is the default; tests switch with ``act_as``.
+ADA = {"user_id": "user-ada", "name": "Ada Example", "email": "ada@example.org"}
+BEA = {"user_id": "user-bea", "name": "Bea Example", "email": "bea@example.org"}
+
+
+def build_env(
+    store, *, search=True, pubmed=True, openalex=True, context=None, actor=None
+):
     """The real services over ``store``, and the tools built on them.
 
     The request context is ``env.context``, which a test changes to play a new
-    user message, unless ``context`` provides another.
+    user message, unless ``context`` provides another. The assistant acts for
+    ``env.who`` (Ada at first), unless ``actor`` says who it acts for.
     """
     requests = FakeRequestStore()
     catalog = PubmedCatalog(store.dataset)
@@ -207,7 +218,8 @@ def build_env(store, *, search=True, pubmed=True, openalex=True, context=None):
     enricher = OpenalexService(
         OpenalexDatasetStore(store.dataset), OpenalexCatalog(store.dataset), source=None
     )
-    asking = {"conversation": "chat-1", "user": "jeremy@naas.ai", "turn": "t1"}
+    asking = {"conversation": "chat-1", "user": ADA["email"], "turn": "t1"}
+    who = dict(ADA)
     found = FakeSearch()
     actions = WorkspaceActions(
         lambda: pipeline,
@@ -216,8 +228,10 @@ def build_env(store, *, search=True, pubmed=True, openalex=True, context=None):
         search=(lambda: found) if search else None,
         pubmed=(lambda: store.publisher) if pubmed else None,
         openalex=(lambda: enricher) if openalex else None,
+        actor=actor or (lambda: Actor.user(**who)),
     )
     return SimpleNamespace(
+        who=who,
         tools={t.name: t for t in build_tools(actions)},
         actions=actions,
         context=asking,
@@ -244,6 +258,12 @@ def env(store):
 
 def call(env, tool, **args):
     return env.tools[tool].invoke(args)
+
+
+def act_as(env, user):
+    """The assistant now acts for ``user``, in a conversation of their own."""
+    env.who.clear()
+    env.who.update(user)
 
 
 def user_says(env, turn):
@@ -624,13 +644,18 @@ def test_a_run_is_queued_only_after_a_yes_and_records_who_asked(env):
     queued = call(env, "queue_run", confirmation_token=token, **choices)
 
     request = env.requests.requests[queued["run_id"]]
-    assert request.requested_by == "jeremy@naas.ai"
+    # Recorded by Nexus user id, the same the app records, and named in lists.
+    assert request.requested_by == ADA["user_id"]
     assert request.prompt_ids == [CLAIMS.prompt_id]
     assert queued["where"] == f"Runs → {queued['run_id']}"
 
     run = call(env, "get_run", run_id=queued["run_id"])
     assert (run["status"], run["collection"]) == ("pending", "Sleep")
+    assert run["requested_by"] == "you"
     assert call(env, "list_runs")["runs"][0]["run_id"] == queued["run_id"]
+    assert queued["run_id"] in [
+        r["run_id"] for r in call(env, "list_runs", owner="mine")["runs"]
+    ]
 
     with pytest.raises(ConfirmationRefused, match="already used"):
         call(env, "queue_run", confirmation_token=token, **choices)
@@ -996,3 +1021,134 @@ def test_only_the_services_own_not_found_errors_read_as_a_wrong_id():
         _ask(lambda: {}["title"])
     with pytest.raises(LookupError, match="Collection not found"):
         _ask(missing_collection)
+
+
+# -- acting as its user --------------------------------------------------
+
+
+def test_what_the_assistant_creates_belongs_to_its_user(env):
+    created = call(env, "create_collection", name="Ada sleep set", paper_ids=[PAPER])
+    assert (created["owner"], created["you_can_change"]) == ("you", True)
+    call(
+        env,
+        "save_prompt_version",
+        name="Ada claims",
+        template="Ada's claims in {chunk_text}",
+        output_format="results",
+    )
+    configuration = call(
+        env,
+        "save_run_configuration",
+        name="Ada weekly",
+        **run_choices(created["collection_id"]),
+    )
+
+    mine = call(env, "list_prompts", owner="mine")
+    assert mine["showing"] == "yours"
+    assert "Ada claims" in {p["name"] for p in mine["prompts"]}
+    assert {p["owner"] for p in mine["prompts"]} == {"you"}
+    built_in = declared_prompts()[0].name
+    assert built_in not in {p["name"] for p in mine["prompts"]}, "shared"
+    shared = next(
+        p for p in call(env, "list_prompts")["prompts"] if p["name"] == built_in
+    )
+    assert (shared["owner"], shared["you_can_change"]) == ("shared", False)
+
+    act_as(env, BEA)
+    everyone = call(env, "list_collections")["collections"]
+    row = next(c for c in everyone if c["collection_id"] == created["collection_id"])
+    assert (row["owner"], row["you_can_change"]) == ("Ada Example", False)
+    assert created["collection_id"] not in {
+        c["collection_id"]
+        for c in call(env, "list_collections", owner="mine")["collections"]
+    }
+    listed = call(env, "list_run_configurations")["configurations"]
+    assert {
+        c["owner"]
+        for c in listed
+        if c["configuration_id"] == configuration["configuration_id"]
+    } == {"Ada Example"}
+    assert configuration["configuration_id"] not in {
+        c["configuration_id"]
+        for c in call(env, "list_run_configurations", owner="mine")["configurations"]
+    }
+
+
+def test_the_assistant_refuses_what_its_user_could_not_do_and_says_why(env):
+    adas = call(env, "create_collection", name="Ada only", paper_ids=[PAPER])
+    call(
+        env,
+        "save_prompt_version",
+        name="Ada effects",
+        template="Effects in {chunk_text}",
+        output_format="effects",
+    )
+    act_as(env, BEA)
+
+    with pytest.raises(NotAllowed, match="belongs to Ada Example.*Duplicate prompt"):
+        call(
+            env,
+            "save_prompt_version",
+            name="Ada effects",
+            template="Bea's effects in {chunk_text}",
+            output_format="effects",
+        )
+    with pytest.raises(NotAllowed, match="belongs to Ada Example"):
+        call(
+            env,
+            "save_prompt_version",
+            name="ADA EFFECTS",
+            template="Look-alike {chunk_text}",
+            output_format="effects",
+        )
+    built_in = declared_prompts()[0]
+    with pytest.raises(NotAllowed, match="shared prompt.*read-only.*Duplicate"):
+        call(
+            env,
+            "save_prompt_version",
+            name=built_in.name,
+            template=built_in.template + " Changed.",
+            output_format=built_in.output_key,
+        )
+    with pytest.raises(NotAllowed, match="belongs to Ada Example.*only its owner"):
+        call(env, "update_collection", collection_id=adas["collection_id"], name="Mine")
+    with pytest.raises(NotAllowed, match="create a collection of your own"):
+        call(env, "add_to_collection", collection_id=adas["collection_id"], pmids=["1"])
+    assert (
+        call(env, "get_collection", collection_id=adas["collection_id"])["name"]
+        == "Ada only"
+    )
+
+    # What Bea can do instead: duplicate the prompt, change her copy, and still
+    # run on Ada's collection.
+    copy = call(env, "duplicate_prompt", name="Ada effects")
+    assert (copy["name"], copy["owner"]) == ("Ada effects copy", "you")
+    changed = call(
+        env,
+        "save_prompt_version",
+        name=copy["name"],
+        template="Bea's effects in {chunk_text}",
+        output_format="effects",
+    )
+    assert changed["already_saved"] is False
+    assert call(env, "duplicate_prompt", name="Ada effects")["name"] == (
+        "Ada effects copy 2"
+    )
+    prepared = call(env, "prepare_run", **run_choices(adas["collection_id"]))
+    assert prepared["confirmation_token"]
+
+
+def test_without_a_known_user_the_assistant_changes_nothing(store):
+    env = build_env(store, actor=lambda: NOBODY)
+
+    with pytest.raises(NotAllowed, match="could not tell who you are"):
+        call(env, "create_collection", name="Nobody's")
+    with pytest.raises(NotAllowed, match="could not tell who you are"):
+        call(
+            env,
+            "save_prompt_version",
+            name="Nobody prompt",
+            template="{chunk_text}",
+            output_format="results",
+        )
+    assert call(env, "list_prompts")["prompts"], "reading still works"

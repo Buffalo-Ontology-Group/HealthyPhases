@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Collection
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
@@ -45,4 +46,9 @@ class RequestStore(Protocol):
 
     def pending(self) -> list[RunRequest]: ...
 
-    def recent(self, limit: int = 50) -> list[RunRequest]: ...
+    def recent(
+        self, limit: int = 50, requested_by: Collection[str | None] | None = None
+    ) -> list[RunRequest]:
+        """The latest requests; with ``requested_by``, only those requested by
+        one of these (``None`` among them: requests with no requester)."""
+        ...
