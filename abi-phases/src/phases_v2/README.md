@@ -484,8 +484,8 @@ papers through chunking and extraction. An empty collection remains an empty sco
 it never falls back to the whole corpus. Standalone stage jobs retain their existing
 whole-corpus default. Graph and vector projections remain incremental shared projections.
 
-New authoring endpoints require the platform's existing ABI API key or registered
-Nexus session-token validation. The embedded UI sends the current Nexus session token;
+Every endpoint, reads included, requires the platform's existing ABI API key or a Nexus
+session token that Nexus identifies (see [Owners](#owners)). The embedded UI sends the current Nexus session token;
 a direct API client supplies `Authorization: Bearer ...`. No new authentication scheme
 or inter-domain security policy is introduced. Uploads validate size, filename, path,
 and PDF header; full PDF rendering happens during ingestion.
@@ -671,8 +671,15 @@ token (its `sub` is the Nexus user id), refuses a revoked one and reads the user
 name and email. Nexus runs in the ABI API process, so this needs no change upstream and no
 new auth scheme. Who a token belongs to is kept for a minute, under a digest of the
 token, so the app's polling does not ask Nexus every time; a token revoked meanwhile still
-names its user for at most that minute. A token Nexus refuses acts as nobody: it reads,
-and every change is refused with "We could not tell who you are". When Nexus cannot answer
+names its user for at most that minute.
+
+**Signed-in callers only.** Every route under `/phases_v2/api` (the search routes under
+`/phases_v2/api/search` aside) answers only the ABI API key or a user Nexus identifies,
+reads included: lists name the people who own items and request runs, and the API host is
+public. A request with no token, or with one Nexus refuses, is a 401 ("We could not tell
+who you are. Reload Nexus and sign in again."), checked by `caller` as a dependency of the
+whole router. The app always sends the session token, so it is unaffected; a script reads
+with the API key. When Nexus cannot answer
 at all (its database is down, it fails, or it cannot be imported in the API process, which
 is logged as an error), the request is a 503 asking the user to try again shortly, not to
 sign in again. The Assistant acts as the user Nexus sets on

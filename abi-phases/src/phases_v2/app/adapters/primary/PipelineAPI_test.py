@@ -130,12 +130,13 @@ def test_the_chunker_already_in_use_returns_no_warning(client):
     assert response.json()["warning"] is None
 
 
-def test_the_models_endpoint_reports_availability():
+def test_the_models_endpoint_reports_availability(monkeypatch):
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
     from phases_v2.models.catalog import DECLARED_MODELS
 
+    monkeypatch.setenv("ABI_API_KEY", "test-pipeline-key")
     usable = DECLARED_MODELS[0].model_id
     app = FastAPI()
     service = PipelineAppService(
@@ -144,7 +145,11 @@ def test_the_models_endpoint_reports_availability():
     )
     register(app, service)
 
-    models = TestClient(app).get(f"{PREFIX}/models").json()["models"]
+    models = (
+        TestClient(app, headers={"Authorization": "Bearer test-pipeline-key"})
+        .get(f"{PREFIX}/models")
+        .json()["models"]
+    )
 
     by_id = {m["model_id"]: m["available"] for m in models}
     assert by_id[usable] is True
