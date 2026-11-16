@@ -7,9 +7,11 @@ requests to calls and errors to status codes.
 Nothing here contacts the orchestrator. Submitting records a row; a Dagster
 sensor picks it up.
 
-Every endpoint knows who is asking (:func:`caller`): the ABI API key, a Nexus
-user, or nobody known. The services decide what that caller may do; a refusal
-(:class:`~phases_v2.ownership.NotAllowed`) is a 403 with its message.
+Every endpoint, reads included, needs to know who is asking (:func:`caller`):
+the ABI API key or a Nexus user. Anyone else gets a 401, so who owns what and
+who requested which run never reaches an anonymous client. The services decide
+what the caller may do; a refusal (:class:`~phases_v2.ownership.NotAllowed`) is
+a 403 with its message.
 """
 
 from __future__ import annotations
@@ -33,7 +35,7 @@ from phases_v2.app.adapters.primary.SearchAPI import csv_document
 from phases_v2.app.contracts.pipeline_validation import validate_message
 from phases_v2.app.pipeline_management import MAX_UPLOAD_BYTES, ManagementUnavailable
 from phases_v2.app.service import PipelineAppService
-from phases_v2.ownership import NOBODY, SYSTEM, Actor, IdentityUnavailable, NotAllowed
+from phases_v2.ownership import SYSTEM, Actor, IdentityUnavailable, NotAllowed
 from phases_v2.requests.interfaces import RequestNotFound
 
 PREFIX = "/phases_v2/api"
@@ -54,9 +56,10 @@ def caller_dependency(service: PipelineAppService, identify: Identify):
     """A dependency giving each endpoint the caller, with no new auth scheme.
 
     The ABI API key acts as no user (:data:`SYSTEM`). Any other credential is
-    asked of Nexus; one it refuses is :data:`NOBODY`, which may read but
-    change nothing. When Nexus cannot answer, the request is a 503. Whether a
-    write is allowed in at all is still ``require_abi_api_token``'s decision.
+    asked of Nexus. No credential, or one Nexus refuses, is a 401: lists name
+    the people who own items and request runs, which is for signed-in users
+    only. When Nexus cannot answer, the request is a 503. Whether a write is
+    allowed in at all is still ``require_abi_api_token``'s decision.
 
     Who a token belongs to is kept for :data:`CALLER_SECONDS`, so the app's
     polling does not ask Nexus every time; only answers that name a user are
@@ -70,7 +73,7 @@ def caller_dependency(service: PipelineAppService, identify: Identify):
         if is_abi_api_token_valid(token):
             return SYSTEM
         if not token:
-            return NOBODY
+            raise _not_signed_in()
         key = hashlib.sha256(token.encode()).hexdigest()
         now = time.monotonic()
         cached = known.get(key)
@@ -82,7 +85,7 @@ def caller_dependency(service: PipelineAppService, identify: Identify):
             raise HTTPException(status_code=503, detail=str(unavailable)) from None
         if actor is None:
             known.pop(key, None)
-            return NOBODY
+            raise _not_signed_in()
         if len(known) >= CALLER_TOKENS:
             for stale in [
                 k for k, (at, _) in known.items() if now - at >= CALLER_SECONDS
@@ -97,15 +100,27 @@ def caller_dependency(service: PipelineAppService, identify: Identify):
     return caller
 
 
+def _not_signed_in() -> HTTPException:
+    return HTTPException(
+        status_code=401,
+        detail="We could not tell who you are. Reload Nexus and sign in again.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
 def build_router(
     service: PipelineAppService, identify: Identify | None = None
 ) -> APIRouter:
-    router = APIRouter(prefix=PREFIX, tags=["phases_v2"])
     if identify is None:
         from phases_v2.app.adapters.secondary.NexusUsers import nexus_user
 
         identify = nexus_user
     caller = caller_dependency(service, identify)
+    # Every route needs a known caller. FastAPI runs ``caller`` once per
+    # request, so the endpoints that take ``actor`` share this answer.
+    router = APIRouter(
+        prefix=PREFIX, tags=["phases_v2"], dependencies=[Depends(caller)]
+    )
 
     @router.get("/prompts")
     def prompts(owner: str = OWNER, actor: Actor = Depends(caller)):

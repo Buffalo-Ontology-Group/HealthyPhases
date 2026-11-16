@@ -10,6 +10,7 @@ by both; prompt names stay unique across them. The ABI API key acts as no user.
 
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime
 from types import SimpleNamespace
 from uuid import uuid4
@@ -110,6 +111,8 @@ def env(store, monkeypatch):
         bea=client("bea-session"),
         key=client(API_KEY),
         unplaced=client(UNPLACED),
+        anonymous=TestClient(app),
+        app=app,
         outage=client(OUTAGE),
         identified=identified,
     )
@@ -500,28 +503,36 @@ def test_the_api_key_acts_as_no_user_and_keeps_its_rights(env):
     )
 
 
-def test_a_session_nexus_cannot_place_changes_nothing(env):
-    detail = refused(
-        env.unplaced.post(f"{PREFIX}/collections", json={"name": unique("Nobody's")}),
-        "could not tell who you are",
-    )
-    assert "sign in again" in detail
-    refused(
-        save_prompt(env.unplaced, unique("Nobody prompt")),
-        "could not tell who you are",
-    )
+def not_signed_in(response):
+    assert response.status_code == 401, response.text
+    assert response.json() == {
+        "detail": "We could not tell who you are. Reload Nexus and sign in again."
+    }
+
+
+def test_nobody_unknown_reads_or_changes_anything(env):
+    """No token, or one Nexus cannot place: a 401 on every route, with no
+    owner or requester in it."""
     collection = create_collection(env.ada, unique("Ada set"))
-    refused(
-        env.unplaced.post(
+    ok(
+        env.ada.post(
             f"{PREFIX}/requests", json=run_inputs(collection["collection_id"])
         ),
-        "could not tell who you are",
+        201,
     )
-    # Reading still works, and nothing is anyone's.
-    assert (
-        ok(env.unplaced.get(f"{PREFIX}/prompts", params={"owner": "mine"}))["prompts"]
-        == []
-    )
+    routes = [
+        (method, route.path)
+        for route in env.app.routes
+        if route.path.startswith(PREFIX)
+        for method in route.methods
+    ]
+    assert ("GET", f"{PREFIX}/requests") in routes
+    for client in (env.anonymous, env.unplaced):
+        for method, path in routes:
+            url = re.sub(r"\{[^}]+\}", "x", path)
+            not_signed_in(client.request(method, url, params={"name": "x"}))
+    # Nexus was asked about the unplaced token, and said nobody.
+    assert UNPLACED in env.identified
 
 
 def test_when_nexus_cannot_answer_the_user_is_asked_to_try_again(env):
@@ -583,7 +594,7 @@ def test_nobody_uploads_into_another_users_collection_folder(env):
 
     refused(upload_to_folder(env.bea, folder), "belongs to Ada Example")
     refused(upload_to_folder(env.bea, f"{folder}/deeper"), "belongs to Ada Example")
-    refused(upload_to_folder(env.unplaced, folder), "could not tell who you are")
+    not_signed_in(upload_to_folder(env.unplaced, folder))
     assert stored_under(env, folder) == []
     with pytest.raises(NotAllowed):
         env.service.upload_document(folder, "b.pdf", b"%PDF-1.7 x", BEA)
