@@ -18,11 +18,13 @@ Configuration example:
       embedding_model: "text-embedding-3-small"
 """
 
+from naas_abi_core import logger
 from naas_abi_core.module.Module import (
     BaseModule,
     ModuleConfiguration,
     ModuleDependencies,
 )
+from naas_abi_core.services.dataset.DatasetService import DatasetService
 from pydantic import Field, SecretStr, model_validator
 
 DEFAULT_LLM_MODEL = "openai/gpt-4.1-mini"
@@ -60,12 +62,12 @@ class PsychDefgenConfiguration(ModuleConfiguration):
 
 class ABIModule(BaseModule[PsychDefgenConfiguration]):
     Configuration = PsychDefgenConfiguration
-    dependencies: ModuleDependencies = ModuleDependencies(modules=[], services=[])
+    dependencies: ModuleDependencies = ModuleDependencies(
+        modules=[], services=[DatasetService]
+    )
 
     def on_initialized(self) -> None:
         super().on_initialized()
-        from naas_abi_core import logger
-
         from psych_defgen.factory import missing_settings
 
         missing = missing_settings(self._configuration)
@@ -75,3 +77,30 @@ class ABIModule(BaseModule[PsychDefgenConfiguration]):
                 + ", ".join(missing)
                 + " to produce definitions."
             )
+        if not self._engine.services.dataset_available():
+            logger.warning(
+                "psych_defgen needs the dataset service to store definition "
+                "runs; configure it to enable runs, the job and the API."
+            )
+            return
+        from psych_defgen.adapters.secondary.definition_run_store import (
+            DefinitionRunStore,
+        )
+
+        DefinitionRunStore(self._engine.services.dataset).ensure()
+
+    def api(self, app) -> None:
+        """Mount the runs API. A wiring error is logged, not raised, so the
+        rest of the engine still serves."""
+        if not self._engine.services.dataset_available():
+            logger.warning("psych_defgen API not mounted: no dataset service")
+            return
+        try:
+            from psych_defgen.adapters.primary.runs_api import router
+            from psych_defgen.factory import definition_runs
+
+            runs = definition_runs(self._engine.services.dataset, self._configuration)
+            app.include_router(router(runs))
+            logger.debug("Mounted psych_defgen API at /psych_defgen/api")
+        except Exception as exc:  # noqa: BLE001
+            logger.error(f"Failed to mount the psych_defgen API: {exc}")

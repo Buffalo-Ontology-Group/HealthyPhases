@@ -17,8 +17,9 @@ OpenAI embeddings API, OpenRouter and the APA Dictionary website. Nothing
 runs a local model or a browser. `UPSTREAM.md` lists what was kept, changed
 and dropped.
 
-This module holds the pipeline only. Runs, storage, the Dagster job, the HTTP
-API and the Nexus app build on it.
+Users ask for definitions through the HTTP API (and the Construct
+Definitions app in Nexus): each request is a **run**, stored in a DuckLake
+dataset and carried out by a Dagster job, because a definition takes minutes.
 
 ## How a definition is made
 
@@ -53,6 +54,82 @@ evidence to generate a definition."
 A run with the defaults (100 articles) makes about two hundred NCBI requests and
 takes minutes, mostly waiting on NCBI's rate limit: it belongs in a
 background job, not a web request.
+
+## Runs
+
+A run is one definition request, a row of the dataset table
+`psych_defgen.definition_runs`:
+
+| Column | Holds |
+| --- | --- |
+| `run_id` | 32 hex digits that sort by creation time. |
+| `term`, `max_results`, `top_k`, `model` | The request, with defaults filled in. |
+| `embedding_model` | The configured embedding model when the run was created. |
+| `status` | `pending` → `running` → `succeeded` or `failed`. |
+| `stage` | The stage reached (`apa` … `synthesis`); kept once the run ends, so a failure shows where it happened. |
+| `error` | Why a failed run failed: readable, never a secret value. |
+| `created_at`, `started_at`, `finished_at` | ISO-8601 UTC (`2026-11-16T10:00:00Z`), null until reached. |
+| `result` | The definition as JSON text, once the run succeeded. |
+
+`ABIModule.on_initialized` creates the table if it is missing
+(`DefinitionRunStore.ensure()`, safe on every start). Without a dataset
+service the module logs a warning and stays inert: no table, no API, and the
+sensors skip.
+
+A run is written a handful of times: created, started, once per stage, and
+finished, because DuckLake commits serialise (#635). Each change re-reads the
+row and writes it against the catalog snapshot it read, retrying on a newer
+one, so the job and the sensors never overwrite each other: a finished run
+stays finished.
+
+`application/runs.py` (`DefinitionRuns`) validates requests, lists and reads
+runs, and moves them through their states; `execute()` is the job's body.
+
+## Dagster job and sensors
+
+`orchestrations/psych_defgen_orchestration.py`, loaded into the Dagster code
+location like the other modules' orchestrations:
+
+- **`psych_defgen_run_request_sensor`**, every 30 s, launches
+  `psych_defgen_run` for the oldest pending run, with the run ID as the run
+  key (and the `psych_defgen/run_id` tag). Runs go one at a time: they share
+  the deployment's NCBI rate limit, which each Dagster run paces on its own.
+  It also fails any pending or running run whose Dagster runs have all ended
+  (canceled, or lost in a restart), so a stuck run never holds the queue.
+- **`psych_defgen_run`** (op `define_construct`) marks the run running, calls
+  `define()` with each stage written to the run, and stores the result, or
+  the error:
+  - a `DefinitionStepError` or `NotConfiguredError` message is stored as is
+    (it names the step or the missing keys, never a value), and the Dagster
+    run fails too;
+  - any other exception is a bug: the run's error names its type and stage
+    and points to the Dagster run's logs, and the exception is raised again.
+- **`psych_defgen_run_failure_sensor`** marks the run failed when its Dagster
+  run fails, for failures the job could not record itself (a crash, an
+  out-of-memory kill). A run the job already failed keeps its own message.
+
+## HTTP API
+
+Under `/psych_defgen/api`, mounted by `ABIModule.api()`; every endpoint needs
+the ABI API token (`Depends(require_abi_api_token)`). Errors are
+`{"detail": "..."}`. A wiring error is logged and the engine keeps serving.
+
+| Endpoint | Returns |
+| --- | --- |
+| `GET /settings` | `models`, `default_model`, `embedding_model`, the `max_results` and `top_k` limits (`default`, `min`, `max`), and `missing`: the unset required keys, out of `NCBI_EMAIL`, `OPENROUTER_API_KEY`, `OPENAI_API_KEY`. |
+| `POST /runs` | `201` with the new pending run. Takes `{"term", "max_results"?, "top_k"?, "model"?}`. |
+| `GET /runs?page=1&page_size=25` | `{"runs", "total", "page", "page_count"}`, newest first, runs without `result`. `page_count` is 0 when there are no runs. |
+| `GET /runs/{run_id}` | The run with `result` (null until it succeeds), or `404`. |
+
+`POST /runs` answers:
+
+- `422` when `term`, trimmed, is not 1–200 characters, `max_results` is not
+  1–200, `top_k` is not 1–20, or `model` is not one of `llm_models`;
+- `409` naming the missing keys when any required key is unset; nothing is
+  stored.
+
+`GET /runs` answers `422` when `page` is below 1 or `page_size` is not 1–100.
+No response holds a key or the NCBI email.
 
 ## Configuration
 
@@ -103,7 +180,7 @@ naming them.
 ## Tests
 
 ```bash
-make test-psych-defgen              # fakes only, no network
+make test-psych-defgen              # fakes and a local DuckLake, no network
 make test-psych-defgen-network      # one real "loneliness" run (5 articles, top 3)
 ```
 

@@ -1,0 +1,270 @@
+import pytest
+
+from psych_defgen.application.definition_service import STAGES
+from psych_defgen.application.runs import new_run_id
+from psych_defgen.domain.errors import (
+    DefinitionStepError,
+    InvalidRunError,
+    NotConfiguredError,
+    RunNotFoundError,
+)
+from psych_defgen.tests.conftest import RESULT, FakeDefiner, make_runs
+
+
+def test_create_fills_the_defaults_and_trims_the_term(runs):
+    run = runs.create({"term": "  loneliness \n"})
+    assert run == {
+        "run_id": "run0001",
+        "term": "loneliness",
+        "max_results": 100,
+        "top_k": 10,
+        "model": "openai/gpt-4.1-mini",
+        "embedding_model": "text-embedding-3-small",
+        "status": "pending",
+        "stage": None,
+        "error": None,
+        "created_at": "2026-11-16T10:00:00Z",
+        "started_at": None,
+        "finished_at": None,
+        "result": None,
+    }
+    assert runs.get("run0001") == run
+
+
+def test_create_accepts_the_limits_and_an_offered_model(runs):
+    run = runs.create(
+        {
+            "term": "x" * 200,
+            "max_results": 200,
+            "top_k": 1,
+            "model": "anthropic/claude-sonnet-4",
+        }
+    )
+    assert (run["max_results"], run["top_k"], run["model"]) == (
+        200,
+        1,
+        "anthropic/claude-sonnet-4",
+    )
+    assert runs.create({"term": "a", "max_results": 1, "top_k": 20})["top_k"] == 20
+
+
+@pytest.mark.parametrize(
+    "payload, field",
+    [
+        (None, "JSON object"),
+        (["loneliness"], "JSON object"),
+        ({}, "term"),
+        ({"term": ""}, "term"),
+        ({"term": "   "}, "term"),
+        ({"term": "x" * 201}, "term"),
+        ({"term": 7}, "term"),
+        ({"term": "a", "max_results": 0}, "max_results"),
+        ({"term": "a", "max_results": 201}, "max_results"),
+        ({"term": "a", "max_results": 1.5}, "max_results"),
+        ({"term": "a", "max_results": True}, "max_results"),
+        ({"term": "a", "max_results": "many"}, "max_results"),
+        ({"term": "a", "max_results": "5"}, "max_results"),
+        ({"term": "a", "top_k": 0}, "top_k"),
+        ({"term": "a", "top_k": 21}, "top_k"),
+        ({"term": "a", "model": "openai/gpt-5"}, "model"),
+        ({"term": "a", "model": ""}, "model"),
+    ],
+)
+def test_create_rejects_out_of_range_requests(runs, store, payload, field):
+    with pytest.raises(InvalidRunError, match=field):
+        runs.create(payload)
+    assert store.page(offset=0, limit=10) == (0, [])
+
+
+def test_create_names_missing_keys_and_stores_nothing(store):
+    runs = make_runs(store, ncbi_email="", openai_api_key=None)
+    with pytest.raises(NotConfiguredError) as raised:
+        runs.create({"term": "loneliness"})
+    assert raised.value.missing == ["NCBI_EMAIL", "OPENAI_API_KEY"]
+    assert "NCBI_EMAIL, OPENAI_API_KEY" in str(raised.value)
+    assert store.page(offset=0, limit=10) == (0, [])
+    assert runs.settings()["missing"] == ["NCBI_EMAIL", "OPENAI_API_KEY"]
+
+
+def test_settings_follow_the_configuration(runs):
+    assert runs.settings() == {
+        "models": ["openai/gpt-4.1-mini", "anthropic/claude-sonnet-4"],
+        "default_model": "openai/gpt-4.1-mini",
+        "embedding_model": "text-embedding-3-small",
+        "max_results": {"default": 100, "min": 1, "max": 200},
+        "top_k": {"default": 10, "min": 1, "max": 20},
+        "missing": [],
+    }
+
+
+def test_list_pages_newest_first_without_results(runs):
+    for index in range(30):
+        runs.create({"term": f"term {index}"})
+    first = runs.list(1, 25)
+    assert (first["total"], first["page"], first["page_count"]) == (30, 1, 2)
+    assert [r["term"] for r in first["runs"][:2]] == ["term 29", "term 28"]
+    assert len(first["runs"]) == 25
+    assert all("result" not in r for r in first["runs"])
+    second = runs.list("2", "25")
+    assert [r["term"] for r in second["runs"]] == [
+        f"term {i}" for i in range(4, -1, -1)
+    ]
+    assert runs.list(3, 25)["runs"] == []
+    assert runs.list()["page_count"] == 2  # page 1, 25 per page by default
+    assert runs.list(1, 100)["page_count"] == 1
+
+
+def test_an_empty_history_has_no_pages(runs):
+    assert runs.list() == {"runs": [], "total": 0, "page": 1, "page_count": 0}
+
+
+@pytest.mark.parametrize(
+    "page, page_size", [(0, 25), (-1, 25), ("x", 25), (1, 0), (1, 101), (1, "")]
+)
+def test_list_rejects_bad_pages(runs, page, page_size):
+    with pytest.raises(InvalidRunError):
+        runs.list(page, page_size)
+
+
+def test_get_unknown_run(runs):
+    with pytest.raises(RunNotFoundError):
+        runs.get("nope")
+
+
+def test_a_run_goes_pending_running_succeeded(runs):
+    run_id = runs.create({"term": "loneliness"})["run_id"]
+    assert [r["run_id"] for r in runs.pending()] == [run_id]
+
+    started = runs.start(run_id)
+    assert started["status"] == "running"
+    assert started["started_at"] == "2026-11-16T10:00:01Z"
+    assert runs.start(run_id) is None  # already started
+    assert runs.pending() == []
+    assert [r["status"] for r in runs.active()] == ["running"]
+
+    runs.set_stage(run_id, "search")
+    assert runs.get(run_id)["stage"] == "search"
+    with pytest.raises(ValueError):
+        runs.set_stage(run_id, "dreaming")
+
+    runs.succeed(run_id, RESULT)
+    run = runs.get(run_id)
+    assert run["status"] == "succeeded"
+    assert run["result"] == RESULT
+    assert run["finished_at"] == "2026-11-16T10:00:02Z"
+    assert runs.active() == []
+
+    # A finished run stays finished.
+    runs.fail(run_id, "too late")
+    runs.set_stage(run_id, "apa")
+    assert runs.get(run_id)["status"] == "succeeded"
+    assert runs.get(run_id)["stage"] == "search"
+
+
+def test_a_run_can_fail_before_or_while_running(runs):
+    waiting = runs.create({"term": "a"})["run_id"]
+    runs.fail(waiting, "Dagster run d1 was canceled. Start a new run.")
+    run = runs.get(waiting)
+    assert (run["status"], run["error"], run["result"]) == (
+        "failed",
+        "Dagster run d1 was canceled. Start a new run.",
+        None,
+    )
+    assert runs.start(waiting) is None
+    with_stage = runs.create({"term": "b"})["run_id"]
+    runs.start(with_stage)
+    runs.fail(with_stage, "stopped")
+    assert runs.get(with_stage)["status"] == "failed"
+    runs.succeed(with_stage, RESULT)  # a failed run is not revived
+    assert runs.get(with_stage)["result"] is None
+
+
+def test_stage_writes_happen_only_on_changes(runs, store, monkeypatch):
+    run_id = runs.create({"term": "a"})["run_id"]
+    runs.start(run_id)
+    writes = []
+    real = store.dataset.write
+    monkeypatch.setattr(
+        store.dataset,
+        "write",
+        lambda *a, **k: writes.append(a[0]) or real(*a, **k),
+    )
+    runs.set_stage(run_id, "apa")
+    runs.set_stage(run_id, "apa")
+    assert len(writes) == 1
+
+
+def test_execute_stores_the_result_and_each_stage(runs):
+    run_id = runs.create({"term": "loneliness", "max_results": 5, "top_k": 3})["run_id"]
+    stages = []
+    definer = FakeDefiner(seen=lambda _: stages.append(runs.get(run_id)["stage"]))
+
+    assert runs.execute(run_id, lambda: definer, job_run_id="d1") == "succeeded"
+
+    assert definer.calls == [("loneliness", 5, 3, "openai/gpt-4.1-mini")]
+    assert stages == list(STAGES)
+    run = runs.get(run_id)
+    assert run["status"] == "succeeded"
+    assert run["result"]["term"] == "loneliness"
+    assert run["error"] is None
+    assert run["started_at"] and run["finished_at"]
+
+
+def test_execute_stores_a_step_failure(runs):
+    run_id = runs.create({"term": "loneliness"})["run_id"]
+    error = DefinitionStepError(
+        "ranking", "OpenAI refused the request (HTTP 401); check OPENAI_API_KEY."
+    )
+    status = runs.execute(
+        run_id, lambda: FakeDefiner(error=error, fail_at="ranking"), job_run_id="d1"
+    )
+    assert status == "failed"
+    run = runs.get(run_id)
+    assert run["status"] == "failed"
+    assert run["stage"] == "ranking"
+    assert run["error"] == (
+        "Step 'ranking' failed: OpenAI refused the request (HTTP 401); "
+        "check OPENAI_API_KEY."
+    )
+    assert run["result"] is None
+
+
+def test_execute_fails_a_run_when_keys_went_missing(runs):
+    run_id = runs.create({"term": "loneliness"})["run_id"]
+
+    def unconfigured():
+        raise NotConfiguredError(["OPENROUTER_API_KEY"])
+
+    assert runs.execute(run_id, unconfigured, job_run_id="d1") == "failed"
+    assert "OPENROUTER_API_KEY" in runs.get(run_id)["error"]
+
+
+def test_execute_points_unexpected_errors_to_the_job_logs(runs):
+    run_id = runs.create({"term": "loneliness"})["run_id"]
+    error = KeyError("sk-or-v1-secret-value")  # an error text is never stored
+    with pytest.raises(KeyError):
+        runs.execute(
+            run_id,
+            lambda: FakeDefiner(error=error, fail_at="selection"),
+            job_run_id="d1",
+        )
+    run = runs.get(run_id)
+    assert run["status"] == "failed"
+    assert run["error"] == (
+        "The run stopped on an unexpected KeyError during stage 'selection'. "
+        "See Dagster run d1 for details, then start a new run."
+    )
+
+
+def test_execute_skips_a_run_that_is_not_pending(runs):
+    run_id = runs.create({"term": "loneliness"})["run_id"]
+    runs.fail(run_id, "canceled")
+    definer = FakeDefiner()
+    assert runs.execute(run_id, lambda: definer, job_run_id="d1") == "failed"
+    assert definer.calls == []
+
+
+def test_run_ids_sort_by_creation_time():
+    first = new_run_id()
+    assert len(first) == 32 and int(first, 16) >= 0
+    assert new_run_id()[:12] >= first[:12]

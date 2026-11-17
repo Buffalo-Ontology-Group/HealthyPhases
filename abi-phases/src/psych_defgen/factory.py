@@ -3,6 +3,7 @@
 from pydantic import SecretStr
 
 from psych_defgen.application.definition_service import DefinitionService
+from psych_defgen.application.runs import DefinitionRuns, RunSettings
 from psych_defgen.domain.errors import NotConfiguredError
 
 #: Required settings, by the environment variable that feeds each one.
@@ -54,3 +55,22 @@ def definition_service(configuration) -> DefinitionService:
         ),
         dictionary=ApaDictionary(),
     )
+
+
+def run_settings(configuration) -> RunSettings:
+    """What requests may ask for, and the required keys that are unset."""
+    return RunSettings(
+        models=tuple(configuration.llm_models),
+        default_model=configuration.llm_model,
+        embedding_model=configuration.embedding_model,
+        missing=tuple(missing_settings(configuration)),
+    )
+
+
+def definition_runs(dataset, configuration) -> DefinitionRuns:
+    """Definition runs stored in ``dataset`` (a ``DatasetService``)."""
+    from psych_defgen.adapters.secondary.definition_run_store import (
+        DefinitionRunStore,
+    )
+
+    return DefinitionRuns(DefinitionRunStore(dataset), run_settings(configuration))

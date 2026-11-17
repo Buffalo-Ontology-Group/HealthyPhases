@@ -29,3 +29,15 @@ class NotConfiguredError(Exception):
             + " in the deployment's environment."
         )
         self.missing = list(missing)
+
+
+class InvalidRunError(ValueError):
+    """A definition request is out of the accepted limits."""
+
+
+class RunNotFoundError(LookupError):
+    """No definition run has this ID."""
+
+    def __init__(self, run_id: str):
+        super().__init__("Definition run not found")
+        self.run_id = run_id
