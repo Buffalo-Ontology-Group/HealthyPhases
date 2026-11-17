@@ -147,14 +147,14 @@ No response holds a key or the NCBI email.
   - module: psych_defgen
     enabled: true
     config:
-      ncbi_email: "{{ secret.NCBI_EMAIL }}"
-      ncbi_api_key: "{{ secret.NCBI_API_KEY }}"            # optional: NCBI allows 10 requests/s with it, 3 without
-      openrouter_api_key: "{{ secret.OPENROUTER_API_KEY }}"
-      openai_api_key: "{{ secret.OPENAI_API_KEY }}"        # embeddings
       llm_model: "openai/gpt-4.1-mini"
       llm_models: ["openai/gpt-4.1-mini"]                  # what the app offers; llm_model must be one of them
       embedding_model: "text-embedding-3-small"
 ```
+
+The keys are not in the module entry. The module reads them by name from
+the engine's secret service (`.env` with the dotenv adapter, or the
+environment) when it first needs them:
 
 | Key | Needed | Used for |
 | --- | --- | --- |
@@ -163,12 +163,22 @@ No response holds a key or the NCBI email.
 | `OPENROUTER_API_KEY` | yes | Definition selection and synthesis (`llm_model`, or one of `llm_models`). |
 | `OPENAI_API_KEY` | yes | Embeddings for ranking (`embedding_model`). |
 
-The keys and the email are `SecretStr`: they are not logged, and no error
-message holds them. An unset `{{ secret.NAME }}` renders as an empty string,
-so the engine still boots; the module then logs which keys are missing,
-`factory.missing_settings(configuration)` names them, and
-`factory.definition_service(configuration)` raises `NotConfiguredError`
-naming them.
+Why not `{{ secret.NAME }}` in the entry: the engine's template rendering
+raises when NAME is absent from the secret store and no terminal is
+attached, which stops the API and Dagster's code location for one optional
+key. Read by the module, a name absent from `.env` (or set to an empty
+value) only leaves that key unset, and the engine boots. Without
+`NCBI_API_KEY`, NCBI is used anonymously at 3 requests/s. Without a required
+key, the module logs which keys are missing, `/settings` lists them under
+`missing`, `POST /runs` answers `409` naming them, and
+`factory.definition_service(configuration)` raises `NotConfiguredError`.
+`tests/config_loading_test.py` loads `config.yaml` and `config.local.yaml`
+through the engine's loader with the NCBI names absent.
+
+A key may still be set in the entry (`ncbi_email`, `ncbi_api_key`,
+`openrouter_api_key`, `openai_api_key`); a non-empty value there wins over
+the secret service. The keys and the email are `SecretStr`: they are not
+logged, and no error message holds them.
 
 ## What differs from upstream
 

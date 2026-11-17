@@ -5,7 +5,7 @@ from pydantic import ValidationError
 from psych_defgen import PsychDefgenConfiguration
 from psych_defgen.application.definition_service import DefinitionService
 from psych_defgen.domain.errors import NotConfiguredError
-from psych_defgen.factory import definition_service, missing_settings
+from psych_defgen.factory import definition_service, missing_settings, with_secrets
 
 SECRET_VALUES = {
     "ncbi_email": "researcher@example.org",
@@ -27,7 +27,7 @@ def test_missing_settings_names_every_unset_or_empty_key():
         "OPENROUTER_API_KEY",
         "OPENAI_API_KEY",
     ]
-    # An unset {{ secret.NAME }} renders as "": that is missing too.
+    # An empty value is missing too.
     config = validated(ncbi_email="", openrouter_api_key="  ", openai_api_key="sk")
     assert missing_settings(config) == ["NCBI_EMAIL", "OPENROUTER_API_KEY"]
 
@@ -98,3 +98,70 @@ def test_deployment_configs_enable_the_module(name):
         "OPENROUTER_API_KEY",
         "OPENAI_API_KEY",
     ]
+
+
+def lookup_in(values):
+    calls = []
+
+    def lookup(name):
+        calls.append(name)
+        return values.get(name)
+
+    lookup.calls = calls
+    return lookup
+
+
+def test_with_secrets_reads_unset_keys_by_name():
+    lookup = lookup_in(
+        {
+            "NCBI_EMAIL": " researcher@example.org ",
+            "OPENROUTER_API_KEY": "sk-or-v1-secret-value",
+            "OPENAI_API_KEY": "sk-proj-secret-value",
+        }
+    )
+
+    config = with_secrets(validated(ncbi_email=""), lookup)
+
+    assert lookup.calls == [
+        "NCBI_EMAIL",
+        "NCBI_API_KEY",
+        "OPENROUTER_API_KEY",
+        "OPENAI_API_KEY",
+    ]
+    assert config.ncbi_email.get_secret_value() == "researcher@example.org"
+    assert config.ncbi_api_key is None  # absent: anonymous NCBI access
+    assert missing_settings(config) == []
+
+
+def test_with_secrets_keeps_values_set_in_the_configuration():
+    lookup = lookup_in({"OPENAI_API_KEY": "from-the-secret-store"})
+
+    config = with_secrets(validated(**SECRET_VALUES), lookup)
+
+    assert config.openai_api_key.get_secret_value() == "sk-proj-secret-value"
+    assert lookup.calls == ["NCBI_API_KEY"]
+
+
+def test_with_secrets_leaves_absent_or_empty_names_missing():
+    config = with_secrets(validated(), lookup_in({"NCBI_EMAIL": "  "}))
+    assert missing_settings(config) == [
+        "NCBI_EMAIL",
+        "OPENROUTER_API_KEY",
+        "OPENAI_API_KEY",
+    ]
+
+
+def test_a_secret_store_that_fails_leaves_the_key_unset(caplog_messages):
+    def broken(name):
+        raise RuntimeError(f"vault down, token sk-hidden for {name}")
+
+    config = with_secrets(validated(), broken)
+
+    assert missing_settings(config) == [
+        "NCBI_EMAIL",
+        "OPENROUTER_API_KEY",
+        "OPENAI_API_KEY",
+    ]
+    joined = " ".join(caplog_messages)
+    assert "could not read NCBI_EMAIL" in joined and "RuntimeError" in joined
+    assert "sk-hidden" not in joined

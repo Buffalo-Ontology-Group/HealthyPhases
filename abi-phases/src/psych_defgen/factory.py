@@ -1,5 +1,8 @@
 """Build the definition service from the module configuration."""
 
+from collections.abc import Callable
+
+from naas_abi_core import logger
 from pydantic import SecretStr
 
 from psych_defgen.application.definition_service import DefinitionService
@@ -14,8 +17,45 @@ REQUIRED_SETTINGS = (
 )
 
 
+#: Every key, by the secret name it is read from when the configuration
+#: leaves it unset. ``NCBI_API_KEY`` is optional.
+SECRET_SETTINGS = (
+    ("NCBI_EMAIL", "ncbi_email"),
+    ("NCBI_API_KEY", "ncbi_api_key"),
+    ("OPENROUTER_API_KEY", "openrouter_api_key"),
+    ("OPENAI_API_KEY", "openai_api_key"),
+)
+
+
 def _value(secret: SecretStr | None) -> str:
     return secret.get_secret_value().strip() if secret is not None else ""
+
+
+def with_secrets(configuration, lookup: Callable[[str], str | None]):
+    """``configuration`` with each key it leaves unset or empty read by name
+    through ``lookup`` (the engine's secret service).
+
+    The module entry in config.yaml holds no ``{{ secret.NAME }}``: the
+    engine's template rendering raises on a name absent from the secret
+    store, which would stop the whole engine for one optional key. Here an
+    absent name, or a lookup that fails, leaves the key unset, and
+    ``missing_settings`` reports it.
+    """
+    update = {}
+    for name, field in SECRET_SETTINGS:
+        if _value(getattr(configuration, field, None)):
+            continue
+        try:
+            value = lookup(name)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                f"psych_defgen: could not read {name} from the secret service "
+                f"({type(exc).__name__}); it is treated as unset."
+            )
+            continue
+        if isinstance(value, str) and value.strip():
+            update[field] = SecretStr(value.strip())
+    return configuration.model_copy(update=update) if update else configuration
 
 
 def missing_settings(configuration) -> list[str]:

@@ -4,15 +4,12 @@ A vendored copy of psych-defgen (see UPSTREAM.md) whose model calls all go to
 hosted services: NCBI E-utilities, OpenAI embeddings, OpenRouter and the APA
 Dictionary website. Nothing runs a local model or a browser.
 
-Configuration example:
+Configuration example (the keys are read from the secret service by name,
+see ``factory.SECRET_SETTINGS``):
 
     module: psych_defgen
     enabled: true
     config:
-      ncbi_email: "{{ secret.NCBI_EMAIL }}"
-      ncbi_api_key: "{{ secret.NCBI_API_KEY }}"
-      openrouter_api_key: "{{ secret.OPENROUTER_API_KEY }}"
-      openai_api_key: "{{ secret.OPENAI_API_KEY }}"
       llm_model: "openai/gpt-4.1-mini"
       llm_models: ["openai/gpt-4.1-mini"]
       embedding_model: "text-embedding-3-small"
@@ -25,14 +22,16 @@ from naas_abi_core.module.Module import (
     ModuleDependencies,
 )
 from naas_abi_core.services.dataset.DatasetService import DatasetService
+from naas_abi_core.services.secret.Secret import Secret
 from pydantic import Field, SecretStr, model_validator
 
 DEFAULT_LLM_MODEL = "openai/gpt-4.1-mini"
 
 
 class PsychDefgenConfiguration(ModuleConfiguration):
-    #: A missing ``{{ secret.NAME }}`` renders as an empty string; an empty
-    #: value counts as unset (see ``factory.missing_settings``).
+    #: The keys are normally left out here and read from the secret service
+    #: by name (``ABIModule.configuration``); a value set here wins. Unset or
+    #: empty counts as missing (see ``factory.missing_settings``).
     ncbi_email: SecretStr | None = None
     #: Optional: NCBI allows 10 requests/s with a key, 3 without.
     ncbi_api_key: SecretStr | None = None
@@ -63,14 +62,29 @@ class PsychDefgenConfiguration(ModuleConfiguration):
 class ABIModule(BaseModule[PsychDefgenConfiguration]):
     Configuration = PsychDefgenConfiguration
     dependencies: ModuleDependencies = ModuleDependencies(
-        modules=[], services=[DatasetService]
+        modules=[], services=[DatasetService, Secret]
     )
+
+    _with_secrets: PsychDefgenConfiguration | None = None
+
+    @property
+    def configuration(self) -> PsychDefgenConfiguration:
+        """The module configuration, with the keys it leaves unset read from
+        the engine's secret service by name. A name absent from ``.env``
+        stays unset: the engine boots and the module says what is missing."""
+        if self._with_secrets is None:
+            from psych_defgen.factory import with_secrets
+
+            self._with_secrets = with_secrets(
+                self._configuration, self._engine.services.secret.get
+            )
+        return self._with_secrets
 
     def on_initialized(self) -> None:
         super().on_initialized()
         from psych_defgen.factory import missing_settings
 
-        missing = missing_settings(self._configuration)
+        missing = missing_settings(self.configuration)
         if missing:
             logger.warning(
                 "psych_defgen is not configured: set "
@@ -99,7 +113,7 @@ class ABIModule(BaseModule[PsychDefgenConfiguration]):
             from psych_defgen.adapters.primary.runs_api import router
             from psych_defgen.factory import definition_runs
 
-            runs = definition_runs(self._engine.services.dataset, self._configuration)
+            runs = definition_runs(self._engine.services.dataset, self.configuration)
             app.include_router(router(runs))
             logger.debug("Mounted psych_defgen API at /psych_defgen/api")
         except Exception:  # noqa: BLE001

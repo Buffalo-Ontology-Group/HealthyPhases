@@ -195,7 +195,9 @@ def module(dataset=None, **config):
     from psych_defgen.tests.conftest import configuration
 
     services = SimpleNamespace(
-        dataset_available=lambda: dataset is not None, dataset=dataset
+        dataset_available=lambda: dataset is not None,
+        dataset=dataset,
+        secret=SimpleNamespace(get=lambda name, default=None: default),
     )
     return ABIModule(SimpleNamespace(services=services), configuration(**config))
 

@@ -204,11 +204,11 @@ modules:
 
   - module: psych_defgen
     enabled: true
+    # Keys are read from the secret service by name, not templated here, so
+    # that a name absent from .env leaves the engine up: NCBI_EMAIL,
+    # OPENROUTER_API_KEY, OPENAI_API_KEY (embeddings) are required for runs;
+    # NCBI_API_KEY is optional (NCBI allows 10 requests/s with it, 3 without).
     config:
-      ncbi_email: "{{ secret.NCBI_EMAIL }}"
-      ncbi_api_key: "{{ secret.NCBI_API_KEY }}"            # optional: NCBI allows 10 requests/s with it, 3 without
-      openrouter_api_key: "{{ secret.OPENROUTER_API_KEY }}"
-      openai_api_key: "{{ secret.OPENAI_API_KEY }}"        # embeddings
       llm_model: "openai/gpt-4.1-mini"
       llm_models: ["openai/gpt-4.1-mini"]                  # what the app offers; llm_model must be one of them
       embedding_model: "text-embedding-3-small"
