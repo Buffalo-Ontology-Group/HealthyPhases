@@ -1,12 +1,14 @@
-.PHONY: install test test-app test-search test-pubmed test-pubmed-network test-terms lint build proto
+.PHONY: install test test-app test-search test-pubmed test-pubmed-network test-psych-defgen test-psych-defgen-network test-terms lint build proto
 install:
 	uv sync
 
 APP_TESTS = src/phases_v2/apps/workspace/tests
+DEFINITIONS_APP_TESTS = src/psych_defgen/apps/definitions/tests
 
 test:
-	uv run pytest tests src/phases_v2 src/pubmed src/openalex
+	uv run pytest tests src/phases_v2 src/pubmed src/openalex src/psych_defgen
 	node --test $(APP_TESTS)/*_test.cjs
+	node --test $(DEFINITIONS_APP_TESTS)/*_test.cjs
 
 # The HealthyPhases workspace app on its own: manifest/packaging checks and browser logic.
 test-app:
@@ -27,7 +29,7 @@ test-terms:
 	uv run --no-project $(TERMS_DEPS) pytest $(TERMS_DIR)/tests -q
 
 lint:
-	uv run ruff check tests src/phases_v2 src/pubmed src/openalex $(TERMS_DIR)
+	uv run ruff check tests src/phases_v2 src/pubmed src/openalex src/psych_defgen $(TERMS_DIR)
 
 build:
 	uv build
@@ -54,3 +56,12 @@ test-pubmed-network:
 test-openalex:
 	uv run pytest src/openalex src/pubmed/tests/pubmed_library_test.py
 	node --test $(APP_TESTS)/library_test.cjs
+
+# The definition pipeline on fakes; the live check needs NCBI_EMAIL,
+# OPENROUTER_API_KEY and OPENAI_API_KEY (NCBI_API_KEY optional).
+test-psych-defgen:
+	uv run pytest src/psych_defgen
+	node --test $(DEFINITIONS_APP_TESTS)/*_test.cjs
+
+test-psych-defgen-network:
+	PSYCH_DEFGEN_NETWORK_TESTS=1 uv run pytest src/psych_defgen/tests/network_test.py -v -s

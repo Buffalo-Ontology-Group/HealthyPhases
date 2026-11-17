@@ -93,6 +93,9 @@ modules:
                 # shows it in the sidebar once deployed.
                 apps:
                   - "phases_v2:workspace"
+                  # Construct Definitions (psych_defgen): evidence-based
+                  # definitions of psychological constructs.
+                  - "psych_defgen:definitions"
                 # Every ontology file the engine loads, which is what this
                 # workspace showed before ABI started requiring a list.
                 ontologies:
@@ -176,6 +179,17 @@ modules:
 
   - module: pubmed
     enabled: true
+
+  - module: psych_defgen
+    enabled: true
+    # Keys are read from the secret service by name, not templated here, so
+    # that a name absent from .env leaves the engine up: NCBI_EMAIL,
+    # OPENROUTER_API_KEY, OPENAI_API_KEY (embeddings) are required for runs;
+    # NCBI_API_KEY is optional (NCBI allows 10 requests/s with it, 3 without).
+    config:
+      llm_model: "openai/gpt-4.1-mini"
+      llm_models: ["openai/gpt-4.1-mini"]                  # what the app offers; llm_model must be one of them
+      embedding_model: "text-embedding-3-small"
 
   - module: openalex
     enabled: true

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Construct Definitions</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="./css/app.css">
+<script type="module" src="./js/main.js"></script>
+</head>
+<body>
+<main id="main">
+  <section id="view-home" class="view" aria-labelledby="app-title" hidden>
+    <header class="page-head">
+      <p class="eyebrow">Construct Definitions</p>
+      <h1 id="app-title" tabindex="-1">Define a psychological construct</h1>
+      <p class="lede">Name a construct, such as loneliness. A run searches PubMed, reads the articles' full texts or abstracts, ranks the passages that define it and returns a definition quoted from the literature, an AI-synthesized definition and the evidence behind both.</p>
+    </header>
+
+    <form id="def-form" class="card" novalidate>
+      <h2>New definition</h2>
+      <div id="def-missing" class="notice" role="alert" hidden>
+        <strong>Not configured</strong>
+        <p id="def-missing-text"></p>
+      </div>
+      <fieldset id="def-fieldset" disabled>
+        <legend class="sr-only">Run settings</legend>
+        <div class="field">
+          <label for="def-term">Construct</label>
+          <input id="def-term" name="term" autocomplete="off" placeholder="e.g. loneliness" aria-describedby="def-term-error">
+          <p id="def-term-error" class="msg" role="alert"></p>
+        </div>
+        <div class="fields">
+          <div class="field">
+            <label for="def-max-results">Max results</label>
+            <input id="def-max-results" name="max_results" type="number" inputmode="numeric" step="1" aria-describedby="def-max-results-hint def-max-results-error">
+            <small id="def-max-results-hint"></small>
+            <p id="def-max-results-error" class="msg" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="def-top-k">Top-k</label>
+            <input id="def-top-k" name="top_k" type="number" inputmode="numeric" step="1" aria-describedby="def-top-k-hint def-top-k-error">
+            <small id="def-top-k-hint"></small>
+            <p id="def-top-k-error" class="msg" role="alert"></p>
+          </div>
+          <div class="field">
+            <label for="def-model">LLM model</label>
+            <select id="def-model" name="model" aria-describedby="def-model-error"></select>
+            <small>Picks and writes the definitions.</small>
+            <p id="def-model-error" class="msg" role="alert"></p>
+          </div>
+        </div>
+      </fieldset>
+      <div class="row">
+        <button id="def-submit" type="submit" class="primary" disabled>Start run</button>
+        <button id="def-retry" type="button" hidden>Try again</button>
+        <small id="def-embedding"></small>
+      </div>
+      <p id="def-msg" class="msg" role="status"></p>
+    </form>
+
+    <section class="card" aria-labelledby="history-title">
+      <div class="card-head">
+        <h2 id="history-title">Runs</h2>
+        <button id="history-refresh" type="button" class="small">Refresh</button>
+      </div>
+      <p id="history-msg" class="msg" role="status"></p>
+      <div class="table-wrap stacked-wrap">
+        <table class="runs stacked">
+          <caption class="sr-only">Definition runs, newest first</caption>
+          <thead><tr><th scope="col">Term</th><th scope="col">Status</th><th scope="col">Model</th><th scope="col">Requested</th><th scope="col">Duration</th></tr></thead>
+          <tbody id="history-body"></tbody>
+        </table>
+      </div>
+      <div id="history-pager" class="pager" hidden>
+        <button id="history-prev" type="button" class="small">Previous</button>
+        <span id="history-page"></span>
+        <button id="history-next" type="button" class="small">Next</button>
+      </div>
+    </section>
+  </section>
+
+  <section id="view-run" class="view" aria-labelledby="run-title" hidden>
+    <header class="page-head">
+      <a id="run-back" class="back" href="#/">← All runs</a>
+      <div class="row spread">
+        <h1 id="run-title" tabindex="-1">Run</h1>
+        <button id="run-download" type="button" class="primary" hidden>Download JSON</button>
+      </div>
+      <p id="run-msg" class="msg" role="status"></p>
+      <button id="run-retry" type="button" class="small" hidden>Try again</button>
+    </header>
+    <div id="run-summary" class="card"></div>
+    <div id="run-body" class="stack"></div>
+  </section>
+
+  <noscript><p class="card">Construct Definitions needs JavaScript. Enable it and reload the app.</p></noscript>
+</main>
+</body>
+</html>
