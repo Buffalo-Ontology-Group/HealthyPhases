@@ -36,6 +36,7 @@ from phases_v2.coverage.interfaces import (
     Backlog,
     CoverageReader,
     FailureCount,
+    Integrity,
     PromptVersion,
     RelationCheck,
     Selection,
@@ -120,6 +121,7 @@ class CoverageReport:
     unfinished_requests: list[dict[str, Any]]
     backlog: list[Backlog]
     relation_check: RelationCheck
+    integrity: Integrity = field(default_factory=Integrity)
 
     def problems(self) -> list[str]:
         """What ``--strict`` fails on, for the selected prompts and models.
@@ -151,6 +153,17 @@ class CoverageReport:
                 outstanding -= self.relation_check.rejected_selected
             if outstanding:
                 found.append(f"projection {backlog.target}: {outstanding} outstanding")
+        # Whatever the selection: a broken dataset breaks every count above.
+        for dup in self.integrity.duplicates:
+            found.append(
+                f"dataset {dup.dataset}: {dup.keys} keys held by more than one row "
+                f"({dup.surplus} surplus rows)"
+            )
+        if self.integrity.orphan_items:
+            found.append(
+                f"dataset extracted_items: {self.integrity.orphan_items} items "
+                "whose extraction row is missing"
+            )
         return found
 
 
@@ -245,6 +258,7 @@ def build_report(
             if relations.outstanding
             else RelationCheck(0, 0)
         ),
+        integrity=reader.integrity(),
     )
 
 
@@ -487,6 +501,19 @@ def to_dict(report: CoverageReport) -> dict[str, Any]:
             "rejected_selected": report.relation_check.rejected_selected,
             "sample_errors": report.relation_check.sample_errors,
         },
+        "integrity": {
+            "duplicate_keys": [
+                {
+                    "dataset": d.dataset,
+                    "keys": d.keys,
+                    "surplus_rows": d.surplus,
+                    "sample": list(d.sample),
+                }
+                for d in report.integrity.duplicates
+            ],
+            "orphan_items": report.integrity.orphan_items,
+            "orphan_sample": list(report.integrity.orphan_sample),
+        },
         "strict": {"passed": not problems, "problems": problems},
     }
 
@@ -603,6 +630,24 @@ def render_text(report: CoverageReport) -> str:
         )
         for item, error in list(check.sample_errors.items())[:5]:
             lines.append(f"      {item}: {_reason(error)}")
+
+    lines += ["", "== Integrity (every dataset, whatever the selection)"]
+    integrity = report.integrity
+    if not integrity.duplicates:
+        lines.append("   duplicate keys: none")
+    for d in integrity.duplicates:
+        lines.append(
+            f"   {d.dataset}: {d.keys} keys held by more than one row "
+            f"({d.surplus} surplus rows), e.g. {', '.join(d.sample)}"
+        )
+    lines.append(
+        f"   extracted items without an extraction row: {integrity.orphan_items}"
+        + (
+            f", e.g. of {', '.join(integrity.orphan_sample)}"
+            if integrity.orphan_sample
+            else ""
+        )
+    )
 
     problems = report.problems()
     lines += ["", f"== Strict check: {'passed' if not problems else 'FAILED'}"]

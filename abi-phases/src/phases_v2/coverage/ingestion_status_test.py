@@ -96,6 +96,7 @@ def test_json_shape(reader):
         "run_requests",
         "projection_backlog",
         "relation_check",
+        "integrity",
         "strict",
     }
     assert data["selection"]["models"] == [GPT]

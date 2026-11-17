@@ -5,9 +5,9 @@ upserts. That is not a stylistic preference: ``DatasetSpec.primary_key`` is
 advisory — the store matches upserts against it but enforces no uniqueness — so
 an ``append`` into a keyed dataset duplicates rows silently, with no error to
 notice. Keeping one function in one file makes that invariant reviewable, and
-``store_test`` fails if any other module file writes directly. The two ways to
-remove rows, :func:`delete_rows` and :func:`truncate`, live here for the same
-reason.
+``store_test`` fails if any other module file writes directly. The ways to
+remove rows, :func:`delete_rows`, :func:`delete_versions` and :func:`truncate`,
+live here for the same reason.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ from naas_abi_core.services.dataset.DatasetPort import (
 from naas_abi_core.services.dataset.DatasetService import DatasetService
 
 from phases_v2.datasets.schemas import DATASETS, NAMESPACE
-from phases_v2.sql import in_list
+from phases_v2.sql import in_list, literal
 
 _BY_NAME: dict[str, DatasetSpec] = {spec.name: spec for spec in DATASETS}
 
@@ -118,6 +118,35 @@ def delete_rows(
         )
         deleted += int(matching)
     return deleted
+
+
+def delete_versions(
+    dataset: DatasetService, name: str, versions: list[dict[str, Any]]
+) -> None:
+    """Delete exact row versions: each names its key columns and the
+    ``snapshot_id`` that wrote it.
+
+    Only for repairing a dataset that holds a key in more than one row, which
+    an upsert cannot do: it would rewrite every copy. The copies share their
+    key and even DuckLake's row id, so the snapshot that wrote each one is what
+    tells them apart. One statement, so the delete is all or nothing.
+    """
+    spec = _BY_NAME.get(name)
+    if spec is None:
+        raise KeyError(f"{name!r} is not a phases_v2 dataset")
+    if not versions:
+        return
+    conditions = []
+    for version in versions:
+        parts = [
+            f"{column} = {literal(version[column])}" for column in spec.primary_key
+        ]
+        parts.append(f"snapshot_id = {int(version['snapshot_id'])}")
+        conditions.append("(" + " AND ".join(parts) + ")")
+    dataset.query(
+        f"DELETE FROM {name} WHERE " + " OR ".join(conditions),  # nosec B608 - name is checked against the schema; values go through literal
+        namespace=NAMESPACE,
+    )
 
 
 def truncate(dataset: DatasetService, name: str) -> None:

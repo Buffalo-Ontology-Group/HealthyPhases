@@ -6,6 +6,7 @@ tests describe a corpus rather than a query. It has no method that writes.
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -21,7 +22,9 @@ from phases_v2.coverage.interfaces import (
     Backlog,
     Collection,
     CoverageCount,
+    DuplicateKeys,
     FailureCount,
+    Integrity,
     PromptVersion,
     RelationCheck,
     SavedSearch,
@@ -235,4 +238,30 @@ class FakeCoverageReader:
             sample_errors={
                 i["item_id"]: self.rejected_relations[i["item_id"]] for i in rejected
             },
+        )
+
+    def integrity(self):
+        """The datasets the fake holds: chunks, extractions and items."""
+        duplicates = []
+        for name, keys in (
+            ("chunks", [c["chunk_id"] for c in self.chunks]),
+            ("extractions", [self.extraction_id(e) for e in self.extractions]),
+            ("extracted_items", [i["item_id"] for i in self.items]),
+        ):
+            held = sorted((k, n) for k, n in Counter(keys).items() if n > 1)
+            if held:
+                duplicates.append(
+                    DuplicateKeys(
+                        name,
+                        keys=len(held),
+                        surplus=sum(n - 1 for _, n in held),
+                        sample=tuple(k for k, _ in held[:5]),
+                    )
+                )
+        owned = {self.extraction_id(e) for e in self.extractions}
+        orphans = [i for i in self.items if i["extraction_id"] not in owned]
+        return Integrity(
+            duplicates=duplicates,
+            orphan_items=len(orphans),
+            orphan_sample=tuple(sorted({i["extraction_id"] for i in orphans})[:5]),
         )
