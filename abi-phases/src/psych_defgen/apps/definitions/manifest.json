@@ -1,0 +1,27 @@
+{
+    "name": "Construct Definitions",
+    "description": "Get an evidence-based definition of a psychological construct: a definition quoted from PubMed and PMC articles, an AI-synthesized definition, the ranked evidence behind both and whether the APA Dictionary of Psychology has an entry.",
+    "category": "domain",
+    "url": "html:index.html",
+    "icon_emoji": "📖",
+    "version": "1.0.0",
+    "author": "HealthyPhases",
+    "license": "MIT",
+    "keywords": [
+        "definitions",
+        "constructs",
+        "psychology",
+        "pubmed",
+        "pmc",
+        "literature",
+        "evidence",
+        "apa",
+        "psych-defgen"
+    ],
+    "tier": "community",
+    "maintainer": "HealthyPhases",
+    "pricing": {
+        "type": "free",
+        "price": 0
+    }
+}

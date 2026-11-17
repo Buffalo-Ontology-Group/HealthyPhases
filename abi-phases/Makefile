@@ -3,10 +3,12 @@ install:
 	uv sync
 
 APP_TESTS = src/phases_v2/apps/workspace/tests
+DEFINITIONS_APP_TESTS = src/psych_defgen/apps/definitions/tests
 
 test:
 	uv run pytest tests src/phases_v2 src/pubmed src/openalex src/psych_defgen
 	node --test $(APP_TESTS)/*_test.cjs
+	node --test $(DEFINITIONS_APP_TESTS)/*_test.cjs
 
 # The HealthyPhases workspace app on its own: manifest/packaging checks and browser logic.
 test-app:
@@ -50,6 +52,7 @@ test-openalex:
 # OPENROUTER_API_KEY and OPENAI_API_KEY (NCBI_API_KEY optional).
 test-psych-defgen:
 	uv run pytest src/psych_defgen
+	node --test $(DEFINITIONS_APP_TESTS)/*_test.cjs
 
 test-psych-defgen-network:
 	PSYCH_DEFGEN_NETWORK_TESTS=1 uv run pytest src/psych_defgen/tests/network_test.py -v -s

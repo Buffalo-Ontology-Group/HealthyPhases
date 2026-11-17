@@ -93,6 +93,9 @@ modules:
                 # shows it in the sidebar once deployed.
                 apps:
                   - "phases_v2:workspace"
+                  # Construct Definitions (psych_defgen): evidence-based
+                  # definitions of psychological constructs.
+                  - "psych_defgen:definitions"
                 # Every ontology file the engine loads, which is what this
                 # workspace showed before ABI started requiring a list.
                 ontologies:
