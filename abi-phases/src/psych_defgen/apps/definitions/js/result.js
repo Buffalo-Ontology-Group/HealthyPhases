@@ -122,14 +122,15 @@ function usageRow(label, usage, note = '') {
   if (!usage || typeof usage !== 'object') {
     return `<tr><th scope="row">${esc(label)}</th><td colspan="4" class="muted">${esc(note || 'Not reported')}</td></tr>`;
   }
-  return `<tr><th scope="row">${esc(label)}</th><td>${esc(usage.model || '—')}</td>`
-    + `<td>${esc(formatNumber(usage.input_tokens))}</td><td>${esc(formatNumber(usage.output_tokens))}</td><td>${esc(formatNumber(usage.total_tokens))}</td></tr>`;
+  return `<tr><th scope="row">${esc(label)}</th><td data-label="Model">${esc(usage.model || '—')}</td>`
+    + `<td data-label="Input">${esc(formatNumber(usage.input_tokens))}</td><td data-label="Output">${esc(formatNumber(usage.output_tokens))}</td>`
+    + `<td data-label="Total">${esc(formatNumber(usage.total_tokens))}</td></tr>`;
 }
 
 export function usageHtml(usage, result) {
   if (!usage || typeof usage !== 'object') return '<p class="muted">Not reported.</p>';
   const selectionNote = result.definition_method === 'pattern' ? 'Not needed: a pattern found the definition' : 'No call made';
-  return '<div class="table-wrap"><table class="usage"><caption class="sr-only">Token usage</caption>'
+  return '<div class="table-wrap stacked-wrap"><table class="usage stacked"><caption class="sr-only">Token usage</caption>'
     + '<thead><tr><th scope="col">Step</th><th scope="col">Model</th><th scope="col">Input</th><th scope="col">Output</th><th scope="col">Total</th></tr></thead><tbody>'
     + usageRow('Selection', usage.selection, selectionNote)
     + usageRow('Synthesis', usage.synthesis, 'No call made')

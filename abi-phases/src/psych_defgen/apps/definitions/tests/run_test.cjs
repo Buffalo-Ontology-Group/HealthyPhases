@@ -99,7 +99,7 @@ test('a full result shows every part', async () => {
   assert.match(html, /<dt>PubMed articles<\/dt><dd>100<\/dd>/);
   assert.match(html, /<dt>Passages ranked<\/dt><dd>900<\/dd>/);
   assert.match(html, /<th scope="row">Selection<\/th><td colspan="4" class="muted">Not needed: a pattern found the definition<\/td>/);
-  assert.match(html, /<th scope="row">Synthesis<\/th><td>openai\/gpt-4\.1-mini<\/td><td>1,200<\/td><td>80<\/td><td>1,280<\/td>/);
+  assert.match(html, /<th scope="row">Synthesis<\/th><td data-label="Model">openai\/gpt-4\.1-mini<\/td><td data-label="Input">1,200<\/td><td data-label="Output">80<\/td><td data-label="Total">1,280<\/td>/);
   assert.match(html, /<dt>LLM model<\/dt><dd>openai\/gpt-4\.1-mini<\/dd><dt>Embedding model<\/dt><dd>text-embedding-3-small<\/dd><dt>Pipeline<\/dt><dd>psych-defgen 0\.0\.1b1 \(a625984\)<\/dd>/);
   assert.match($('run-summary').innerHTML, /<dt>Duration<\/dt><dd>4 min 0 s<\/dd>/);
 });
@@ -115,8 +115,8 @@ test('an LLM-selected definition and a missing generated one are worded as such'
   assert.match(html, /<span class="pill ok">Selected by LLM<\/span>/);
   assert.match(html, /<span class="pill warn">Not enough evidence<\/span>/);
   assert.doesNotMatch(html, /AI-generated/);
-  assert.match(html, /<th scope="row">Selection<\/th><td>m<\/td><td>10<\/td><td>2<\/td><td>12<\/td>/);
-  assert.match(html, /<th scope="row">Total<\/th><td>m<\/td><td>—<\/td><td>—<\/td><td>—<\/td>/);
+  assert.match(html, /<th scope="row">Selection<\/th><td data-label="Model">m<\/td><td data-label="Input">10<\/td><td data-label="Output">2<\/td><td data-label="Total">12<\/td>/);
+  assert.match(html, /<th scope="row">Total<\/th><td data-label="Model">m<\/td><td data-label="Input">—<\/td><td data-label="Output">—<\/td><td data-label="Total">—<\/td>/);
 });
 
 test('no definition from the literature shows upstream sentence as none found', async () => {
