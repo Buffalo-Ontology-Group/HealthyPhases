@@ -318,6 +318,61 @@ def test_the_result_survives_a_long_run_of_conflicts(runs, store, monkeypatch):
     assert runs.get(run_id)["result"]["term"] == "loneliness"
 
 
+def test_a_result_that_cannot_be_stored_fails_the_run_with_the_reason(runs):
+    run_id = runs.create({"term": "loneliness"})["run_id"]
+
+    class NaNDefiner(FakeDefiner):
+        def define(self, term, **options):
+            return {**super().define(term, **options), "score": float("nan")}
+
+    with pytest.raises(ValueError):
+        runs.execute(run_id, NaNDefiner, job_run_id="d7")
+
+    run = runs.get(run_id)
+    assert run["status"] == "failed"
+    assert run["error"] == (
+        "The result could not be stored (ValueError). "
+        "See Dagster run d7 for details, then start a new run."
+    )
+    assert run["result"] is None
+
+
+def test_a_start_survives_a_long_run_of_conflicts(runs, store, monkeypatch):
+    run_id = runs.create({"term": "loneliness"})["run_id"]
+    refusals = iter(range(20))
+    busy = Contention(
+        store.dataset,
+        monkeypatch,
+        lambda row: (
+            row["status"] == "running"
+            and row["stage"] is None
+            and next(refusals, None) is not None
+        ),
+    )
+
+    assert runs.execute(run_id, FakeDefiner, job_run_id="d1") == "succeeded"
+
+    assert busy.refused == 20 > ATTEMPTS
+    run = runs.get(run_id)
+    assert run["status"] == "succeeded"
+    assert run["started_at"] is not None
+
+
+def test_starting_a_run_waits_as_long_as_finishing_it(store):
+    pauses = []
+    store.pause = pauses.append
+    runs = make_runs(store)
+    run_id = runs.create({"term": "a"})["run_id"]
+
+    def always_refuse(name, rows, **options):
+        raise DatasetSnapshotConflictError(1, 2)
+
+    store.dataset.write = always_refuse
+    with pytest.raises(DatasetSnapshotConflictError):
+        runs.start(run_id)
+    assert len(pauses) == FINISH_ATTEMPTS - 1
+
+
 def test_finishing_writes_wait_about_fifty_seconds_at_most(store):
     pauses = []
     store.pause = pauses.append

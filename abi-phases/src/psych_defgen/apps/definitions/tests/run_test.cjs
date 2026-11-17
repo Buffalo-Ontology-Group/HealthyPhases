@@ -224,12 +224,26 @@ test('saveJson hands the browser a JSON file to save', async () => {
 });
 
 test('an unknown run says it does not exist', async () => {
-  const { $, page } = await view(response({ detail: 'Run not found' }, { status: 404 }), 'gone');
+  const { $, page } = await view(response({ detail: 'Definition run not found.' }, { status: 404 }), 'gone');
   assert.equal($('run-title').textContent, 'Run not found');
   assert.match($('run-msg').textContent, /This run does not exist/);
   assert.equal($('run-body').innerHTML, '');
   assert.equal(page.polling, false);
 });
+
+for (const [label, answer] of [
+  ['a 404 from a route that is not mounted', () => response({ detail: 'Not Found' }, { status: 404 })],
+  ['a 404 page from the wrong server', () => response('<html>Not found</html>', { status: 404 })],
+]) {
+  test(`${label} does not call the run missing`, async () => {
+    const { $, page } = await view(answer(), 'run-1');
+    assert.notEqual($('run-title').textContent, 'Run not found');
+    assert.doesNotMatch($('run-msg').textContent, /does not exist/);
+    assert.match($('run-msg').textContent, /definitions API was not found at .*\/psych_defgen\/api \(404\)/);
+    assert.equal($('run-retry').hidden, false);
+    assert.equal(page.polling, false);
+  });
+}
 
 test('opening another run drops the late answer for the previous one', async () => {
   let release;
@@ -296,7 +310,7 @@ test('coming back to the tab reads a run again only while it can still change', 
 });
 
 test('a run not found or not loaded yet is handled on refresh', async () => {
-  let answer = response({ detail: 'nope' }, { status: 404 });
+  let answer = response({ detail: 'Definition run not found.' }, { status: 404 });
   const { page, calls } = await view(() => answer);
   await page.refresh();
   assert.equal(calls.length, 1, 'a missing run is not read again');

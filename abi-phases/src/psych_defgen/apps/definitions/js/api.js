@@ -8,12 +8,22 @@
 export const PREFIX = '/psych_defgen/api';
 export const PAGE_SIZE = 25;
 
+// What GET /runs/{id} answers for an unknown run. Any other 404 means the
+// request did not reach the runs API (module not mounted, wrong server).
+export const RUN_NOT_FOUND = 'Definition run not found.';
+
 export class ApiError extends Error {
-  constructor(message, status = 0) {
+  // detail: the API's own {"detail": "..."} text, or null when it sent none.
+  constructor(message, status = 0, detail = null) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.detail = detail;
   }
+}
+
+export function isRunNotFound(error) {
+  return error?.status === 404 && error.detail === RUN_NOT_FOUND;
 }
 
 export function apiBase() {
@@ -90,7 +100,10 @@ export async function request(path, { method = 'GET', body, signal } = {}) {
     throw new ApiError(error?.message ? `Could not reach the server: ${error.message}` : 'Could not reach the server. Check your connection and try again.');
   }
   const payload = await readJson(response, url);
-  if (!response.ok) throw new ApiError(errorMessage(payload, response.status), response.status);
+  if (!response.ok) {
+    const detail = typeof payload?.detail === 'string' ? payload.detail : null;
+    throw new ApiError(errorMessage(payload, response.status), response.status, detail);
+  }
   return payload;
 }
 

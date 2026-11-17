@@ -8,6 +8,7 @@ dependencies = [
     "beautifulsoup4>=4.12",
     "biopython>=1.84",
     "langchain-google-genai>=2.1.12",
+    "lxml>=5",
     "naas-abi>=2.93.1",
     "naas-abi-cli>=2.28.1",
     "naas-abi-core[all]>=2.44.0",

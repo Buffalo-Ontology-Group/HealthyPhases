@@ -77,6 +77,10 @@ EVIDENCE:
 
     try:
         result = json.loads(response["text"])
+        # Rule 10 invites a bare ``null``: any JSON that is not an object
+        # means no definition was selected.
+        if not isinstance(result, dict):
+            return None, usage
         definition = result.get("definition")
 
         if not isinstance(definition, str) or not definition.strip():

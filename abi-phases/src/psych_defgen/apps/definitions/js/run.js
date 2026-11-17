@@ -2,7 +2,7 @@
 // its error or its result, which can be downloaded as JSON. A finished run
 // cannot change, so it is not read again until it is opened again.
 
-import { getRun } from './api.js';
+import { PREFIX, apiBase, getRun, isRunNotFound } from './api.js';
 import { fileName, runBodyHtml, summaryHtml } from './result.js';
 import { $, isActive, latest, message, poller } from './ui.js';
 
@@ -54,12 +54,18 @@ export function createRunView(ctx) {
       if (isActive(run)) poll.schedule();
     } catch (error) {
       if (!token.is(mine)) return;
-      if (error.status === 404) {
+      if (isRunNotFound(error)) {
         run = null;
         missing = true;
         render();
         $('run-title').textContent = 'Run not found';
         message('run-msg', 'This run does not exist. Go back to all runs and open another one.', 'bad');
+        return;
+      }
+      if (error.status === 404) {
+        // Not the API's answer for an unknown run: every run would look gone.
+        message('run-msg', `Could not load the run: the definitions API was not found at ${apiBase() || 'this origin'}${PREFIX} (404). Check that the psych_defgen module is enabled and Nexus points at the ABI API.`, 'bad');
+        $('run-retry').hidden = false;
         return;
       }
       message('run-msg', `Could not load the run: ${error.message}`, 'bad');

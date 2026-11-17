@@ -13,7 +13,7 @@ export function historyRow(run, now = Date.now()) {
     + `<td data-label="Term"><a class="row-link" href="${esc(runHref(run.run_id))}" data-run-id="${esc(run.run_id)}">${esc(run.term)}</a></td>`
     + `<td data-label="Status"><span>${statusPill(run.status)}${stage ? `<small>${esc(stage)}</small>` : ''}</span></td>`
     + `<td data-label="Model">${esc(run.model || '—')}</td>`
-    + `<td data-label="Started">${esc(formatDate(run.created_at))}</td>`
+    + `<td data-label="Requested">${esc(formatDate(run.created_at))}</td>`
     + `<td data-label="Duration">${esc(runDuration(run, now))}</td>`
     + `</tr>`;
 }

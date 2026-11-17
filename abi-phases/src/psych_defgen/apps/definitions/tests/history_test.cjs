@@ -17,7 +17,7 @@ async function history(answer) {
   return { dom, ctx, view, calls, $: dom.$, timers: ctx.timers };
 }
 
-test('each run is a row with its term, status, stage, model, start and duration', async () => {
+test('each run is a row with its term, status, stage, model, request time and duration', async () => {
   const { $, calls } = await history(page([
     run({ run_id: 'r2', status: 'running', stage: 'full_text', started_at: '2026-11-16T10:00:05Z' }),
     run({ run_id: 'r1', status: 'succeeded', started_at: '2026-11-16T09:00:00Z', finished_at: '2026-11-16T09:03:12Z' }),
@@ -30,6 +30,9 @@ test('each run is a row with its term, status, stage, model, start and duration'
   assert.match(html, /openai\/gpt-4\.1-mini/);
   assert.match(html, /3 min 12 s/);
   assert.match(html, /data-label="Duration"/);
+  // The column shows created_at, which the run page calls "Requested".
+  assert.match(html, /data-label="Requested"/);
+  assert.doesNotMatch(html, /data-label="Started"/);
 });
 
 test('an empty history says how to start', async () => {

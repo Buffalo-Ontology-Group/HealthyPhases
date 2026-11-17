@@ -52,7 +52,9 @@ restores it when the app opens without one.
   history stays readable. Settings that failed to load, or that name a missing key, are
   read again when the home page is shown or the tab comes back. A run the API refuses
   (409) keeps its reason on screen after that read. Starting a run opens it.
-- **The history** reads its page again every 5 seconds while a run on it is pending or
+- **The history** lists each run's term, status and stage, model, the time it was
+  requested (`created_at`, labelled "Requested" as on the run page) and its duration. It
+  reads its page again every 5 seconds while a run on it is pending or
   running. A poll that changes nothing leaves the rows alone; one that does puts keyboard
   focus back on the same run's link.
 - **A run** reads itself again every 5 seconds while it is pending or running, showing its

@@ -40,7 +40,7 @@ returns for the same articles.
 | `chunk_text.py` | `domain/chunk_text.py` | changed (imports) | |
 | `extract_definition_candidates.py` | `domain/extract_definition_candidates.py` | changed (imports) | |
 | `select_definition_sentence.py` | `domain/select_definition_sentence.py` | changed | Imports; the LLM selector is passed in as `select_definition_with_llm(term, items)` instead of being imported with provider, model, key and URL arguments. |
-| `llm_definition_selector.py` | `domain/llm_definition_selector.py` | changed | Prompt, parsing and the check that the answer occurs in the evidence are upstream's; the model call is a `generate(messages, json_mode=True)` argument bound to the `LanguageModel` port. |
+| `llm_definition_selector.py` | `domain/llm_definition_selector.py` | changed | Prompt, parsing and the check that the answer occurs in the evidence are upstream's; the model call is a `generate(messages, json_mode=True)` argument bound to the `LanguageModel` port. A reply that is valid JSON but not an object (`null`, as the prompt's rule 10 allows, a list or a string) selects nothing; upstream raised `AttributeError` on it. |
 | `llm_definition_generator.py` | `domain/llm_definition_generator.py` | changed | Same: the prompt is upstream's, the call goes through `generate`. |
 | `parse_fulltext.py` | `domain/parse_fulltext.py`, `adapters/secondary/ncbi_entrez.py` | changed | `extract_paragraphs` and `parse_pmc_xml` are kept in the domain; the PMC `efetch` moved to the NCBI adapter. |
 | `pubmed_search.py` | `adapters/secondary/ncbi_entrez.py` | changed | `search_pubmed` and `fetch_pubmed_authors` as `NcbiEntrez.search` and `.authors`. |
@@ -77,6 +77,9 @@ Not copied: `README.md`, `pyproject.toml`, `uv.lock`, `.gitignore` and
   retried with back-off (4 attempts), the 3 requests/s limit (10 with an API
   key) is kept across threads, and email and key go in a POST body rather
   than a URL.
+- **LLM selection.** A selection reply that is valid JSON but not an object
+  (`null`, a list, a string) means no definition was selected, as invalid
+  JSON already did; upstream raised `AttributeError` and lost the run.
 - **APA Dictionary.** The entry markup upstream waited for is in the HTML
   the server sends, so entries are found the same way. A term without an
   entry gets the site's generic page over plain HTTP, which upstream's rules

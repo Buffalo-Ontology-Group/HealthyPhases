@@ -38,9 +38,11 @@ TERM_MAX_LENGTH = 200
 PAGE_SIZE_DEFAULT = 25
 PAGE_SIZE_MAX = 100
 
-#: Snapshot-conflict retries for the writes that finish a run: after minutes
-#: of NCBI and LLM work, a busy catalog must not cost the result (about 50 s
-#: of waiting; stage writes keep the store's short default).
+#: Snapshot-conflict retries for the writes that start and finish a run:
+#: conflicts are catalog-wide (#635), so a busy catalog must neither fail a
+#: run before it does any work nor cost the result after minutes of NCBI and
+#: LLM work (about 50 s of waiting; stage writes keep the store's short
+#: default).
 FINISH_ATTEMPTS = 60
 
 _WHOLE_NUMBER = re.compile(r"-?[0-9]+")
@@ -241,7 +243,7 @@ class DefinitionRuns:
             started.append(True)
             return {**row, "status": RUNNING, "started_at": self.clock()}
 
-        row = self.store.update(run_id, change)
+        row = self.store.update(run_id, change, attempts=FINISH_ATTEMPTS)
         return row if started else None
 
     def set_stage(self, run_id: str, stage: str) -> None:
@@ -343,7 +345,16 @@ class DefinitionRuns:
                 f"See Dagster run {job_run_id} for details, then start a new run.",
             )
             raise
-        stored = self.succeed(run_id, result)
+        try:
+            stored = self.succeed(run_id, result)
+        except Exception as exc:
+            # Fail the run with the reason; the job fails too.
+            self.fail(
+                run_id,
+                f"The result could not be stored ({type(exc).__name__}). "
+                f"See Dagster run {job_run_id} for details, then start a new run.",
+            )
+            raise
         if stored["status"] != SUCCEEDED:
             logger.warning(
                 f"Definition run {run_id} was {stored['status']} before its "
