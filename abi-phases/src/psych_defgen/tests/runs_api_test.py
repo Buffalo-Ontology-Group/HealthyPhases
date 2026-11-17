@@ -106,7 +106,30 @@ def test_invalid_requests_are_422_with_a_readable_detail(client, body):
 
 
 def test_a_request_without_a_body_is_422(client):
-    assert client.post(f"{API}/runs").status_code == 422
+    response = client.post(f"{API}/runs")
+    assert response.status_code == 422
+    assert isinstance(response.json()["detail"], str)
+
+
+@pytest.mark.parametrize(
+    "content", [b'{"term": "loneliness"', b"term=loneliness", b'{"term": "\xff"}']
+)
+def test_a_malformed_body_is_422_with_a_readable_detail(client, content):
+    response = client.post(
+        f"{API}/runs", content=content, headers={"Content-Type": "application/json"}
+    )
+    assert response.status_code == 422
+    assert response.json() == {
+        "detail": 'The request body must be JSON, such as {"term": "loneliness"}.'
+    }
+    assert client.get(f"{API}/runs").json()["total"] == 0
+
+
+@pytest.mark.parametrize("query", ["page=1_0", "page_size=%D9%A1"])
+def test_page_numbers_must_be_plain_digits(client, query):
+    response = client.get(f"{API}/runs?{query}")
+    assert response.status_code == 422
+    assert isinstance(response.json()["detail"], str)
 
 
 @pytest.mark.parametrize("query", ["page=0", "page_size=0", "page_size=101", "page=x"])
@@ -214,14 +237,6 @@ def test_a_wiring_error_is_logged_and_does_not_stop_the_engine(
     monkeypatch.setattr("psych_defgen.factory.definition_runs", broken)
     app = FastAPI()
     module(dataset).api(app)
-    assert any("wiring broke" in message for message in caplog_messages)
-
-
-@pytest.fixture
-def caplog_messages():
-    from naas_abi_core import logger
-
-    messages = []
-    handler = logger.add(lambda message: messages.append(str(message)))
-    yield messages
-    logger.remove(handler)
+    (logged,) = [m for m in caplog_messages if "Failed to mount" in m]
+    # The traceback is kept, not just the message.
+    assert "Traceback" in logged and "RuntimeError: wiring broke" in logged

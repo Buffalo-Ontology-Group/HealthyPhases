@@ -14,12 +14,15 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import secrets
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Protocol
+
+from naas_abi_core import logger
 
 from psych_defgen.application.definition_service import STAGES
 from psych_defgen.domain.errors import (
@@ -34,6 +37,13 @@ ACTIVE = (PENDING, RUNNING)
 TERM_MAX_LENGTH = 200
 PAGE_SIZE_DEFAULT = 25
 PAGE_SIZE_MAX = 100
+
+#: Snapshot-conflict retries for the writes that finish a run: after minutes
+#: of NCBI and LLM work, a busy catalog must not cost the result (about 50 s
+#: of waiting; stage writes keep the store's short default).
+FINISH_ATTEMPTS = 60
+
+_WHOLE_NUMBER = re.compile(r"-?[0-9]+")
 
 
 @dataclass(frozen=True)
@@ -77,7 +87,9 @@ class RunStore(Protocol):
         """The run with ``result`` as JSON text; raises ``RunNotFoundError``."""
         ...
 
-    def page(self, *, offset: int, limit: int) -> tuple[int, list[dict[str, Any]]]: ...
+    def page(self, *, offset: int, limit: int) -> tuple[int, list[dict[str, Any]]]:
+        """Runs newest first, without ``result``, and the total count."""
+        ...
 
     def with_status(self, *statuses: str) -> list[dict[str, Any]]: ...
 
@@ -85,6 +97,8 @@ class RunStore(Protocol):
         self,
         run_id: str,
         change: Callable[[dict[str, Any]], dict[str, Any] | None],
+        *,
+        attempts: int = ...,
     ) -> dict[str, Any]: ...
 
 
@@ -118,18 +132,13 @@ def _integer(
     if isinstance(value, bool):
         raise InvalidRunError(message)
     if from_text and isinstance(value, str):
-        try:
-            value = int(value.strip())
-        except ValueError:
-            raise InvalidRunError(message) from None
+        # Plain ASCII digits only: int() would also take "1_0" or "١".
+        if not _WHOLE_NUMBER.fullmatch(value.strip()):
+            raise InvalidRunError(message)
+        value = int(value.strip())
     if not isinstance(value, int) or not low <= value <= high:
         raise InvalidRunError(message)
     return value
-
-
-def summary(row: dict[str, Any]) -> dict[str, Any]:
-    """A run as the list returns it: without ``result``."""
-    return {key: value for key, value in row.items() if key != "result"}
 
 
 class DefinitionRuns:
@@ -198,7 +207,7 @@ class DefinitionRuns:
         page_size = _integer(page_size, "page_size", 1, PAGE_SIZE_MAX, from_text=True)
         total, rows = self.store.page(offset=(page - 1) * page_size, limit=page_size)
         return {
-            "runs": [summary(row) for row in rows],
+            "runs": rows,
             "total": total,
             "page": page,
             "page_count": math.ceil(total / page_size),
@@ -248,6 +257,8 @@ class DefinitionRuns:
         )
 
     def succeed(self, run_id: str, result: dict[str, Any]) -> dict[str, Any]:
+        """Store the result of a running run; returns the row as stored, which
+        is left as it was if the run is no longer running."""
         text = json.dumps(result, ensure_ascii=False, allow_nan=False)
         return self.store.update(
             run_id,
@@ -262,6 +273,7 @@ class DefinitionRuns:
                 if row["status"] == RUNNING
                 else None
             ),
+            attempts=FINISH_ATTEMPTS,
         )
 
     def fail(self, run_id: str, message: str) -> dict[str, Any]:
@@ -278,6 +290,7 @@ class DefinitionRuns:
                 if row["status"] in ACTIVE
                 else None
             ),
+            attempts=FINISH_ATTEMPTS,
         )
 
     def execute(
@@ -301,8 +314,15 @@ class DefinitionRuns:
         reached: list[str] = []
 
         def on_stage(stage: str) -> None:
+            # Progress only: a store that cannot take it must not stop the run.
             reached.append(stage)
-            self.set_stage(run_id, stage)
+            try:
+                self.set_stage(run_id, stage)
+            except Exception:  # noqa: BLE001
+                logger.opt(exception=True).warning(
+                    f"Definition run {run_id}: stage '{stage}' not stored; "
+                    "the run goes on."
+                )
 
         try:
             result = definer().define(
@@ -323,5 +343,10 @@ class DefinitionRuns:
                 f"See Dagster run {job_run_id} for details, then start a new run.",
             )
             raise
-        self.succeed(run_id, result)
-        return SUCCEEDED
+        stored = self.succeed(run_id, result)
+        if stored["status"] != SUCCEEDED:
+            logger.warning(
+                f"Definition run {run_id} was {stored['status']} before its "
+                "result could be stored; the result was discarded."
+            )
+        return stored["status"]

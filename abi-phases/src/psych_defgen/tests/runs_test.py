@@ -1,7 +1,9 @@
 import pytest
+from naas_abi_core.services.dataset.DatasetPort import DatasetSnapshotConflictError
 
+from psych_defgen.adapters.secondary.definition_run_store import ATTEMPTS
 from psych_defgen.application.definition_service import STAGES
-from psych_defgen.application.runs import new_run_id
+from psych_defgen.application.runs import FINISH_ATTEMPTS, new_run_id
 from psych_defgen.domain.errors import (
     DefinitionStepError,
     InvalidRunError,
@@ -268,3 +270,96 @@ def test_run_ids_sort_by_creation_time():
     first = new_run_id()
     assert len(first) == 32 and int(first, 16) >= 0
     assert new_run_id()[:12] >= first[:12]
+
+
+class Contention:
+    """Makes the dataset refuse matching writes with a snapshot conflict,
+    as a busy catalog does when other modules commit in between."""
+
+    def __init__(self, dataset, monkeypatch, refuse):
+        self.real_write = dataset.write
+        self.refuse = refuse  # (row) -> how many more times to refuse it
+        self.refused = 0
+        monkeypatch.setattr(dataset, "write", self.write)
+
+    def write(self, name, rows, **options):
+        if options.get("snapshot_id") is not None and self.refuse(rows[0]):
+            self.refused += 1
+            raise DatasetSnapshotConflictError(
+                options["snapshot_id"], options["snapshot_id"] + 1
+            )
+        return self.real_write(name, rows, **options)
+
+
+def test_a_stage_that_cannot_be_stored_does_not_stop_the_run(runs, store, monkeypatch):
+    run_id = runs.create({"term": "loneliness"})["run_id"]
+    busy = Contention(store.dataset, monkeypatch, lambda row: row["stage"] == "ranking")
+
+    assert runs.execute(run_id, FakeDefiner, job_run_id="d1") == "succeeded"
+
+    assert busy.refused == ATTEMPTS  # every attempt at the ranking stage
+    run = runs.get(run_id)
+    assert run["status"] == "succeeded"
+    assert run["result"]["term"] == "loneliness"
+
+
+def test_the_result_survives_a_long_run_of_conflicts(runs, store, monkeypatch):
+    run_id = runs.create({"term": "loneliness"})["run_id"]
+    refusals = iter(range(3 * ATTEMPTS))
+    busy = Contention(
+        store.dataset,
+        monkeypatch,
+        lambda row: row["status"] == "succeeded" and next(refusals, None) is not None,
+    )
+
+    assert runs.execute(run_id, FakeDefiner, job_run_id="d1") == "succeeded"
+
+    assert busy.refused == 3 * ATTEMPTS
+    assert runs.get(run_id)["result"]["term"] == "loneliness"
+
+
+def test_finishing_writes_wait_about_fifty_seconds_at_most(store):
+    pauses = []
+    store.pause = pauses.append
+    runs = make_runs(store)
+    run_id = runs.create({"term": "a"})["run_id"]
+    runs.start(run_id)
+
+    def always_refuse(name, rows, **options):
+        raise DatasetSnapshotConflictError(1, 2)
+
+    store.dataset.write = always_refuse
+    with pytest.raises(DatasetSnapshotConflictError):
+        runs.succeed(run_id, RESULT)
+    assert len(pauses) == FINISH_ATTEMPTS - 1
+    assert 45 < sum(pauses) < 55
+
+
+def test_a_result_for_a_run_failed_meanwhile_is_not_reported_as_stored(
+    runs, caplog_messages
+):
+    run_id = runs.create({"term": "loneliness"})["run_id"]
+
+    def released(stage):
+        if stage == "synthesis":  # e.g. a sensor fails the run meanwhile
+            runs.fail(run_id, "Dagster run d0 was canceled. Start a new run.")
+
+    status = runs.execute(run_id, lambda: FakeDefiner(seen=released), job_run_id="d1")
+
+    assert status == "failed"
+    run = runs.get(run_id)
+    assert run["result"] is None
+    assert run["error"] == "Dagster run d0 was canceled. Start a new run."
+    assert any("result was discarded" in m for m in caplog_messages)
+
+
+@pytest.mark.parametrize("text", ["1_0", "١", "2.0", "+-1", "--1", "0x10", ""])
+def test_page_numbers_are_plain_digits(runs, text):
+    with pytest.raises(InvalidRunError):
+        runs.list(text, "25")
+
+
+def test_page_numbers_may_have_surrounding_spaces(runs):
+    assert runs.list(" 1 ", "10 ")["page"] == 1
+    with pytest.raises(InvalidRunError, match="from 1 to"):
+        runs.list("-1", "25")

@@ -58,6 +58,17 @@ def dataset(tmp_path):
 
 
 @pytest.fixture
+def caplog_messages():
+    """Messages the module logs during a test, tracebacks included."""
+    from naas_abi_core import logger
+
+    messages = []
+    handler = logger.add(lambda message: messages.append(str(message)))
+    yield messages
+    logger.remove(handler)
+
+
+@pytest.fixture
 def store(dataset):
     store = DefinitionRunStore(dataset, pause=lambda _: None)
     store.ensure()

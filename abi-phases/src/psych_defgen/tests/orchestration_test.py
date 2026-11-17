@@ -151,6 +151,46 @@ def test_the_job_stores_a_step_failure_and_fails(runs, wired, instance):
     )
 
 
+def test_a_job_launched_by_hand_tags_itself_and_is_not_released(runs, wired, instance):
+    run_id = runs.create({"term": "loneliness"})["run_id"]
+    seen = {}
+
+    def tick_meanwhile(stage):
+        if stage == "ranking":
+            seen["tick"] = tick(instance)
+            seen["status"] = runs.get(run_id)["status"]
+
+    wired["definer"] = FakeDefiner(seen=tick_meanwhile)
+    # As the launchpad does: run config only, no run tag.
+    outcome = orchestration.run_job.execute_in_process(
+        run_config={"ops": {"define_construct": {"config": {"run_id": run_id}}}},
+        instance=instance,
+    )
+
+    assert outcome.success
+    assert instance.get_run_by_id(outcome.run_id).tags[TAG] == run_id
+    assert isinstance(seen["tick"], dg.SkipReason)  # in progress, not released
+    assert seen["status"] == "running"
+    assert runs.get(run_id)["status"] == "succeeded"
+
+
+def test_the_job_fails_when_its_result_could_not_be_stored(runs, wired, instance):
+    run_id = runs.create({"term": "loneliness"})["run_id"]
+
+    def released(stage):
+        if stage == "synthesis":
+            runs.fail(run_id, "Dagster run d0 was canceled. Start a new run.")
+
+    wired["definer"] = FakeDefiner(seen=released)
+    (request,) = tick(instance)
+
+    outcome = launch(instance, request)
+
+    assert not outcome.success
+    run = runs.get(run_id)
+    assert (run["status"], run["result"]) == ("failed", None)
+
+
 def test_the_failure_sensor_marks_the_run_failed(runs, wired, instance):
     run_id = runs.create({"term": "loneliness"})["run_id"]
     runs.start(run_id)

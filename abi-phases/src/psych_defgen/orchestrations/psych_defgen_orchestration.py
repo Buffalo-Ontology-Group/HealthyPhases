@@ -61,6 +61,10 @@ class RunConfig(dg.Config):
 
 @dg.op(name=OP)
 def define_construct(context: dg.OpExecutionContext, config: RunConfig) -> str:
+    if context.run.tags.get(TAG) != config.run_id:
+        # Launched by hand (e.g. from the launchpad): tag the Dagster run so
+        # the sensors recognise it as this run's.
+        context.instance.add_run_tags(context.run_id, {TAG: config.run_id})
     service = runs()
     status = service.execute(config.run_id, definer, job_run_id=context.run_id)
     if status == FAILED:
@@ -110,11 +114,17 @@ def release_stopped(
     A pending run with no Dagster run yet is waiting for this sensor, and is
     left alone.
     """
+    if not active:
+        return set()
+    # One lookup for every active run; newest Dagster run first.
+    by_run: dict[str, list] = {}
+    for dagster_run in instance.get_runs(
+        filters=dg.RunsFilter(tags={TAG: [row["run_id"] for row in active]})
+    ):
+        by_run.setdefault(dagster_run.tags[TAG], []).append(dagster_run)
     stopped = set()
     for row in active:
-        dagster_runs = instance.get_runs(
-            filters=dg.RunsFilter(tags={TAG: row["run_id"]})
-        )
+        dagster_runs = by_run.get(row["run_id"], [])
         if any(run.status not in FINISHED for run in dagster_runs):
             continue
         if row["status"] == PENDING and not dagster_runs:

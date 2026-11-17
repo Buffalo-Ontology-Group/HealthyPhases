@@ -80,7 +80,10 @@ A run is written a handful of times: created, started, once per stage, and
 finished, because DuckLake commits serialise (#635). Each change re-reads the
 row and writes it against the catalog snapshot it read, retrying on a newer
 one, so the job and the sensors never overwrite each other: a finished run
-stays finished.
+stays finished. Snapshots are catalog-wide, so other modules' commits cause
+retries too. A stage write gives up after about 1.4 s and the run goes on
+without it (stages only report progress); the writes that finish a run keep
+trying for about 50 s, so a busy catalog does not cost a finished definition.
 
 `application/runs.py` (`DefinitionRuns`) validates requests, lists and reads
 runs, and moves them through their states; `execute()` is the job's body.
@@ -98,7 +101,10 @@ location like the other modules' orchestrations:
   (canceled, or lost in a restart), so a stuck run never holds the queue.
 - **`psych_defgen_run`** (op `define_construct`) marks the run running, calls
   `define()` with each stage written to the run, and stores the result, or
-  the error:
+  the error. Launched by hand (from the launchpad, with only the run config),
+  it tags its Dagster run itself so that the sensors recognise it. If the
+  run was failed meanwhile, the result is not stored, a warning says so and
+  the Dagster run fails. Errors:
   - a `DefinitionStepError` or `NotConfiguredError` message is stored as is
     (it names the step or the missing keys, never a value), and the Dagster
     run fails too;
@@ -128,7 +134,11 @@ the ABI API token (`Depends(require_abi_api_token)`). Errors are
 - `409` naming the missing keys when any required key is unset; nothing is
   stored.
 
-`GET /runs` answers `422` when `page` is below 1 or `page_size` is not 1–100.
+A body that is not JSON is a `422` too, with a string `detail` like every
+other error.
+
+`GET /runs` answers `422` when `page` is below 1, `page_size` is not 1–100,
+or either is not plain digits.
 No response holds a key or the NCBI email.
 
 ## Configuration

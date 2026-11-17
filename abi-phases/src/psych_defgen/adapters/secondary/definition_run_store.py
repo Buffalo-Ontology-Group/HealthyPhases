@@ -48,8 +48,11 @@ SPEC = DatasetSpec(
 )
 
 #: Conditional writes retry on a newer catalog snapshot. Snapshots are
-#: catalog-wide, so other modules' commits count too (#635).
+#: catalog-wide, so other modules' commits count too (#635). ATTEMPTS is the
+#: default (about 1.4 s of waiting in all); callers that must not lose a
+#: write pass more (60 attempts wait about 50 s).
 ATTEMPTS = 8
+MAX_PAUSE = 1.0
 
 
 def literal(value: str) -> str:
@@ -110,13 +113,16 @@ class DefinitionRunStore:
         self,
         run_id: str,
         change: Callable[[dict[str, Any]], dict[str, Any] | None],
+        *,
+        attempts: int = ATTEMPTS,
     ) -> dict[str, Any]:
         """Apply ``change`` to the current row and write it back.
 
         ``change`` returns the new row, or ``None`` to leave it as it is.
-        Returns the row as stored afterwards.
+        Returns the row as stored afterwards. After ``attempts`` snapshot
+        conflicts, the last ``DatasetSnapshotConflictError`` is raised.
         """
-        for attempt in range(ATTEMPTS):
+        for attempt in range(attempts):
             snapshot = self.dataset.describe(TABLE, namespace=NAMESPACE).snapshot_id
             current = self.get(run_id)
             updated = change(dict(current))
@@ -132,9 +138,9 @@ class DefinitionRunStore:
                 )
                 return updated
             except DatasetSnapshotConflictError:
-                if attempt == ATTEMPTS - 1:
+                if attempt == attempts - 1:
                     raise
-                self.pause(0.05 * (attempt + 1))
+                self.pause(min(0.05 * (attempt + 1), MAX_PAUSE))
         raise AssertionError("unreachable")  # pragma: no cover
 
     def _query(self, sql: str) -> list[dict[str, Any]]:

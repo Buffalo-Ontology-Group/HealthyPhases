@@ -4,9 +4,11 @@ Requests only queue runs and read them: the definitions themselves are made
 by the Dagster job ``psych_defgen_run``. Errors are ``{"detail": "..."}``.
 """
 
-from typing import Annotated, Any
+import json
+from typing import Any
 
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from naas_abi_core.apps.api.abi_api_key_auth import require_abi_api_token
 
 from psych_defgen.application.runs import PAGE_SIZE_DEFAULT, DefinitionRuns
@@ -40,12 +42,20 @@ def router(runs: DefinitionRuns) -> APIRouter:
     def settings() -> dict[str, Any]:
         return runs.settings()
 
+    # The body and the page numbers are parsed here, not by FastAPI, so that
+    # a malformed one gets the same {"detail": "..."} as every other error.
     @api.post("/runs", status_code=201)
-    def create_run(body: Annotated[Any, Body()] = None) -> dict[str, Any]:
-        return call(runs.create, body)
+    async def create_run(request: Request) -> dict[str, Any]:
+        raw = await request.body()
+        try:
+            body = json.loads(raw) if raw.strip() else None
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            raise HTTPException(
+                422, 'The request body must be JSON, such as {"term": "loneliness"}.'
+            ) from None
+        # Creating a run writes to the dataset: keep it off the event loop.
+        return await run_in_threadpool(call, runs.create, body)
 
-    # Page numbers arrive as text so that a bad value gets the same
-    # {"detail": "..."} as every other error.
     @api.get("/runs")
     def list_runs(
         page: str = "1", page_size: str = str(PAGE_SIZE_DEFAULT)

@@ -102,5 +102,5 @@ class ABIModule(BaseModule[PsychDefgenConfiguration]):
             runs = definition_runs(self._engine.services.dataset, self._configuration)
             app.include_router(router(runs))
             logger.debug("Mounted psych_defgen API at /psych_defgen/api")
-        except Exception as exc:  # noqa: BLE001
-            logger.error(f"Failed to mount the psych_defgen API: {exc}")
+        except Exception:  # noqa: BLE001
+            logger.exception("Failed to mount the psych_defgen API")
