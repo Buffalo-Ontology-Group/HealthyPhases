@@ -458,8 +458,20 @@ DuckLake catalog marks that version deleted, and the nightly
 `dataset_compaction_job` turns the mark into a position when it flushes the
 inlined rows to Parquet. On 2026-11-07 the flush wrote one file's rows in a
 different order from the positions it computed, so nine good extractions were
-hidden and the nine versions they replaced came back. The coverage check's
-integrity section reports this. To repair it:
+hidden and the nine versions they replaced came back.
+
+The coverage check's integrity section shows what that fault left: a key
+held by more than one row (the hidden row's neighbour back next to its own
+replacement) and extracted items whose extraction row is missing (the hidden
+row's items). It cannot see every such fault: a misplaced delete that hides a
+key's new version while bringing back that same key's old one leaves one row
+per key and no orphan items. The repair below cannot tell that case either,
+since the snapshot re-inserted the key it deleted; only a check inside the
+compaction itself would catch it.
+
+To repair, while no extraction run or compaction is writing (the plan is read
+first, and a restore is an upsert, so a row written in between would be
+overwritten):
 
 ```
 uv run abi run script src/phases_v2/migrations/repair_misapplied_deletes.py -- --dry-run
@@ -470,11 +482,19 @@ It reads DuckLake's own record of what each snapshot inserted and deleted
 (`ducklake_table_insertions` / `ducklake_table_deletions`). Every write here is
 an upsert or an outright delete, so a snapshot that inserted rows deletes only
 keys it re-inserted; any other row it deleted was deleted by mistake. For every
-`phases_v2` dataset, such a row is written back as it was when its key has no
-row now, and of a key held by more than one row only the version written last
-(the highest `snapshot_id`) is kept, the others deleted by key and snapshot
-(`store.delete_versions`). Restored rows keep their ids, so their items and
-projections need nothing. A second run finds nothing to do.
+`phases_v2` dataset:
+
+- such a row is written back as it was when its key has no row now and no
+  later snapshot inserted or deleted that key. DuckLake keeps the mistaken
+  delete in its record for good, so every run finds it again; a key written or
+  deleted since was changed on purpose and is left as is;
+- of a key held by more than one row only the version written last (the
+  highest `snapshot_id`) is kept, the others deleted by key and snapshot
+  (`store.delete_versions`). Copies that one snapshot wrote cannot be told
+  apart: the key is reported as left as is.
+
+Restored rows keep their ids, so their items and projections need nothing. A
+second run finds nothing to do.
 
 ## Authoring pipelines in the web app
 

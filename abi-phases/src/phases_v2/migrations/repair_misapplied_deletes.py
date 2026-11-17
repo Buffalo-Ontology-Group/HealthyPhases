@@ -19,16 +19,25 @@ was deleted by mistake.
 
 What it does, for every ``phases_v2`` dataset:
 
-1. a row deleted by mistake whose key has no row now is written back as it was;
-   a key that has a row again was rewritten since, and is left alone;
+1. a row deleted by mistake is written back as it was, but only when its key
+   has no row now and no snapshot after the mistaken delete inserted or
+   deleted that key. DuckLake keeps the mistaken delete in its record for
+   good, so every run finds it again; a key written or deleted since was
+   rewritten or removed on purpose (a re-run, ``rename_prompt``, a delete),
+   and is left as is;
 2. a key held by more than one row keeps the version written last (the highest
-   ``snapshot_id``), and the others are deleted by their key and snapshot, in
-   one statement per dataset. Copies share their key and their DuckLake row
-   id, so the snapshot is what tells them apart.
+   ``snapshot_id``), and the others are deleted by their key and snapshot.
+   Copies share their key and their DuckLake row id, so the snapshot is what
+   tells them apart. When the newest copies of a key were written by one
+   snapshot, nothing tells them apart: the key is reported and left as is.
 
 Restoring comes first, so a run stopped in between leaves only duplicates, which
 the next run removes. Nothing is projected: restored rows have the ids their
 items and projections already name. A second run finds nothing to do.
+
+Run it while no extraction run or compaction is writing: the plan is read
+first, and a restore is an upsert, so a row written in between would be
+overwritten.
 
 Run on the deployment with::
 
@@ -39,6 +48,7 @@ Run on the deployment with::
 from __future__ import annotations
 
 import sys
+from collections import Counter
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -48,7 +58,7 @@ from naas_abi_core.services.dataset.DatasetService import DatasetService
 from phases_v2.datasets import store
 from phases_v2.datasets.row_store import DatasetRowStore
 from phases_v2.datasets.schemas import DATASETS
-from phases_v2.sql import literal
+from phases_v2.sql import any_row, batches, literal
 
 
 @dataclass
@@ -56,10 +66,15 @@ class DatasetRepair:
     name: str
     #: Rows deleted by mistake, with the snapshot that deleted them.
     misapplied: list[dict[str, Any]] = field(default_factory=list)
-    #: Of those, the rows to write back: their key has no row now.
+    #: Of those, the rows to write back: their key has no row now and was not
+    #: written or deleted since.
     restore: list[dict[str, Any]] = field(default_factory=list)
+    #: The others: their key was rewritten or deleted since, or has a row now.
+    left: list[dict[str, Any]] = field(default_factory=list)
     #: Older versions of keys held by more than one row: key + ``snapshot_id``.
     surplus: list[dict[str, Any]] = field(default_factory=list)
+    #: Keys whose newest copies one snapshot wrote: key + ``copies``.
+    tied: list[dict[str, Any]] = field(default_factory=list)
 
     @property
     def changed(self) -> int:
@@ -82,12 +97,17 @@ class Report:
         lines = [title]
         width = max((len(d.name) for d in self.datasets), default=0)
         for d in self.datasets:
-            if not (d.misapplied or d.surplus):
+            if not (d.misapplied or d.surplus or d.tied):
                 continue
-            lines.append(
+            line = (
                 f"{d.name:{width}}  deleted by mistake {len(d.misapplied)}, "
-                f"restored {len(d.restore)}, older copies removed {len(d.surplus)}"
+                f"restored {len(d.restore)}, "
+                f"left as is {len(d.left)} (rewritten or deleted since), "
+                f"older copies removed {len(d.surplus)}"
             )
+            if d.tied:
+                line += f", left as is {len(d.tied)} keys (copies from one snapshot)"
+            lines.append(line)
         if not self.changed:
             lines.append("nothing to do")
         return "\n".join(lines)
@@ -97,13 +117,17 @@ def _key(spec: DatasetSpec, row: dict[str, Any]) -> tuple[str, ...]:
     return tuple(str(row[column]) for column in spec.primary_key)
 
 
+def _changes(spec: DatasetSpec, catalog: str, snapshot: int) -> str:
+    """Arguments of DuckLake's change functions: the table's whole history."""
+    return f"{literal(catalog)}, {literal(spec.namespace)}, {literal(spec.name)}, 1, {snapshot}"
+
+
 def _misapplied(
-    rows: DatasetRowStore, spec: DatasetSpec, catalog: str, snapshot: int
+    rows: DatasetRowStore, spec: DatasetSpec, changes: str
 ) -> list[dict[str, Any]]:
     keys = ", ".join(spec.primary_key)
     match = " AND ".join(f"ins.{c} = del.{c}" for c in spec.primary_key)
     columns = ", ".join(f"del.{c.name}" for c in spec.columns)
-    changes = f"{literal(catalog)}, {literal(spec.namespace)}, {literal(spec.name)}, 1, {snapshot}"
     # With no deletions at all, DuckLake returns an empty list that lacks the
     # snapshot_id column, so there is nothing to compare.
     [deleted] = rows.query(
@@ -123,34 +147,79 @@ def _misapplied(
     )
 
 
-def _surplus(rows: DatasetRowStore, spec: DatasetSpec) -> list[dict[str, Any]]:
+def _copies(
+    rows: DatasetRowStore, spec: DatasetSpec
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Of the keys held by more than one row: the older versions, and the keys
+    whose newest copies one snapshot wrote."""
     keys = ", ".join(spec.primary_key)
     match = " AND ".join(f"t.{c} = dup.{c}" for c in spec.primary_key)
-    return rows.query(
+    copies = rows.query(
         f"WITH dup AS (SELECT {keys} FROM {spec.name} GROUP BY ALL "  # nosec B608 - names come from the declared schemas
         "HAVING count(*) > 1), "
         f"v AS (SELECT t.{', t.'.join(spec.primary_key)}, t.snapshot_id, "
         f"max(t.snapshot_id) OVER (PARTITION BY {', '.join(f't.{c}' for c in spec.primary_key)}) AS latest "
         f"FROM {spec.name} t JOIN dup ON {match}) "
-        f"SELECT {keys}, snapshot_id FROM v WHERE snapshot_id < latest "
-        f"ORDER BY {keys}, snapshot_id"
+        f"SELECT {keys}, snapshot_id, latest FROM v ORDER BY {keys}, snapshot_id"
     )
+    surplus = [
+        {c: r[c] for c in (*spec.primary_key, "snapshot_id")}
+        for r in copies
+        if r["snapshot_id"] < r["latest"]
+    ]
+    newest = Counter(_key(spec, r) for r in copies if r["snapshot_id"] == r["latest"])
+    tied = [
+        dict(zip(spec.primary_key, key), copies=n)
+        for key, n in sorted(newest.items())
+        if n > 1
+    ]
+    return surplus, tied
+
+
+def _unique_keys(
+    spec: DatasetSpec, candidates: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    keys = {_key(spec, r): r for r in candidates}
+    return [{c: r[c] for c in spec.primary_key} for r in keys.values()]
 
 
 def _present(
     rows: DatasetRowStore, spec: DatasetSpec, candidates: list[dict[str, Any]]
 ) -> set[tuple[str, ...]]:
-    if not candidates:
-        return set()
     keys = ", ".join(spec.primary_key)
-    wanted = " OR ".join(
-        "(" + " AND ".join(f"{c} = {literal(r[c])}" for c in spec.primary_key) + ")"
-        for r in candidates
-    )
-    return {
-        _key(spec, r)
-        for r in rows.query(f"SELECT DISTINCT {keys} FROM {spec.name} WHERE {wanted}")  # nosec B608 - values go through literal
-    }
+    present = set()
+    for batch in batches(_unique_keys(spec, candidates)):
+        present |= {
+            _key(spec, r)
+            for r in rows.query(
+                f"SELECT DISTINCT {keys} FROM {spec.name} "  # nosec B608 - values go through literal
+                f"WHERE {any_row(spec.primary_key, batch)}"
+            )
+        }
+    return present
+
+
+def _last_change(
+    rows: DatasetRowStore,
+    spec: DatasetSpec,
+    changes: str,
+    candidates: list[dict[str, Any]],
+) -> dict[tuple[str, ...], int]:
+    """The last snapshot that inserted or deleted each candidate key."""
+    keys = ", ".join(spec.primary_key)
+    last = {}
+    # Candidates come from a snapshot that inserted and deleted rows, so both
+    # change functions return their snapshot_id column.
+    for batch in batches(_unique_keys(spec, candidates)):
+        for r in rows.query(
+            f"SELECT {keys}, max(snapshot_id) AS last FROM ("  # nosec B608 - names come from the declared schemas; values go through literal
+            f"SELECT snapshot_id, {keys} FROM ducklake_table_insertions({changes}) "
+            f"UNION ALL SELECT snapshot_id, {keys} "
+            f"FROM ducklake_table_deletions({changes})) "
+            f"WHERE {any_row(spec.primary_key, batch)} GROUP BY ALL"
+        ):
+            last[_key(spec, r)] = int(r["last"])
+    return last
 
 
 def plan(dataset: DatasetService) -> list[DatasetRepair]:
@@ -161,17 +230,23 @@ def plan(dataset: DatasetService) -> list[DatasetRepair]:
     if snapshot is None:
         return repairs
     for spec in DATASETS:
+        changes = _changes(spec, where["catalog"], snapshot)
         repair = DatasetRepair(spec.name)
-        repair.misapplied = _misapplied(rows, spec, where["catalog"], snapshot)
+        repair.misapplied = _misapplied(rows, spec, changes)
         present = _present(rows, spec, repair.misapplied)
-        restore: dict[tuple[str, ...], dict[str, Any]] = {}
-        # The version deleted last is the newest one.
+        last = _last_change(rows, spec, changes, repair.misapplied)
+        decided: set[tuple[str, ...]] = set()
+        # The version deleted last is the newest one; earlier ones of the same
+        # key were superseded by it.
         for row in reversed(repair.misapplied):
             key = _key(spec, row)
-            if key not in present and key not in restore:
-                restore[key] = {c.name: row[c.name] for c in spec.columns}
-        repair.restore = list(restore.values())
-        repair.surplus = _surplus(rows, spec)
+            since = last.get(key, row["deleted_at"]) > row["deleted_at"]
+            if key in decided or key in present or since:
+                repair.left.insert(0, row)
+            else:
+                repair.restore.insert(0, {c.name: row[c.name] for c in spec.columns})
+            decided.add(key)
+        repair.surplus, repair.tied = _copies(rows, spec)
         repairs.append(repair)
     return repairs
 

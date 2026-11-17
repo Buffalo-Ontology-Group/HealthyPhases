@@ -470,6 +470,47 @@ def test_duplicate_keys_and_orphan_items_are_found_and_agree_with_the_fake(
     assert (found.orphan_items, found.orphan_sample) == (1, ("gone",))
 
 
+def test_composite_keys_are_compared_part_by_part(tmp_path):
+    from phases_v2.datasets.schemas import NAMESPACE
+
+    dataset = DatasetService(
+        adapter=DatasetSecondaryAdapterDuckLake(
+            catalog=f"sqlite:{tmp_path / 'catalog.sqlite'}",
+            data_path=str(tmp_path / "warehouse") + "/",
+        )
+    )
+    ensure_datasets(dataset)
+    # Distinct keys that read the same once joined with "/" or with NULL
+    # parts dropped.
+    dataset.query(
+        "INSERT INTO projections (target, key) VALUES "
+        "('graph', 'a/b'), ('graph/a', 'b'), ('x', NULL), (NULL, 'x')",
+        namespace=NAMESPACE,
+    )
+    rows = DatasetRowStore(dataset)
+    reader = DatasetCoverageReader(
+        rows,
+        snapshot=rows.snapshot(),
+        pubmed=None,
+        storage=Storage(),
+        supported=lambda name: name.endswith(".pdf"),
+    )
+    assert reader.integrity().duplicates == []
+
+    dataset.query(
+        "INSERT INTO projections (target, key) VALUES ('graph', 'a/b')",
+        namespace=NAMESPACE,
+    )
+
+    [dup] = reader.integrity().duplicates
+    assert (dup.dataset, dup.keys, dup.surplus, dup.sample) == (
+        "projections",
+        1,
+        1,
+        ("graph/a/b",),
+    )
+
+
 def test_a_clean_corpus_has_nothing_to_report(env):
     assert env["reader"].integrity() == env["fake"].integrity()
     assert env["reader"].integrity().duplicates == []

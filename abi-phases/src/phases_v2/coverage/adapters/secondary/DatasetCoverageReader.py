@@ -383,10 +383,12 @@ class DatasetCoverageReader:
     def integrity(self):
         duplicates = []
         for spec in DATASETS:
-            key = "concat_ws('/', " + ", ".join(spec.primary_key) + ")"
+            # Grouped on the key columns themselves: a joined string would merge
+            # keys whose parts contain the separator, and drop NULL parts.
+            keys = ", ".join(spec.primary_key)
             rows = self._rows.query(
-                f"SELECT {key} AS key, count(*) AS n FROM {spec.name} "  # nosec B608 - names come from the declared schemas
-                "GROUP BY ALL HAVING count(*) > 1 ORDER BY key"
+                f"SELECT {keys}, count(*) AS n FROM {spec.name} "  # nosec B608 - names come from the declared schemas
+                f"GROUP BY ALL HAVING count(*) > 1 ORDER BY {keys}"
             )
             if rows:
                 duplicates.append(
@@ -394,7 +396,13 @@ class DatasetCoverageReader:
                         spec.name,
                         keys=len(rows),
                         surplus=sum(int(r["n"]) - 1 for r in rows),
-                        sample=tuple(r["key"] for r in rows[:_SAMPLE]),
+                        sample=tuple(
+                            "/".join(
+                                "NULL" if r[c] is None else str(r[c])
+                                for c in spec.primary_key
+                            )
+                            for r in rows[:_SAMPLE]
+                        ),
                     )
                 )
         orphans = self._rows.query(

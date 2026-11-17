@@ -42,30 +42,42 @@ def lake(tmp_path):
     )
     store.ensure_datasets(dataset)
 
-    def fault(new_version, deleted_key):
-        """One snapshot that inserts ``new_version`` and deletes ``deleted_key``'s
-        row, leaving the version it replaced: what the bad flush left behind."""
+    def raw(*statements):
+        """Run ``statements`` in one DuckDB transaction, bypassing the store:
+        the only way to leave what a storage fault leaves."""
         con = duckdb.connect()
         con.execute("LOAD ducklake")
         con.execute(f"ATTACH 'ducklake:sqlite:{catalog}' AS lake (DATA_PATH '{data}')")
-        columns = ", ".join(new_version)
-        values = ", ".join("?" for _ in new_version)
         con.execute("BEGIN")
-        con.execute(
-            f"INSERT INTO lake.{NAMESPACE}.extractions ({columns}) VALUES ({values})",
-            [
-                None if v is None else str(v) if k == "response" else v
-                for k, v in new_version.items()
-            ],
-        )
-        con.execute(
-            f"DELETE FROM lake.{NAMESPACE}.extractions WHERE extraction_id = ?",
-            [deleted_key],
-        )
+        for sql, params in statements:
+            con.execute(sql.replace("{table}", f"lake.{NAMESPACE}.extractions"), params)
         con.execute("COMMIT")
         con.close()
 
-    return dataset, fault
+    def insert(row):
+        columns = ", ".join(row)
+        values = ", ".join("?" for _ in row)
+        return (
+            f"INSERT INTO {{table}} ({columns}) VALUES ({values})",
+            [
+                None if v is None else str(v) if k == "response" else v
+                for k, v in row.items()
+            ],
+        )
+
+    def fault(new_version, deleted_key):
+        """One snapshot that inserts ``new_version`` and deletes ``deleted_key``'s
+        row, leaving the version it replaced: what the bad flush left behind."""
+        raw(
+            insert(new_version),
+            ("DELETE FROM {table} WHERE extraction_id = ?", [deleted_key]),
+        )
+
+    def copies(row, n):
+        """``n`` copies of ``row`` written by one snapshot."""
+        raw(*[insert(row)] * n)
+
+    return dataset, fault, copies
 
 
 def _extractions(dataset):
@@ -94,7 +106,7 @@ def _seed(dataset, fault):
 
 
 def test_a_lost_row_is_restored_and_the_stale_copy_removed(lake):
-    dataset, fault = lake
+    dataset, fault, _ = lake
     good = _seed(dataset, fault)
     assert [r[:2] for r in _extractions(dataset)] == [
         ("a", "a087ca55"),
@@ -117,11 +129,14 @@ def test_a_lost_row_is_restored_and_the_stale_copy_removed(lake):
     assert [r["extraction_id"] for r in extractions.misapplied] == ["b"]
     assert len(extractions.restore) == 1
     assert [r["extraction_id"] for r in extractions.surplus] == ["a"]
-    assert "deleted by mistake 1, restored 1, older copies removed 1" in report.render()
+    assert (
+        "deleted by mistake 1, restored 1, left as is 0 (rewritten or deleted since), "
+        "older copies removed 1"
+    ) in report.render()
 
 
 def test_a_dry_run_changes_nothing(lake):
-    dataset, fault = lake
+    dataset, fault, _ = lake
     _seed(dataset, fault)
     before = _extractions(dataset)
 
@@ -133,7 +148,7 @@ def test_a_dry_run_changes_nothing(lake):
 
 
 def test_a_second_run_finds_nothing_to_do(lake):
-    dataset, fault = lake
+    dataset, fault, _ = lake
     _seed(dataset, fault)
     repair(dataset)
     after = _extractions(dataset)
@@ -146,7 +161,7 @@ def test_a_second_run_finds_nothing_to_do(lake):
 
 
 def test_the_repair_survives_a_flush_and_a_compaction(lake):
-    dataset, fault = lake
+    dataset, fault, _ = lake
     _seed(dataset, fault)
     repair(dataset)
     after = _extractions(dataset)
@@ -159,7 +174,7 @@ def test_the_repair_survives_a_flush_and_a_compaction(lake):
 
 
 def test_a_clean_store_has_nothing_to_repair(lake):
-    dataset, _ = lake
+    dataset, _, _ = lake
     store.write_rows(dataset, "extractions", [_row("a", "r1")])
     store.write_rows(dataset, "extractions", [_row("a", "r2")])
     store.delete_rows(dataset, "extractions", "extraction_id", ["a"])
@@ -168,3 +183,52 @@ def test_a_clean_store_has_nothing_to_repair(lake):
 
     assert report.changed == 0
     assert all(not d.misapplied for d in report.datasets)
+
+
+def test_a_key_deleted_on_purpose_after_the_repair_stays_deleted(lake):
+    dataset, fault, _ = lake
+    _seed(dataset, fault)
+    repair(dataset)
+    # DuckLake keeps the mistaken delete in its record: every run sees it.
+    store.delete_rows(dataset, "extractions", "extraction_id", ["b"])
+    after = _extractions(dataset)
+
+    again = repair(dataset)
+
+    assert _extractions(dataset) == after
+    assert "b" not in {r[0] for r in after}
+    [extractions] = [d for d in again.datasets if d.name == "extractions"]
+    assert [r["extraction_id"] for r in extractions.misapplied] == ["b"]
+    assert extractions.restore == []
+    assert [r["extraction_id"] for r in extractions.left] == ["b"]
+    assert again.changed == 0
+    assert "left as is 1 (rewritten or deleted since)" in again.render()
+    assert "nothing to do" in again.render()
+
+
+def test_a_key_rewritten_and_deleted_before_the_repair_is_left_as_is(lake):
+    dataset, fault, _ = lake
+    _seed(dataset, fault)
+    store.write_rows(dataset, "extractions", [_row("b", "r3")])
+    store.delete_rows(dataset, "extractions", "extraction_id", ["b"])
+
+    report = repair(dataset)
+
+    [extractions] = [d for d in report.datasets if d.name == "extractions"]
+    assert extractions.restore == []
+    assert [r["extraction_id"] for r in extractions.left] == ["b"]
+    assert "b" not in {r[0] for r in _extractions(dataset)}
+
+
+def test_copies_one_snapshot_wrote_are_reported_and_left(lake):
+    dataset, _, copies = lake
+    copies(_row("e", "r1"), 2)
+
+    report = repair(dataset)
+
+    [extractions] = [d for d in report.datasets if d.name == "extractions"]
+    assert extractions.surplus == []
+    assert [(t["extraction_id"], t["copies"]) for t in extractions.tied] == [("e", 2)]
+    assert report.changed == 0
+    assert "left as is 1 keys (copies from one snapshot)" in report.render()
+    assert [r[0] for r in _extractions(dataset)] == ["e", "e"]

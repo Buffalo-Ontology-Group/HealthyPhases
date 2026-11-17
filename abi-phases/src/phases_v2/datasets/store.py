@@ -23,7 +23,7 @@ from naas_abi_core.services.dataset.DatasetPort import (
 from naas_abi_core.services.dataset.DatasetService import DatasetService
 
 from phases_v2.datasets.schemas import DATASETS, NAMESPACE
-from phases_v2.sql import in_list, literal
+from phases_v2.sql import any_row, batches, in_list
 
 _BY_NAME: dict[str, DatasetSpec] = {spec.name: spec for spec in DATASETS}
 
@@ -81,10 +81,6 @@ def write_rows(
     dataset.write(name, complete, namespace=NAMESPACE, mode="upsert")
 
 
-# Bounds one DELETE statement; the dataset service takes SQL as a string.
-_DELETE_BATCH = 500
-
-
 def delete_rows(
     dataset: DatasetService, name: str, column: str, values: list[str]
 ) -> int:
@@ -104,8 +100,8 @@ def delete_rows(
 
     deleted = 0
     unique = sorted(set(values))
-    for start in range(0, len(unique), _DELETE_BATCH):
-        batch = in_list(unique[start : start + _DELETE_BATCH])
+    for values_batch in batches(unique):
+        batch = in_list(list(values_batch))
         matching = dataset.query(
             f"SELECT count(*) AS total FROM {name} WHERE {column} IN {batch}",  # nosec B608 - name and column are checked against the schema above
             namespace=NAMESPACE,
@@ -129,24 +125,19 @@ def delete_versions(
     Only for repairing a dataset that holds a key in more than one row, which
     an upsert cannot do: it would rewrite every copy. The copies share their
     key and even DuckLake's row id, so the snapshot that wrote each one is what
-    tells them apart. One statement, so the delete is all or nothing.
+    tells them apart. The versions go in batches of at most ``BATCH``: a run
+    stopped in between leaves some copies, which the caller can delete again.
     """
     spec = _BY_NAME.get(name)
     if spec is None:
         raise KeyError(f"{name!r} is not a phases_v2 dataset")
-    if not versions:
-        return
-    conditions = []
-    for version in versions:
-        parts = [
-            f"{column} = {literal(version[column])}" for column in spec.primary_key
-        ]
-        parts.append(f"snapshot_id = {int(version['snapshot_id'])}")
-        conditions.append("(" + " AND ".join(parts) + ")")
-    dataset.query(
-        f"DELETE FROM {name} WHERE " + " OR ".join(conditions),  # nosec B608 - name is checked against the schema; values go through literal
-        namespace=NAMESPACE,
-    )
+    columns = [*spec.primary_key, "snapshot_id"]
+    for batch in batches(versions):
+        rows = [dict(v, snapshot_id=int(v["snapshot_id"])) for v in batch]
+        dataset.query(
+            f"DELETE FROM {name} WHERE {any_row(columns, rows)}",  # nosec B608 - name is checked against the schema; values go through literal
+            namespace=NAMESPACE,
+        )
 
 
 def truncate(dataset: DatasetService, name: str) -> None:
