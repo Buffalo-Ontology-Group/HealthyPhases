@@ -438,6 +438,12 @@ records an item its contract rejects, so such an item stays outstanding; each
 outstanding item is checked with the projector's own `relation_rows`, and the
 rejected ones are counted and listed apart.
 
+Last, the integrity of every dataset, whatever the selection: primary keys held
+by more than one row (every write is an upsert on its key, so only a storage
+fault produces one), and extracted items whose extraction row is missing.
+Per-chunk counts can hide both, since a duplicated row and a missing one in the
+same prompt cancel out.
+
 Every count is read at one dataset snapshot and aggregated in SQL. A folder
 document nothing has ingested is read once to learn its content hash, so a
 copy of a PubMed PDF in a folder counts once. Object storage has no snapshot.
@@ -445,9 +451,55 @@ copy of a PubMed PDF in a folder counts once. Object storage has no snapshot.
 `--json` prints the same report for machines. `--strict` exits 1 when, for the
 selected prompts and models, a member cannot be read, or any PDFs are not
 ingested, papers not chunked, chunks not run, calls failed or projections are
-behind. Invalid answers and rejected relation items are listed but never fail
+behind, and also when any dataset holds a key twice or an item has lost its
+extraction row. Invalid answers and rejected relation items are listed but never fail
 it: some answers stay invalid after every retry. A bad flag or an unknown prompt
 id exits 2.
+
+### Deletes a compaction applied to the wrong rows
+
+A run that rewrites a row while its earlier version is still inlined in the
+DuckLake catalog marks that version deleted, and the nightly
+`dataset_compaction_job` turns the mark into a position when it flushes the
+inlined rows to Parquet. On 2026-11-07 the flush wrote one file's rows in a
+different order from the positions it computed, so nine good extractions were
+hidden and the nine versions they replaced came back.
+
+The coverage check's integrity section shows what that fault left: a key
+held by more than one row (the hidden row's neighbour back next to its own
+replacement) and extracted items whose extraction row is missing (the hidden
+row's items). It cannot see every such fault: a misplaced delete that hides a
+key's new version while bringing back that same key's old one leaves one row
+per key and no orphan items. The repair below cannot tell that case either,
+since the snapshot re-inserted the key it deleted; only a check inside the
+compaction itself would catch it.
+
+To repair, while no extraction run or compaction is writing (the plan is read
+first, and a restore is an upsert, so a row written in between would be
+overwritten):
+
+```
+uv run abi run script src/phases_v2/migrations/repair_misapplied_deletes.py -- --dry-run
+uv run abi run script src/phases_v2/migrations/repair_misapplied_deletes.py
+```
+
+It reads DuckLake's own record of what each snapshot inserted and deleted
+(`ducklake_table_insertions` / `ducklake_table_deletions`). Every write here is
+an upsert or an outright delete, so a snapshot that inserted rows deletes only
+keys it re-inserted; any other row it deleted was deleted by mistake. For every
+`phases_v2` dataset:
+
+- such a row is written back as it was when its key has no row now and no
+  later snapshot inserted or deleted that key. DuckLake keeps the mistaken
+  delete in its record for good, so every run finds it again; a key written or
+  deleted since was changed on purpose and is left as is;
+- of a key held by more than one row only the version written last (the
+  highest `snapshot_id`) is kept, the others deleted by key and snapshot
+  (`store.delete_versions`). Copies that one snapshot wrote cannot be told
+  apart: the key is reported as left as is.
+
+Restored rows keep their ids, so their items and projections need nothing. A
+second run finds nothing to do.
 
 ## Authoring pipelines in the web app
 

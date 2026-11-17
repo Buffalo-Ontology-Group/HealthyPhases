@@ -421,6 +421,48 @@ def test_the_text_report_names_every_section():
         "== Prompt versions",
         "== Run requests",
         "== Projection backlog",
+        "== Integrity",
         "== Strict check: passed",
     ):
         assert heading in text
+
+
+def test_duplicate_keys_and_orphan_items_fail_the_strict_check():
+    reader = corpus()
+    kept = reader.extractions[0]
+    # A replaced row back next to its replacement, as a storage fault leaves it.
+    reader.extractions.append(dict(kept, status="failed", error="Connection error."))
+    reader.items.append(
+        {"item_id": "lost#0", "extraction_id": "lost", "prompt_id": WHAT.prompt_id}
+    )
+
+    report = report_for(reader)
+
+    problems = report.problems()
+    assert (
+        "dataset extractions: 1 keys held by more than one row (1 surplus rows)"
+        in problems
+    )
+    assert (
+        "dataset extracted_items: 1 items whose extraction row is missing" in problems
+    )
+    data = to_dict(report)["integrity"]
+    assert data["duplicate_keys"] == [
+        {
+            "dataset": "extractions",
+            "keys": 1,
+            "surplus_rows": 1,
+            "sample": [reader.extraction_id(kept)],
+        }
+    ]
+    assert (data["orphan_items"], data["orphan_sample"]) == (1, ["lost"])
+    text = render_text(report)
+    assert "extractions: 1 keys held by more than one row" in text
+    assert "extracted items without an extraction row: 1, e.g. of lost" in text
+
+
+def test_a_clean_corpus_reports_no_duplicates():
+    text = render_text(report_for(corpus()))
+
+    assert "duplicate keys: none" in text
+    assert "extracted items without an extraction row: 0" in text

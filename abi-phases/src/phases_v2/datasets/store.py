@@ -5,9 +5,9 @@ upserts. That is not a stylistic preference: ``DatasetSpec.primary_key`` is
 advisory — the store matches upserts against it but enforces no uniqueness — so
 an ``append`` into a keyed dataset duplicates rows silently, with no error to
 notice. Keeping one function in one file makes that invariant reviewable, and
-``store_test`` fails if any other module file writes directly. The two ways to
-remove rows, :func:`delete_rows` and :func:`truncate`, live here for the same
-reason.
+``store_test`` fails if any other module file writes directly. The ways to
+remove rows, :func:`delete_rows`, :func:`delete_versions` and :func:`truncate`,
+live here for the same reason.
 """
 
 from __future__ import annotations
@@ -24,7 +24,7 @@ from naas_abi_core.services.dataset.DatasetPort import (
 from naas_abi_core.services.dataset.DatasetService import DatasetService
 
 from phases_v2.datasets.schemas import DATASETS, NAMESPACE
-from phases_v2.sql import in_list
+from phases_v2.sql import any_row, batches, in_list
 
 _BY_NAME: dict[str, DatasetSpec] = {spec.name: spec for spec in DATASETS}
 
@@ -185,10 +185,6 @@ def write_rows(
     dataset.write(name, complete, namespace=NAMESPACE, mode="upsert")
 
 
-# Bounds one DELETE statement; the dataset service takes SQL as a string.
-_DELETE_BATCH = 500
-
-
 def delete_rows(
     dataset: DatasetService, name: str, column: str, values: list[str]
 ) -> int:
@@ -208,8 +204,8 @@ def delete_rows(
 
     deleted = 0
     unique = sorted(set(values))
-    for start in range(0, len(unique), _DELETE_BATCH):
-        batch = in_list(unique[start : start + _DELETE_BATCH])
+    for values_batch in batches(unique):
+        batch = in_list(list(values_batch))
         matching = dataset.query(
             f"SELECT count(*) AS total FROM {name} WHERE {column} IN {batch}",  # nosec B608 - name and column are checked against the schema above
             namespace=NAMESPACE,
@@ -222,6 +218,30 @@ def delete_rows(
         )
         deleted += int(matching)
     return deleted
+
+
+def delete_versions(
+    dataset: DatasetService, name: str, versions: list[dict[str, Any]]
+) -> None:
+    """Delete exact row versions: each names its key columns and the
+    ``snapshot_id`` that wrote it.
+
+    Only for repairing a dataset that holds a key in more than one row, which
+    an upsert cannot do: it would rewrite every copy. The copies share their
+    key and even DuckLake's row id, so the snapshot that wrote each one is what
+    tells them apart. The versions go in batches of at most ``BATCH``: a run
+    stopped in between leaves some copies, which the caller can delete again.
+    """
+    spec = _BY_NAME.get(name)
+    if spec is None:
+        raise KeyError(f"{name!r} is not a phases_v2 dataset")
+    columns = [*spec.primary_key, "snapshot_id"]
+    for batch in batches(versions):
+        rows = [dict(v, snapshot_id=int(v["snapshot_id"])) for v in batch]
+        dataset.query(
+            f"DELETE FROM {name} WHERE {any_row(columns, rows)}",  # nosec B608 - name is checked against the schema; values go through literal
+            namespace=NAMESPACE,
+        )
 
 
 def truncate(dataset: DatasetService, name: str) -> None:

@@ -32,12 +32,15 @@ from phases_v2.coverage.interfaces import (
     Backlog,
     Collection,
     CoverageCount,
+    DuplicateKeys,
     FailureCount,
+    Integrity,
     PromptVersion,
     RelationCheck,
     SavedSearch,
     Selection,
 )
+from phases_v2.datasets.schemas import DATASETS
 from phases_v2.extraction.interfaces import failed_call_sql
 from phases_v2.paper_collections.interfaces import Artifact, MemberSources
 from phases_v2.ports import RowStore
@@ -45,6 +48,9 @@ from phases_v2.sources.library_links import PUBMED, linked_schemas
 from phases_v2.sql import literal
 
 logger = logging.getLogger(__name__)
+
+# How many duplicate keys or orphaned extraction ids a report names.
+_SAMPLE = 5
 
 # How a stored extraction reads. Which failures are failed calls is extraction's
 # rule, not this module's.
@@ -373,3 +379,40 @@ class DatasetCoverageReader:
                 if len(errors) < 20:
                     errors[item["item_id"]] = str(error)
         return RelationCheck(examined, rejected, rejected_selected, errors)
+
+    def integrity(self):
+        duplicates = []
+        for spec in DATASETS:
+            # Grouped on the key columns themselves: a joined string would merge
+            # keys whose parts contain the separator, and drop NULL parts.
+            keys = ", ".join(spec.primary_key)
+            rows = self._rows.query(
+                f"SELECT {keys}, count(*) AS n FROM {spec.name} "  # nosec B608 - names come from the declared schemas
+                f"GROUP BY ALL HAVING count(*) > 1 ORDER BY {keys}"
+            )
+            if rows:
+                duplicates.append(
+                    DuplicateKeys(
+                        spec.name,
+                        keys=len(rows),
+                        surplus=sum(int(r["n"]) - 1 for r in rows),
+                        sample=tuple(
+                            "/".join(
+                                "NULL" if r[c] is None else str(r[c])
+                                for c in spec.primary_key
+                            )
+                            for r in rows[:_SAMPLE]
+                        ),
+                    )
+                )
+        orphans = self._rows.query(
+            "SELECT ei.extraction_id, count(*) AS n FROM extracted_items ei "
+            "WHERE NOT EXISTS (SELECT 1 FROM extractions e "
+            "WHERE e.extraction_id = ei.extraction_id) "
+            "GROUP BY ALL ORDER BY ei.extraction_id"
+        )
+        return Integrity(
+            duplicates=duplicates,
+            orphan_items=sum(int(r["n"]) for r in orphans),
+            orphan_sample=tuple(r["extraction_id"] for r in orphans[:_SAMPLE]),
+        )

@@ -116,6 +116,35 @@ class RelationCheck:
     sample_errors: dict[str, str] = field(default_factory=dict)
 
 
+@dataclass(frozen=True)
+class DuplicateKeys:
+    """A dataset holding some primary keys in more than one row.
+
+    Every dataset is written by upsert on its key, so this never happens by
+    design; a storage fault that misapplies deletes shows up here first.
+    """
+
+    dataset: str
+    #: Keys held by more than one row.
+    keys: int
+    #: Rows beyond the first of each such key.
+    surplus: int
+    #: The first few such keys, composite keys joined with ``/``.
+    sample: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class Integrity:
+    """What must hold whatever the selection: one row per key, and every
+    extracted item owned by an extraction row."""
+
+    duplicates: list[DuplicateKeys] = field(default_factory=list)
+    #: Extracted items whose extraction row is missing.
+    orphan_items: int = 0
+    #: The first few extraction ids those items name.
+    orphan_sample: tuple[str, ...] = ()
+
+
 class CoverageReader(Protocol):
     def snapshot(self) -> int | None:
         """The dataset snapshot every other method reads."""
@@ -181,4 +210,8 @@ class CoverageReader(Protocol):
 
     def relation_check(self, selection: Selection) -> RelationCheck:
         """Every outstanding relation item, checked as the projector checks it."""
+        ...
+
+    def integrity(self) -> Integrity:
+        """Duplicate primary keys in every dataset, and items with no extraction."""
         ...

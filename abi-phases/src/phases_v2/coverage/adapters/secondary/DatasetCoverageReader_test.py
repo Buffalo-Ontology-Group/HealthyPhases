@@ -389,3 +389,129 @@ def test_writes_nothing(env):
 
     assert len(dataset.list_snapshots()) == snapshots
     assert storage.files == files
+
+
+def test_duplicate_keys_and_orphan_items_are_found_and_agree_with_the_fake(
+    tmp_path,
+):
+    from phases_v2.datasets.schemas import NAMESPACE
+
+    dataset = DatasetService(
+        adapter=DatasetSecondaryAdapterDuckLake(
+            catalog=f"sqlite:{tmp_path / 'catalog.sqlite'}",
+            data_path=str(tmp_path / "warehouse") + "/",
+        )
+    )
+    ensure_datasets(dataset)
+    rows = DatasetRowStore(dataset)
+    chunks = [{"chunk_id": "a-0", "paper_id": PAPER_A, "chunker_id": CHUNKER}]
+    rows.write_rows("chunks", [dict(c, seq=0, text="t") for c in chunks])
+    kept = _extraction("a-0", WHAT)
+    # A row a later write replaced, back next to its replacement: upserts
+    # cannot do this, only a storage fault can.
+    stale = dict(kept, status="failed", raw_response=None, error="Connection error.")
+    rows.write_rows("extractions", [kept])
+    dataset.query(
+        "INSERT INTO extractions (extraction_id, chunk_id, model_id, prompt_id, "
+        "status, error) VALUES ("
+        + ", ".join(
+            f"'{stale[c]}'"
+            for c in (
+                "extraction_id",
+                "chunk_id",
+                "model_id",
+                "prompt_id",
+                "status",
+                "error",
+            )
+        )
+        + ")",
+        namespace=NAMESPACE,
+    )
+    items = [
+        {
+            "item_id": "i-ok",
+            "extraction_id": kept["extraction_id"],
+            "prompt_id": WHAT.prompt_id,
+            "chunk_id": "a-0",
+            "paper_id": PAPER_A,
+            "text": "x",
+        },
+        {
+            "item_id": "i-lost",
+            "extraction_id": "gone",
+            "prompt_id": WHAT.prompt_id,
+            "chunk_id": "a-0",
+            "paper_id": PAPER_A,
+            "text": "y",
+        },
+    ]
+    rows.write_rows("extracted_items", items)
+    snapshot = rows.snapshot()
+    reader = DatasetCoverageReader(
+        rows.at_snapshot(snapshot),
+        snapshot=snapshot,
+        pubmed=None,
+        storage=Storage(),
+        supported=lambda name: name.endswith(".pdf"),
+    )
+    fake = FakeCoverageReader(chunks=chunks, extractions=[kept, stale], items=items)
+
+    found = reader.integrity()
+
+    assert found == fake.integrity()
+    [dup] = found.duplicates
+    assert (dup.dataset, dup.keys, dup.surplus, dup.sample) == (
+        "extractions",
+        1,
+        1,
+        (kept["extraction_id"],),
+    )
+    assert (found.orphan_items, found.orphan_sample) == (1, ("gone",))
+
+
+def test_composite_keys_are_compared_part_by_part(tmp_path):
+    from phases_v2.datasets.schemas import NAMESPACE
+
+    dataset = DatasetService(
+        adapter=DatasetSecondaryAdapterDuckLake(
+            catalog=f"sqlite:{tmp_path / 'catalog.sqlite'}",
+            data_path=str(tmp_path / "warehouse") + "/",
+        )
+    )
+    ensure_datasets(dataset)
+    # Distinct keys that read the same once joined with "/" or with NULL
+    # parts dropped.
+    dataset.query(
+        "INSERT INTO projections (target, key) VALUES "
+        "('graph', 'a/b'), ('graph/a', 'b'), ('x', NULL), (NULL, 'x')",
+        namespace=NAMESPACE,
+    )
+    rows = DatasetRowStore(dataset)
+    reader = DatasetCoverageReader(
+        rows,
+        snapshot=rows.snapshot(),
+        pubmed=None,
+        storage=Storage(),
+        supported=lambda name: name.endswith(".pdf"),
+    )
+    assert reader.integrity().duplicates == []
+
+    dataset.query(
+        "INSERT INTO projections (target, key) VALUES ('graph', 'a/b')",
+        namespace=NAMESPACE,
+    )
+
+    [dup] = reader.integrity().duplicates
+    assert (dup.dataset, dup.keys, dup.surplus, dup.sample) == (
+        "projections",
+        1,
+        1,
+        ("graph/a/b",),
+    )
+
+
+def test_a_clean_corpus_has_nothing_to_report(env):
+    assert env["reader"].integrity() == env["fake"].integrity()
+    assert env["reader"].integrity().duplicates == []
+    assert env["reader"].integrity().orphan_items == 0
