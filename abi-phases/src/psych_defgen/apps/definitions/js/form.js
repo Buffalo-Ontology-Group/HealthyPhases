@@ -83,7 +83,6 @@ export function createForm(ctx) {
       const option = document.createElement('option');
       option.value = model;
       option.textContent = model;
-      option.selected = model === chosen;
       select.append(option);
     }
     select.value = settings.models.includes(chosen) ? chosen : (settings.models[0] ?? '');
@@ -116,6 +115,8 @@ export function createForm(ctx) {
     return reading;
   }
 
+  const stale = () => !settings || (settings.missing || []).length > 0;
+
   const read = () => Object.fromEntries(Object.keys(FIELDS).map((name) => [name, field(name).value]));
 
   async function submit() {
@@ -137,9 +138,11 @@ export function createForm(ctx) {
       ctx.navigate(runHref(run.run_id));
       return run;
     } catch (error) {
-      message('def-msg', error.message, 'bad');
-      // A key removed since the settings were read: show which one.
+      // A key removed since the settings were read: read them again to name
+      // it, then say why the run did not start, which the read must not erase.
       if (error.status === 409) await load();
+      const settingsError = settings ? '' : ` ${$('def-msg').textContent}`;
+      message('def-msg', `${error.message}${settingsError}`, 'bad');
       return null;
     } finally {
       sending = false;
@@ -156,8 +159,11 @@ export function createForm(ctx) {
   return {
     load,
     submit,
-    // Settings that failed to load are tried again when the page comes back.
-    show() { return settings ? Promise.resolve() : load(); },
+    // Settings are read again when the home page is shown or the tab comes
+    // back, while they failed to load or name a missing key: the deployment
+    // may have been fixed since.
+    show() { return stale() ? load() : Promise.resolve(); },
+    get stale() { return stale(); },
     get settings() { return settings; },
   };
 }

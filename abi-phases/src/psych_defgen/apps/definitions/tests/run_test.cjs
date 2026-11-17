@@ -247,3 +247,64 @@ test('opening another run drops the late answer for the previous one', async () 
   await settle();
   assert.equal(dom.$('run-title').textContent, 'new');
 });
+
+test('a first load that fails on a blip offers a retry and keeps trying until the run loads', async () => {
+  let fail = true;
+  const { $, page, timers, calls } = await view(() => (fail ? response('{"detail":"Bad gateway"}', { status: 502 }) : run({ status: 'running', stage: 'search' })));
+  assert.equal(page.run, null);
+  assert.equal($('run-msg').textContent, 'Could not load the run: Bad gateway');
+  assert.equal($('run-retry').hidden, false);
+  assert.equal(page.polling, true);
+  fail = false;
+  await timers.fire();
+  assert.equal(calls.length, 2);
+  assert.equal($('run-msg').textContent, '');
+  assert.equal($('run-retry').hidden, true);
+  assert.match($('run-body').innerHTML, /Searching PubMed/);
+});
+
+test('a first load refused for good is not polled, but Try again reads it again', async () => {
+  let status = 403;
+  const { $, page, timers, calls } = await view(() => (status ? response({ detail: 'No access.' }, { status }) : run({ status: 'failed', error: 'x' })));
+  assert.equal($('run-msg').textContent, 'Could not load the run: No access.');
+  assert.equal(page.polling, false);
+  assert.equal(timers.count, 0);
+  status = 0;
+  await fire($('run-retry'), 'click');
+  await settle();
+  assert.equal(calls.length, 2);
+  assert.match($('run-body').innerHTML, /The run failed/);
+});
+
+test('coming back to the tab reads a run again only while it can still change', async () => {
+  let state = succeeded();
+  const { $, page, calls } = await view(() => state);
+  const html = $('run-body').innerHTML;
+  await page.refresh();
+  assert.equal(calls.length, 1, 'a succeeded run is not read again');
+  assert.equal($('run-body').innerHTML, html);
+
+  state = run({ status: 'running', stage: 'apa' });
+  await page.show({ name: 'run', runId: 'run-1' });
+  await page.refresh();
+  assert.equal(calls.length, 3, 'a running run is');
+
+  state = run({ status: 'failed', error: 'x' });
+  await page.refresh();
+  await page.refresh();
+  assert.equal(calls.length, 4, 'and stops once it has failed');
+});
+
+test('a run not found or not loaded yet is handled on refresh', async () => {
+  let answer = response({ detail: 'nope' }, { status: 404 });
+  const { page, calls } = await view(() => answer);
+  await page.refresh();
+  assert.equal(calls.length, 1, 'a missing run is not read again');
+
+  answer = response('', { status: 503 });
+  await page.show({ name: 'run', runId: 'other' });
+  answer = run({ run_id: 'other', status: 'succeeded', result: result() });
+  await page.refresh();
+  assert.equal(calls.length, 3, 'one that never loaded is');
+  assert.equal(page.run.status, 'succeeded');
+});

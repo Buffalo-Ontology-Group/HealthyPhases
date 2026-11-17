@@ -10,7 +10,7 @@ export const POLL_MS = 5000;
 export function historyRow(run, now = Date.now()) {
   const stage = stageLabel(run);
   return `<tr>`
-    + `<td data-label="Term"><a class="row-link" href="${esc(runHref(run.run_id))}">${esc(run.term)}</a></td>`
+    + `<td data-label="Term"><a class="row-link" href="${esc(runHref(run.run_id))}" data-run-id="${esc(run.run_id)}">${esc(run.term)}</a></td>`
     + `<td data-label="Status"><span>${statusPill(run.status)}${stage ? `<small>${esc(stage)}</small>` : ''}</span></td>`
     + `<td data-label="Model">${esc(run.model || '—')}</td>`
     + `<td data-label="Started">${esc(formatDate(run.created_at))}</td>`
@@ -23,14 +23,29 @@ export function createHistory(ctx) {
   let pageCount = 0;
   let runs = [];
   let loading = false;
+  let shown = null;
   const token = latest();
   const poll = poller(() => load(page, { quiet: true }), { ms: POLL_MS, timers: ctx.timers });
 
-  function render() {
+  // Rebuilding the rows drops keyboard focus, so a poll that changes nothing
+  // leaves them alone, and one that does puts focus back on the same run's link.
+  function renderRows() {
     const body = $('history-body');
-    body.innerHTML = runs.length
+    const html = runs.length
       ? runs.map((run) => historyRow(run)).join('')
       : `<tr><td colspan="5" class="empty">${page > 1 ? 'No runs on this page.' : 'No runs yet. Start one with the form above.'}</td></tr>`;
+    if (html === shown) return;
+    const focused = document.activeElement;
+    const runId = focused && body.contains(focused) ? focused.dataset?.runId : undefined;
+    body.innerHTML = html;
+    shown = html;
+    if (runId === undefined) return;
+    const link = [...body.querySelectorAll('a[data-run-id]')].find((a) => a.dataset.runId === runId);
+    link?.focus();
+  }
+
+  function render() {
+    renderRows();
     $('history-page').textContent = pageCount > 0 ? `Page ${page} of ${pageCount}` : 'Page 1 of 1';
     $('history-prev').disabled = loading || page <= 1;
     $('history-next').disabled = loading || page >= pageCount;
@@ -41,8 +56,13 @@ export function createHistory(ctx) {
     poll.stop();
     const mine = token.next();
     loading = true;
-    $('history-refresh').disabled = true;
-    if (!quiet) message('history-msg', 'Loading runs…');
+    // A poll leaves the buttons alone: disabling one would take its focus.
+    if (!quiet) {
+      $('history-refresh').disabled = true;
+      $('history-prev').disabled = true;
+      $('history-next').disabled = true;
+      message('history-msg', 'Loading runs…');
+    }
     try {
       const data = await listRuns(target);
       if (!token.is(mine)) return;

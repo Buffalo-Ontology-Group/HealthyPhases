@@ -138,3 +138,42 @@ test('settings that fail to load say so, and can be read again', async () => {
   assert.equal($('def-fieldset').disabled, false);
   assert.equal(view.settings.default_model, 'openai/gpt-4.1-mini');
 });
+
+test('a 409 keeps its reason on screen after the settings are read again, even when they now look fine', async () => {
+  const { $, view, ctx } = await form({
+    'POST /psych_defgen/api/runs': response({ detail: 'NCBI_EMAIL is not set on this deployment.' }, { status: 409 }),
+  });
+  fill($, { 'def-term': 'loneliness' });
+  await view.submit();
+  assert.equal($('def-msg').textContent, 'NCBI_EMAIL is not set on this deployment.');
+  assert.equal($('def-msg').className, 'msg bad');
+  assert.equal($('def-missing').hidden, true);
+  assert.equal($('def-submit').disabled, false);
+  assert.deepEqual(ctx.navigated, []);
+});
+
+test('a 409 whose settings then fail to load reports both', async () => {
+  let fail = false;
+  const { $, view } = await form({
+    '/psych_defgen/api/settings': () => (fail ? response('<html>', { status: 502 }) : SETTINGS),
+    'POST /psych_defgen/api/runs': () => { fail = true; return response({ detail: 'OPENAI_API_KEY is not set.' }, { status: 409 }); },
+  });
+  fill($, { 'def-term': 'loneliness' });
+  await view.submit();
+  assert.match($('def-msg').textContent, /^OPENAI_API_KEY is not set\. Could not load the settings: Expected JSON/);
+  assert.equal($('def-retry').hidden, false);
+});
+
+test('settings are read again only while they failed or name a missing key', async () => {
+  let missing = ['NCBI_EMAIL'];
+  const { $, view, calls } = await form({ '/psych_defgen/api/settings': () => ({ ...SETTINGS, missing }) });
+  assert.equal(view.stale, true);
+  missing = [];
+  await view.show();
+  assert.equal(calls.length, 2);
+  assert.equal($('def-missing').hidden, true);
+  assert.equal($('def-fieldset').disabled, false);
+  assert.equal(view.stale, false);
+  await view.show();
+  assert.equal(calls.length, 2, 'settings that are fine are not read again');
+});

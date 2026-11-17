@@ -17,13 +17,28 @@ CATALOG_ID = "psych_defgen:definitions"
 
 # What Nexus serves next to an app's index.html under /app-html/ (naas-abi
 # apps adapter, _APP_ASSET_SUFFIXES). Anything else is not reachable.
-SERVED = {".css", ".html", ".js", ".json", ".mjs", ".png", ".svg", ".ico", ".woff", ".woff2"}
-IMPORT = re.compile(r"""(?:import|export)\s[^'"]*?from\s+['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]""")
+SERVED = {
+    ".css",
+    ".html",
+    ".js",
+    ".json",
+    ".mjs",
+    ".png",
+    ".svg",
+    ".ico",
+    ".woff",
+    ".woff2",
+}
+IMPORT = re.compile(
+    r"""(?:import|export)\s[^'"]*?from\s+['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]"""
+)
 
 
 def _modules():
     """Every ES module reachable from the page, following relative imports."""
-    entry = re.search(r'<script type="module" src="([^"]+)"', INDEX.read_text()).group(1)
+    entry = re.search(r'<script type="module" src="([^"]+)"', INDEX.read_text()).group(
+        1
+    )
     assert entry == "./js/main.js"
     pending, seen = [(APP / entry).resolve()], set()
     while pending:
@@ -33,7 +48,10 @@ def _modules():
         seen.add(path)
         for match in IMPORT.finditer(path.read_text()):
             target = match.group(1) or match.group(2)
-            assert target.startswith("./") or target.startswith("../"), (path.name, target)
+            assert target.startswith("./") or target.startswith("../"), (
+                path.name,
+                target,
+            )
             pending.append((path.parent / target).resolve())
     return seen
 
@@ -67,13 +85,21 @@ def test_the_page_declares_a_charset_a_title_and_a_viewport():
 
     assert 'charset="utf-8"' in text
     assert "<title>Construct Definitions</title>" in text
-    assert '<meta name="viewport" content="width=device-width, initial-scale=1">' in text
+    assert (
+        '<meta name="viewport" content="width=device-width, initial-scale=1">' in text
+    )
 
 
 def test_every_module_the_page_loads_exists_is_relative_and_is_served_by_nexus():
     modules = _modules()
 
-    assert {path.name for path in modules} >= {"main.js", "app.js", "api.js", "router.js", "ui.js"}
+    assert {path.name for path in modules} >= {
+        "main.js",
+        "app.js",
+        "api.js",
+        "router.js",
+        "ui.js",
+    }
     for path in modules:
         assert path.is_file(), path
         assert path.suffix in SERVED, path
@@ -95,8 +121,13 @@ def test_nothing_loads_from_another_origin():
     for path in [INDEX, *APP.glob("css/*.css"), *APP.glob("js/**/*.js")]:
         text = path.read_text()
         # Links out (to PubMed, PMC, the APA Dictionary) are fine; loaded resources are not.
-        assert not re.search(r"""<(?:script|link|img|iframe|source)\b[^>]*\b(?:src|href)=["'](?:https?:)?//""", text), path
-        assert not re.search(r"""(?:from|import)\s*\(?\s*['"](?:https?:)?//""", text), path
+        assert not re.search(
+            r"""<(?:script|link|img|iframe|source)\b[^>]*\b(?:src|href)=["'](?:https?:)?//""",
+            text,
+        ), path
+        assert not re.search(r"""(?:from|import)\s*\(?\s*['"](?:https?:)?//""", text), (
+            path
+        )
         assert not re.search(r"""url\(\s*['"]?(?:https?:)?//""", text), path
         assert "@import" not in text, path
 
@@ -115,7 +146,9 @@ def test_the_api_client_is_the_only_fetch_caller_and_resolves_nexus_like_the_wor
 
 
 def test_the_package_ships_every_file_the_app_serves():
-    globs = tomllib.loads(PYPROJECT.read_text())["tool"]["setuptools"]["package-data"]["psych_defgen"]
+    globs = tomllib.loads(PYPROJECT.read_text())["tool"]["setuptools"]["package-data"][
+        "psych_defgen"
+    ]
     package = SRC / "psych_defgen"
     shipped = {path for pattern in globs for path in package.glob(pattern)}
     served = [p for p in APP.rglob("*") if p.is_file() and p.suffix in SERVED]
@@ -128,7 +161,9 @@ def test_the_package_ships_every_file_the_app_serves():
 def test_the_main_workspace_turns_the_app_on():
     for config in ("config.yaml", "config.local.yaml"):
         loaded = yaml.safe_load((PROJECT / config).read_text())
-        nexus = next(m for m in loaded["modules"] if m["module"] == "naas_abi")["config"]["nexus_config"]
+        nexus = next(m for m in loaded["modules"] if m["module"] == "naas_abi")[
+            "config"
+        ]["nexus_config"]
         [organization] = nexus["organizations"]
         [workspace] = organization["workspaces"]
 

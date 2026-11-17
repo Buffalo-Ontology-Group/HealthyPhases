@@ -27,7 +27,7 @@
         <legend class="sr-only">Run settings</legend>
         <div class="field">
           <label for="def-term">Construct</label>
-          <input id="def-term" name="term" maxlength="200" autocomplete="off" placeholder="e.g. loneliness" aria-describedby="def-term-error">
+          <input id="def-term" name="term" autocomplete="off" placeholder="e.g. loneliness" aria-describedby="def-term-error">
           <p id="def-term-error" class="msg" role="alert"></p>
         </div>
         <div class="fields">
@@ -88,6 +88,7 @@
         <button id="run-download" type="button" class="primary" hidden>Download JSON</button>
       </div>
       <p id="run-msg" class="msg" role="status"></p>
+      <button id="run-retry" type="button" class="small" hidden>Try again</button>
     </header>
     <div id="run-summary" class="card"></div>
     <div id="run-body" class="stack"></div>

@@ -28,7 +28,26 @@ function element(tag = 'div') {
     setAttribute(key, value) { this.attributes[key] = String(value); },
     getAttribute(key) { return this.attributes[key] ?? null; },
     removeAttribute(key) { delete this.attributes[key]; },
-    focus() { el.focused = true; },
+    focus() { el.focused = true; if (globalThis.document) globalThis.document.activeElement = el; },
+    contains(node) {
+      for (let at = node; at; at = at.parent) if (at === this) return true;
+      return false;
+    },
+    // Only run links: one element per data-run-id in innerHTML, the same
+    // objects until innerHTML changes, as the browser keeps its nodes.
+    querySelectorAll(selector) {
+      if (selector !== 'a[data-run-id]') return [];
+      if (this.parsed?.html !== this.innerHTML) {
+        const links = [...this.innerHTML.matchAll(/data-run-id="([^"]*)"/g)].map(([, id]) => {
+          const link = element('a');
+          link.dataset.runId = id.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+          link.parent = this;
+          return link;
+        });
+        this.parsed = { html: this.innerHTML, links };
+      }
+      return this.parsed.links;
+    },
     click() { el.clicked = true; },
   };
   return el;
@@ -50,7 +69,7 @@ function install({ hash = '', storage = {}, session = {} } = {}) {
   const elements = new Map();
   const documentListeners = {};
   const document = {
-    hidden: false, title: '',
+    hidden: false, title: '', activeElement: null,
     body: element('body'), documentElement: element('html'),
     getElementById(id) {
       if (!elements.has(id)) elements.set(id, Object.assign(element(), { id }));

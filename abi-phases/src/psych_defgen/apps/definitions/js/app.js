@@ -37,7 +37,7 @@ export function boot({ timers = TIMERS, save } = {}) {
     show() { form.show(); return history.show(); },
     hide() { history.hide(); },
     pause() { history.pause(); },
-    refresh() { return history.refresh(); },
+    refresh() { form.show(); return history.refresh(); },
   };
   const views = { home, run: runView };
 

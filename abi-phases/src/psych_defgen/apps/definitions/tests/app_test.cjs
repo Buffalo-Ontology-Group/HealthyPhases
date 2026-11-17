@@ -97,7 +97,7 @@ test('a user starts a run, watches it finish, finds it in the history and downlo
 
   await go(dom, '#/');
   assert.equal($('view-home').hidden, false);
-  assert.match($('history-body').innerHTML, /href="#\/runs\/run-1">Social Anxiety<\/a>/);
+  assert.match($('history-body').innerHTML, /href="#\/runs\/run-1" data-run-id="run-1">Social Anxiety<\/a>/);
   assert.match($('history-body').innerHTML, /Succeeded/);
   assert.equal(timers.count, 0);
 
@@ -151,4 +151,22 @@ test('a deployment missing a key names it and offers no form, but still shows th
   assert.equal($('def-fieldset').disabled, true);
   assert.equal($('def-submit').disabled, true);
   assert.match($('history-body').innerHTML, /grit/);
+});
+
+test('coming back to the tab reads the settings again while a key is missing', async () => {
+  const settings = { ...SETTINGS, missing: ['NCBI_EMAIL'] };
+  const api = fakeApi({ settings });
+  const { dom, $ } = await boot(api);
+  assert.equal($('def-fieldset').disabled, true);
+  settings.missing = [];
+  dom.visibility(true);
+  dom.visibility(false);
+  await settle();
+  assert.equal($('def-missing').hidden, true);
+  assert.equal($('def-fieldset').disabled, false);
+  const reads = api.calls.filter((c) => c.endsWith('/settings')).length;
+  dom.visibility(true);
+  dom.visibility(false);
+  await settle();
+  assert.equal(api.calls.filter((c) => c.endsWith('/settings')).length, reads, 'not once they are fine');
 });

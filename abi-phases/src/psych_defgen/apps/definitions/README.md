@@ -49,12 +49,18 @@ restores it when the app opens without one.
 - **The form** takes its limits, defaults and models from `GET /settings`, and checks
   the values before sending them. When `missing` names unset keys, a notice names them
   (for example "NCBI_EMAIL is not set on this deployment") and the form is disabled; the
-  history stays readable. Starting a run opens it.
+  history stays readable. Settings that failed to load, or that name a missing key, are
+  read again when the home page is shown or the tab comes back. A run the API refuses
+  (409) keeps its reason on screen after that read. Starting a run opens it.
 - **The history** reads its page again every 5 seconds while a run on it is pending or
-  running.
+  running. A poll that changes nothing leaves the rows alone; one that does puts keyboard
+  focus back on the same run's link.
 - **A run** reads itself again every 5 seconds while it is pending or running, showing its
-  stage in words ("Searching PubMed", "Reading full texts", …). A failed run shows its
-  error. A succeeded run shows:
+  stage in words ("Searching PubMed", "Reading full texts", …). When a read fails, **Try
+  again** reads it again; a failure with no answer or a server error (5xx, 429) is also
+  retried on its own while the run may still be going, including before it has loaded.
+  A finished run cannot change, so it is not read again until it is opened again. A
+  failed run shows its error. A succeeded run shows:
   - the definition from the literature and how it was found ("Pattern match", "Selected
     by LLM"), or "None found";
   - the AI-synthesized definition, marked as generated, or "Not enough evidence";
@@ -67,7 +73,7 @@ restores it when the app opens without one.
     (`re.sub(r"[^a-zA-Z0-9_-]+", "_", term.strip().lower())`).
 
 Only the shown view polls, and nothing polls while the page is hidden; coming back reads
-the view again at once. Every value from the API, literature text and the user's term
+the view again at once, unless it is a finished run. Every value from the API, literature text and the user's term
 alike, reaches the page through `esc()`, and only `http(s)` links are followed.
 
 ## Tests
