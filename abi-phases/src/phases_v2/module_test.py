@@ -13,6 +13,7 @@ from naas_abi_core.services.dataset.DatasetService import DatasetService
 import phases_v2
 from phases_v2.datasets.schemas import DATASETS, NAMESPACE
 from phases_v2.fakes import InMemoryRowStore
+from phases_v2.ownership import SYSTEM
 
 
 class _Services:
@@ -149,7 +150,8 @@ def test_a_restart_leaves_a_built_in_version_below_one_saved_after_it(tmp_path):
             "name": built_in.name,
             "template": built_in.template + "\nBe brief.",
             "output_key": built_in.output_key,
-        }
+        },
+        actor=SYSTEM,
     )
 
     phases_v2.load_module_declarations(_Engine(dataset))

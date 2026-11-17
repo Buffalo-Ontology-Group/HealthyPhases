@@ -9,6 +9,12 @@ api:
     - "https://{{ secret.PUBLIC_WEB_HOST }}"
     - "http://{{ secret.PUBLIC_API_HOST }}"
     - "https://{{ secret.PUBLIC_API_HOST }}"
+  # No uvicorn reloader. With it, a failed startup (Fuseki down or answering
+  # 500) kills only the server worker: the reloader parent stays up, so the
+  # container never exits and `restart: unless-stopped` never restarts it.
+  # Without it, the process exits and Docker restarts the API until it boots.
+  # See .deploy/docker/README.md, "When the API fails to start".
+  reload: false
 
 global_config:
   ai_mode: "cloud"

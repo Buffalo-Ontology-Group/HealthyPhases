@@ -1,4 +1,4 @@
-.PHONY: install test test-app test-search test-pubmed test-pubmed-network test-psych-defgen test-psych-defgen-network lint build proto
+.PHONY: install test test-app test-search test-pubmed test-pubmed-network test-psych-defgen test-psych-defgen-network test-terms lint build proto
 install:
 	uv sync
 
@@ -19,8 +19,17 @@ test-search:
 	uv run --with pytest pytest src/phases_v2/search src/phases_v2/app/adapters/primary/SearchAPI_test.py src/phases_v2/extraction/domain_test.py src/phases_v2/projection/probabilistic_test.py src/phases_v2/datasets/schemas_test.py src/phases_v2/orchestrations/PhasesV2Orchestration_test.py src/phases_v2/README_test.py
 	node --test $(APP_TESTS)/search_test.cjs
 
+# The term-clustering scripts carry their own dependencies (PEP 723); their
+# tests need scikit-learn and scipy, which the project does not, so they run
+# in a throwaway environment rather than in `make test`.
+TERMS_DIR = scripts/term_clustering
+TERMS_DEPS = --with pytest --with numpy --with pandas --with pyarrow --with scikit-learn --with scipy
+
+test-terms:
+	uv run --no-project $(TERMS_DEPS) pytest $(TERMS_DIR)/tests -q
+
 lint:
-	uv run ruff check tests src/phases_v2 src/pubmed src/openalex src/psych_defgen
+	uv run ruff check tests src/phases_v2 src/pubmed src/openalex src/psych_defgen $(TERMS_DIR)
 
 build:
 	uv build

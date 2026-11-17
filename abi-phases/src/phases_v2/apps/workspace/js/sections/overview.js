@@ -2,7 +2,7 @@
 // then how to ask the Assistant in the Nexus right pane.
 
 import { phases, pubmed, search } from '../api.js';
-import { $, esc, formatDate, formatNumber, message, plural, statusPill } from '../ui.js';
+import { $, esc, formatDate, formatNumber, helpHref, learnMore, message, plural, statusPill } from '../ui.js';
 
 const STEPS = [
   {
@@ -53,11 +53,12 @@ const assistant = () => `
     <p>${esc(ASSISTANT_HINT)}</p>
     <p class="muted">It knows this app, looks up your collections, prompts, runs and results, and does things for you. It asks for your yes before anything that costs time or money: runs, downloads, schedules and enrichment. Try:</p>
     <ul class="examples">${ASSISTANT_EXAMPLES.map((example) => `<li>“${esc(example)}”</li>`).join('')}</ul>
+    <p class="assistant-more"><a href="${helpHref('assistant')}">What the Assistant can and can’t do</a></p>
   </section>`;
 
 const template = () => `
   <header class="page-head"><p class="eyebrow">HealthyPhases</p><h1 tabindex="-1">Overview</h1>
-    <p class="lede">Turn research papers into structured, searchable findings in four steps.</p></header>
+    <p class="lede">Turn research papers into structured, searchable findings in four steps. ${learnMore('overview', '', 'Overview')}</p></header>
   <p id="ov-message" class="msg" role="status"></p>
   <ol class="steps">${STEPS.map((step, index) => `
     <li class="card step">
@@ -135,7 +136,7 @@ export function create(root, ctx) {
       const latestRun = data.requests?.requests?.[0];
       $('ov-latest').innerHTML = latestRun
         ? `Latest run: <a href="${ctx.href('runs', [latestRun.request_id])}">submitted ${esc(formatDate(latestRun.requested_at))}</a> ${statusPill(latestRun.status)}`
-        : 'No runs yet. Start one once you have papers and prompts.';
+        : `No runs yet. Start one once you have papers and prompts. <a href="${helpHref('runs', 'new-run')}">How to start a run</a>`;
       message('ov-message', failures.length
         ? `Some counts could not be loaded (${plural(failures.length, 'source')}): ${[...new Set(failures)].join('; ')}`
         : '', failures.length ? 'warn' : '');

@@ -68,6 +68,7 @@ def test_dataset_names_are_unique():
 
 def test_the_expected_datasets_are_declared():
     assert {spec.name for spec in DATASETS} == {
+        "app_users",
         "input_collections",
         "paper_collections",
         "paper_paths",

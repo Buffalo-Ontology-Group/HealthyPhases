@@ -158,3 +158,25 @@ def test_every_section_says_how_to_open_the_assistant():
     assert "Open the Assistant with the panel button at the top right of Nexus" in sidebar
     # Nexus catches the shortcut on its own page, not inside the app's frame.
     assert "⌘K / Ctrl+K after clicking outside the app" in sidebar
+
+
+def sidebar():
+    """The sidebar's sections, in order, as (route, title) pairs."""
+    return re.findall(r'<a href="#/(\w+)" data-nav="\w+"[^>]*>.*?<span>([^<]+)</span></a>', INDEX.read_text())
+
+
+def router_sections():
+    listed = re.search(r"export const SECTIONS = \[([^\]]*)\]", (APP / "js" / "router.js").read_text()).group(1)
+    return re.findall(r"'(\w+)'", listed)
+
+
+def test_the_sidebar_lists_the_router_sections_help_included():
+    text = INDEX.read_text()
+    routes = [route for route, _title in sidebar()]
+
+    assert routes == router_sections()
+    assert routes[-1] == "help"
+    assert re.findall(r'data-nav="(\w+)"', text) == routes
+    for route in routes:
+        assert f'<section id="section-{route}" class="section"' in text, route
+

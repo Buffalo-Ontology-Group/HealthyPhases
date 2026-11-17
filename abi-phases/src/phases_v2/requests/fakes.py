@@ -28,5 +28,8 @@ class FakeRequestStore:
     def pending(self) -> list[RunRequest]:
         return [r for r in self.requests.values() if r.status == PENDING]
 
-    def recent(self, limit: int = 50) -> list[RunRequest]:
-        return list(self.requests.values())[:limit]
+    def recent(self, limit: int = 50, requested_by=None) -> list[RunRequest]:
+        found = list(self.requests.values())
+        if requested_by is not None:
+            found = [r for r in found if r.requested_by in set(requested_by)]
+        return found[:limit]

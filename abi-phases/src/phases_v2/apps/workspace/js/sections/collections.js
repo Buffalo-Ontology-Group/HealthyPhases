@@ -4,10 +4,16 @@
 // #/collections/new the create form. On the create form, added papers and PDFs
 // wait on the page and are sent when the collection is created; on a saved
 // collection every addition is sent straight away.
+//
+// A collection belongs to whoever created it, and only they change it; a shared
+// one (from before owners were recorded) stays editable by everyone. Someone
+// else's collection opens read-only: it can still be run, searched and its
+// results opened. The list shows your own collections unless Everyone's is chosen.
 
 import { phases, pubmed } from '../api.js';
 import {
-  $, action, emptyRow, emptyState, esc, fill, formatDate, message, plural, statusPill, tableHtml,
+  $, EVERYONE, MINE, action, emptyRow, emptyState, esc, fill, formatDate, helpHref, learnMore, message, ownerFilter, ownerLabel,
+  plural, shownFor, statusPill, tableHtml,
 } from '../ui.js';
 
 export const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
@@ -27,20 +33,43 @@ export function collectionSummary(c) {
   const parts = [plural(c.member_count ?? c.members?.length ?? 0, 'member')];
   if (c.paper_count != null) parts.push(plural(c.paper_count, 'paper'));
   if (c.updated_at) parts.push(`updated ${formatDate(c.updated_at)}`);
+  if ('owner_id' in c) parts.push(ownerLabel(c));
   return parts.join(' · ');
 }
 
+// Whether the user may change `collection`: theirs or shared, as the server says.
+export const changeable = (collection) => !collection || collection.can_change !== false;
+
+// A storage folder you may upload into. A collection's uploads live in
+// "<root>/collections/<collection_id>", which is one of its members, so only
+// who may change that collection uploads there; `root` is the papers root.
+export function uploadableFolder(prefix, root, collections) {
+  const start = `${root}/collections/`;
+  if (!root || !String(prefix).startsWith(start)) return true;
+  const id = String(prefix).slice(start.length).split('/')[0];
+  const collection = collections.find((c) => c.collection_id === id);
+  return Boolean(collection) && changeable(collection);
+}
+
+// The controls that change a saved collection, disabled on a read-only one.
+export const CHANGE_CONTROLS = [
+  'col-name', 'col-description', 'col-save', 'col-upload-files', 'col-upload', 'col-pubmed', 'col-add-pubmed',
+  'col-folder', 'col-add-folder', 'col-library-q', 'col-library-find',
+];
+
 const template = () => `
   <header class="page-head"><p class="eyebrow">Step 1 · Collect papers</p><h1 tabindex="-1">Collections</h1>
-    <p class="lede">Gather papers from PubMed searches, your own PDFs, storage folders and the library into one collection, then run the pipeline or search within it.</p></header>
+    <p class="lede">Gather papers from PubMed searches, your own PDFs, storage folders and the library into one collection, then run the pipeline or search within it. ${learnMore('collections', '', 'Collections')}</p></header>
   <div class="split">
     <section class="card">
-      <div class="card-head"><h2>Your collections</h2><button id="col-new" type="button">New collection</button></div>
+      <div class="card-head"><h2 id="col-list-title">Your collections</h2><button id="col-new" type="button">New collection</button></div>
+      <div class="row">${ownerFilter('col-owner', 'collections')}${learnMore('collections', 'owners', 'whose collections are shown')}</div>
       <div id="col-list" class="resource-list" aria-label="Collections"></div>
     </section>
     <div class="stack">
       <section class="card">
         <h2 id="col-title">New collection</h2>
+        <p id="col-owner-line" class="msg" role="status"></p>
         <form id="col-form">
           <div class="stack">
             <div><label for="col-name">Collection name</label><input id="col-name" required maxlength="120" placeholder="e.g. Solitude research"></div>
@@ -51,7 +80,7 @@ const template = () => `
         </form>
       </section>
       <section class="card">
-        <h2>Add papers</h2>
+        <div class="card-head"><h2>Add papers</h2>${learnMore('collections', 'add-papers', 'adding papers')}</div>
         <p id="col-add-hint" class="hint"></p>
         <div class="grid">
           <div><label for="col-upload-files">Upload PDFs (up to 25 MiB each)</label><input id="col-upload-files" type="file" accept="application/pdf,.pdf" multiple>
@@ -71,11 +100,11 @@ const template = () => `
         <p id="col-add-message" class="msg" role="status"></p>
       </section>
       <section class="card">
-        <h2>Members</h2>
+        <div class="card-head"><h2>Members</h2>${learnMore('collections', 'members', 'Members')}</div>
         ${tableHtml('col-members', ['Type', 'Member', 'Papers', 'Actions'], 'Collection members')}
       </section>
       <section class="card">
-        <div class="card-head"><h2>Papers</h2><button id="col-refresh" type="button">Refresh</button></div>
+        <div class="card-head"><h2>Papers</h2><div class="row">${learnMore('collections', 'papers', 'paper states')}<button id="col-refresh" type="button">Refresh</button></div></div>
         <p id="col-papers-summary" class="msg" role="status"></p>
         ${tableHtml('col-papers', ['Paper', 'Stored at', 'Status'], 'Papers in this collection', true)}
       </section>
@@ -99,22 +128,47 @@ const template = () => `
 export function create(root, ctx) {
   root.innerHTML = template();
   const state = {
-    collections: [], locations: [], pubmedQueries: [], loaded: false,
+    collections: [], locations: [], pubmedQueries: [], loaded: false, owner: MINE,
     collectionId: '', current: '', detail: null, detailVersion: 0,
     // A new collection's additions, sent when it is created.
     draft: { members: [], files: [] },
   };
   const folderName = (prefix) => state.locations.find((l) => l.prefix === prefix)?.name || prefix;
   const saved = () => state.collections.find((c) => c.collection_id === state.collectionId);
+  // The open collection as last read: its detail carries the freshest owner.
+  const open = () => (state.detail?.collection_id === state.collectionId && state.detail) || saved();
+  const readOnly = () => Boolean(state.collectionId) && !changeable(open());
+  $('col-owner').value = MINE;
 
+  function refuseIfReadOnly() {
+    if (readOnly()) throw new Error(open()?.read_only_reason || 'Only this collection’s owner can change it.');
+  }
+
+  // Someone else's collection: what changes it is disabled, with the reason
+  // said once above the form; running, searching and results stay.
+  function applyAccess() {
+    const collection = state.collectionId ? open() : null;
+    const locked = readOnly();
+    for (const id of CHANGE_CONTROLS) $(id).disabled = locked;
+    if (!locked) $('col-add-pubmed').disabled = !state.pubmedQueries.length;
+    $('col-archive').hidden = !collection || locked;
+    if (!collection) message('col-owner-line', 'Creating a collection makes it yours: only you will change it.');
+    else if (locked) message('col-owner-line', `Read-only: ${collection.read_only_reason || 'only its owner changes it.'}`, 'warn');
+    else if (collection.owned_by_you) message('col-owner-line', 'You own this collection: only you change it.');
+    else message('col-owner-line', 'Shared collection: everyone can change it.');
+  }
   // ---- Lists ----
 
   function renderCollections() {
     $('col-list').replaceChildren();
-    if (!state.collections.length) {
-      $('col-list').innerHTML = emptyState('No collections yet. Name one and add papers to reuse them in runs and searches.');
+    $('col-list-title').textContent = state.owner === MINE ? 'Your collections' : 'Everyone’s collections';
+    const shown = state.collections.filter((c) => shownFor(state.owner, c));
+    if (!shown.length) {
+      $('col-list').innerHTML = state.owner === MINE && state.collections.length
+        ? emptyState('You have no collections of your own yet. Create one with New collection, or choose Everyone’s to run on someone else’s.', [helpHref('collections', 'create'), 'How to create one'])
+        : emptyState('No collections yet. Name one and add papers to reuse them in runs and searches.', [helpHref('collections', 'create'), 'How to create one']);
     }
-    for (const collection of state.collections) {
+    for (const collection of shown) {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'resource';
@@ -127,10 +181,13 @@ export function create(root, ctx) {
 
   function fillChoices() {
     fill($('col-folder'), state.locations, 'prefix', (l) => l.name, [$('col-folder').value]);
-    fill($('col-folder-upload-location'), state.locations, 'prefix', (l) => l.name, [$('col-folder-upload-location').value]);
+    // The papers root is the first location the server lists.
+    const root = state.locations[0]?.prefix || '';
+    const uploadable = state.locations.filter((l) => uploadableFolder(l.prefix, root, state.collections));
+    fill($('col-folder-upload-location'), uploadable, 'prefix', (l) => l.name, [$('col-folder-upload-location').value]);
     const searches = state.pubmedQueries.length ? state.pubmedQueries : [{ query_id: '', query: 'No saved PubMed searches yet' }];
     fill($('col-pubmed'), searches, 'query_id', (q) => (q.query_id ? `${q.query} · ${plural(q.published_paper_count ?? 0, 'downloaded paper')}` : q.query), [$('col-pubmed').value]);
-    $('col-add-pubmed').disabled = !state.pubmedQueries.length;
+    $('col-add-pubmed').disabled = !state.pubmedQueries.length || readOnly();
   }
 
   // Paper counts resolve every collection on the server, so they are read on the
@@ -169,6 +226,7 @@ export function create(root, ctx) {
     const row = document.createElement('tr');
     const papers = count == null ? '<span class="muted">After creating</span>' : esc(count);
     row.innerHTML = `<td>${esc(KINDS[kind] || kind)}</td><td>${esc(label)}${error ? `<small class="bad">${esc(error)}</small>` : ''}</td><td>${papers}</td><td></td>`;
+    if (readOnly()) return row;
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.className = 'small';
@@ -184,7 +242,7 @@ export function create(root, ctx) {
     body.replaceChildren();
     if (state.collectionId) {
       const members = state.detail?.members || [];
-      if (!members.length) body.innerHTML = emptyRow(4, 'No members yet. Add papers above.');
+      if (!members.length) body.innerHTML = emptyRow(4, 'No members yet. Add papers above.', [helpHref('collections', 'add-papers'), 'How to add papers']);
       for (const m of members) {
         const label = m.kind === 'folder' && m.uploads ? 'PDFs uploaded into this collection' : m.label;
         body.append(memberRow(m.kind, label, m.paper_count, () => removeMember(m, label), m.error));
@@ -192,7 +250,7 @@ export function create(root, ctx) {
       return;
     }
     const { members, files } = state.draft;
-    if (!members.length && !files.length) body.innerHTML = emptyRow(4, 'Nothing added yet. Add papers in any of the four ways above.');
+    if (!members.length && !files.length) body.innerHTML = emptyRow(4, 'Nothing added yet. Add papers in any of the four ways above.', [helpHref('collections', 'add-papers'), 'How to add papers']);
     for (const m of members) {
       body.append(memberRow(commandKind(m.command), m.label, null, () => {
         state.draft.members = state.draft.members.filter((d) => d !== m);
@@ -223,7 +281,7 @@ export function create(root, ctx) {
       + (detail.truncated ? ` Showing the first ${detail.papers.length}.` : '')
       + (failed.length ? ` Could not read: ${failed.map((m) => m.label).join('; ')}.` : ''),
       failed.length ? 'warn' : '');
-    if (!detail.papers.length) body.innerHTML = emptyRow(3, 'No papers yet. Add papers above; a PubMed search counts its downloaded papers.');
+    if (!detail.papers.length) body.innerHTML = emptyRow(3, 'No papers yet. Add papers above; a PubMed search counts its downloaded papers.', [helpHref('collections', 'add-papers'), 'How to add papers']);
     for (const paper of detail.papers) {
       const [tone, label] = STATUSES[paper.status] || ['idle', paper.status];
       const row = document.createElement('tr');
@@ -249,6 +307,7 @@ export function create(root, ctx) {
         ? { ...c, name: detail.name, member_count: detail.members.length, paper_count: detail.paper_count, updated_at: detail.updated_at }
         : c));
       renderCollections();
+      applyAccess();
     } catch (error) {
       if (version !== state.detailVersion) return;
       message('col-papers-summary', `Could not read this collection's papers: ${error.message}`, 'bad');
@@ -280,6 +339,8 @@ export function create(root, ctx) {
     $('col-add-hint').textContent = collection
       ? 'Everything you add here joins the collection straight away.'
       : 'Add papers in any of these ways. They are saved with the collection when you create it.';
+    applyAccess();
+    if (readOnly()) $('col-add-hint').textContent = 'Only this collection’s owner adds papers to it. Create a collection of your own to gather these papers.';
     message('col-message');
     message('col-add-message');
     message('col-upload-message');
@@ -290,6 +351,7 @@ export function create(root, ctx) {
   // `items` are [{ command, label }]; `labels` name them in messages.
   async function addMembers(items) {
     if (!items.length) return;
+    refuseIfReadOnly();
     if (!state.collectionId) {
       const held = new Set(state.draft.members.map((m) => commandKey(m.command)));
       for (const item of items) if (!held.has(commandKey(item.command))) state.draft.members.push(item);
@@ -303,6 +365,7 @@ export function create(root, ctx) {
   }
 
   async function removeMember(member, label) {
+    refuseIfReadOnly();
     const removed = await ctx.confirm({
       title: `Remove "${label}" from this collection?`,
       body: ['Its papers leave this collection unless another member includes them.', 'Nothing is deleted from storage or the library, and queued runs keep their papers.'],
@@ -348,6 +411,7 @@ export function create(root, ctx) {
   }
 
   async function upload() {
+    refuseIfReadOnly();
     const files = [...($('col-upload-files').files || [])];
     if (!files.length) throw new Error('Choose at least one PDF.');
     const large = files.filter((f) => f.size > MAX_UPLOAD_BYTES);
@@ -370,6 +434,7 @@ export function create(root, ctx) {
     const name = $('col-name').value.trim();
     const description = $('col-description').value.trim();
     if (!name) throw new Error('Name the collection.');
+    refuseIfReadOnly();
     if (state.collectionId) {
       const updated = await phases(`/collections/${encodeURIComponent(state.collectionId)}`, { method: 'PUT', body: { name, description } });
       await loadCollections();
@@ -395,6 +460,7 @@ export function create(root, ctx) {
   async function archive() {
     const collection = saved();
     if (!collection) return false;
+    refuseIfReadOnly();
     const archived = await ctx.confirm({
       title: `Archive "${collection.name}"?`,
       body: ['The collection disappears from this list, from new runs and from search filters.', 'Its papers, storage folders and any queued runs are kept.'],
@@ -428,6 +494,7 @@ export function create(root, ctx) {
     add.className = 'small';
     add.textContent = 'Add';
     add.setAttribute('aria-label', `Add ${label}`);
+    add.disabled = readOnly();
     add.addEventListener('click', () => action(add, 'col-library-message', () => addMembers([item])));
     row.append(add);
     $('col-library-results').append(row);
@@ -461,12 +528,13 @@ export function create(root, ctx) {
   // Opens a dialog to add `commands` to an existing or a new collection.
   // Resolves with the collection added to, or null when cancelled.
   async function addToCollection(commands, what) {
-    const list = (await phases('/collections?counts=false')).collections;
+    // Only collections the user may change: their own and shared ones.
+    const list = (await phases('/collections?counts=false')).collections.filter(changeable);
     const dialog = $('col-pick-dialog');
     const choose = $('col-pick-select');
     const ok = $('col-pick-ok');
     const cancel = $('col-pick-cancel');
-    $('col-pick-body').textContent = `Add ${what} to one of your collections, or to a new one.`;
+    $('col-pick-body').textContent = `Add ${what} to one of your collections or a shared one, or to a new one.`;
     fill(choose, [...list, { collection_id: NEW, name: 'New collection...' }], 'collection_id', (c) => c.name, [state.lastPicked || list[0]?.collection_id || NEW]);
     const toggle = () => { $('col-pick-new').hidden = choose.value !== NEW; };
     choose.onchange = toggle;
@@ -530,6 +598,10 @@ export function create(root, ctx) {
     state.locations = (await phases('/locations')).locations;
     fillChoices();
     $('col-location-name').value = '';
+    if (readOnly()) {
+      message('col-location-message', 'Storage folder created. This collection is not yours, so the folder was not added to it.', 'ok');
+      return;
+    }
     await addMembers([{ command: { folder: { prefix: location.prefix } }, label: location.name }]);
     message('col-location-message', 'Storage folder created and added to the collection you are editing.', 'ok');
   }
@@ -546,7 +618,14 @@ export function create(root, ctx) {
 
   // ---- Wiring ----
 
+  function chooseOwner(owner) {
+    state.owner = owner === EVERYONE ? EVERYONE : MINE;
+    $('col-owner').value = state.owner;
+    renderCollections();
+  }
+
   $('col-new').addEventListener('click', () => ctx.navigate(ctx.href('collections', ['new'])));
+  $('col-owner').addEventListener('change', () => chooseOwner($('col-owner').value));
   $('col-form').addEventListener('submit', (event) => { event.preventDefault(); action($('col-save'), 'col-message', save); });
   $('col-run').addEventListener('click', runOnCollection);
   $('col-archive').addEventListener('click', () => action($('col-archive'), 'col-message', archive));
@@ -560,7 +639,8 @@ export function create(root, ctx) {
 
   function select(id) {
     if (id === 'new') return edit(null);
-    const collection = state.collections.find((c) => c.collection_id === id) || (!id && state.collections[0]);
+    // With no id, the first collection the list shows; with none shown, a new one.
+    const collection = state.collections.find((c) => c.collection_id === id) || (!id && state.collections.find((c) => shownFor(state.owner, c)));
     if (!collection) {
       const shown = edit(null);
       if (id) message('col-message', 'That collection no longer exists. It may have been archived.', 'warn');
@@ -602,7 +682,7 @@ export function create(root, ctx) {
     addToCollection,
     actions: {
       save, archive, runOnCollection, addMembers, addFolder, addPubmed, upload, findLibrary,
-      removeMember, createLocation, uploadToFolder, edit, reload, loadDetail,
+      removeMember, createLocation, uploadToFolder, edit, reload, loadDetail, chooseOwner,
     },
   };
 }

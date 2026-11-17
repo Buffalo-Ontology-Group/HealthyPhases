@@ -1,8 +1,12 @@
 // The workspace shell: one section visible at a time, chosen by the hash route.
 //
-// Each section module exports create(root, ctx) returning { show(route), hide(),
-// refresh() }. Sections are created on first visit and then kept, so a draft in
-// one section survives a visit to another.
+// Each section module exports create(root, ctx) returning { show(route, options),
+// hide(), refresh() }. Sections are created on first visit and then kept, so a
+// draft in one section survives a visit to another. show() is told `entering`
+// (re-entered after a visit elsewhere) and `first` (the app's first show, when
+// nothing takes focus from Nexus). A section may also return keepsFocus(): true
+// when its last show() put focus somewhere itself, such as Help opened at an
+// entry, so the shell leaves it there.
 
 import { createRouter, href, SECTIONS } from './router.js';
 import { $, confirmAction, toast } from './ui.js';
@@ -13,11 +17,12 @@ import * as prompts from './sections/prompts.js';
 import * as runs from './sections/runs.js';
 import * as results from './sections/results.js';
 import * as search from './sections/search.js';
+import * as help from './sections/help.js';
 
-export const MODULES = { overview, library, collections, prompts, runs, results, search };
+export const MODULES = { overview, library, collections, prompts, runs, results, search, help };
 export const TITLES = {
   overview: 'Overview', library: 'Library', collections: 'Collections',
-  prompts: 'Prompts', runs: 'Runs', results: 'Results', search: 'Search',
+  prompts: 'Prompts', runs: 'Runs', results: 'Results', search: 'Search', help: 'Help',
 };
 
 // Focus and visibility often fire together; one refresh covers both.
@@ -73,8 +78,9 @@ export function boot({ modules = MODULES, every = (ms, work) => setInterval(work
     const existed = Boolean(instances[route.section]);
     active = route.section;
     // A section created earlier is told it is being re-entered, so it re-reads its lists.
-    section(route.section).show(route, { entering: entering && existed });
-    if (entering && !first) $(`section-${route.section}`).querySelector('h1')?.focus();
+    const instance = section(route.section);
+    instance.show(route, { entering: entering && existed, first });
+    if (entering && !first && !instance.keepsFocus?.()) $(`section-${route.section}`).querySelector('h1')?.focus();
   }
 
   function refresh() {

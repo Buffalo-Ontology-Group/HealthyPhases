@@ -3,11 +3,18 @@
 // runs the text on a few chunks of a paper, and Versions lists and compares the
 // texts saved under the same name.
 //
+// A prompt belongs to whoever created its name, and only they save new versions
+// of it. Shared prompts (the built-in ones, and those from before owners were
+// recorded) and other people's are read-only here: Duplicate prompt makes a
+// copy of your own. The library shows your own prompts unless Everyone's is chosen.
+//
 // #/prompts opens the first prompt, #/prompts/<prompt_id> a given version and
 // #/prompts/new an empty form.
 
 import { phases } from '../api.js';
-import { $, action, emptyState, esc, fill, message } from '../ui.js';
+import {
+  $, EVERYONE, MINE, action, emptyState, esc, fill, helpHref, learnMore, message, ownerFilter, ownerLabel, shownFor,
+} from '../ui.js';
 import { createTry, shortId, template as tryTemplate } from './prompt_try.js';
 import { createVersions, template as versionsTemplate } from './prompt_versions.js';
 
@@ -21,6 +28,40 @@ export function promptLabel(prompt, prompts) {
   return versions > 1 ? `${prompt.name} (version ${prompt.prompt_id.slice(-8)})` : prompt.name;
 }
 
+// The characters Python's str.strip() removes, which JavaScript's trim() does
+// not quite match (it keeps \x1c-\x1f and \x85, and removes \ufeff).
+const PY_SPACE = '\\t\\n\\v\\f\\r\\x1c-\\x20\\x85\\xa0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000';
+const PY_STRIP = new RegExp(`^[${PY_SPACE}]+|[${PY_SPACE}]+$`, 'g');
+const PY_RSTRIP = new RegExp(`[${PY_SPACE}]+$`);
+
+// What makes two prompt names the same name, as the server compares them
+// (strip, then casefold). Upper- then lower-casing folds what toLowerCase()
+// alone does not, so "Straße" and "STRASSE" are one name here too.
+export const nameKey = (name) => String(name || '').replace(PY_STRIP, '').toUpperCase().toLowerCase();
+
+// Why the name in the editor cannot take a new version, or '' when it can:
+// a name nobody has yet is free, one you own is yours.
+export function readOnlyReason(name, prompts) {
+  const taken = prompts.find((p) => nameKey(p.name) === nameKey(name));
+  return taken && taken.can_change === false ? taken.read_only_reason || 'Only this prompt’s owner can save new versions of it.' : '';
+}
+
+// The longest prompt name the server accepts.
+export const MAX_NAME = 100;
+
+// "<name> copy", numbered when that name is taken, as the server names a copy.
+// The name is cut, in characters as the server counts them, so that the suffix
+// always fits in MAX_NAME.
+export function copyName(name, prompts) {
+  const taken = new Set(prompts.map((p) => nameKey(p.name)));
+  const base = Array.from(String(name || 'Prompt'));
+  for (let n = 1; ; n += 1) {
+    const suffix = n === 1 ? ' copy' : ` copy ${n}`;
+    const candidate = base.slice(0, MAX_NAME - suffix.length).join('').replace(PY_RSTRIP, '') + suffix;
+    if (!taken.has(nameKey(candidate))) return candidate;
+  }
+}
+
 export function formatExample(key) {
   return key === 'relations'
     ? 'Structured process and disposition relations. Duplicate the probabilistic_processes prompt for its full format.'
@@ -29,16 +70,17 @@ export function formatExample(key) {
 
 const template = () => `
   <header class="page-head"><p class="eyebrow">Step 2 · Prepare prompts</p><h1 tabindex="-1">Prompts</h1>
-    <p class="lede">Write and refine the instructions that extract findings from each chunk of a paper.</p></header>
+    <p class="lede">Write and refine the instructions that extract findings from each chunk of a paper. ${learnMore('prompts', '', 'Prompts')}</p></header>
   <div class="split">
     <section class="card">
       <div class="card-head"><h2>Prompt library</h2><button id="pr-new" type="button">New prompt</button></div>
+      <div class="row">${ownerFilter('pr-owner', 'prompts')}${learnMore('prompts', 'owners', 'whose prompts are shown')}</div>
       <label for="pr-search">Find a prompt</label><input id="pr-search" type="search" placeholder="Search by name">
       <div id="pr-list" class="resource-list" aria-label="Prompts"></div>
     </section>
     <div class="stack">
     <section class="card">
-      <h2 id="pr-title">New prompt</h2>
+      <div class="card-head"><h2 id="pr-title">New prompt</h2>${learnMore('prompts', 'editor', 'the editor')}</div>
       <form id="pr-form"><div class="stack">
         <div><label for="pr-name">Prompt name</label><input id="pr-name" required maxlength="100"></div>
         <div><label for="pr-output">Output format</label><select id="pr-output"></select><p id="pr-format" class="hint"></p></div>
@@ -46,6 +88,7 @@ const template = () => `
           <p class="hint">Include <code>{chunk_text}</code> where the document text should appear.</p></div>
       </div>
       <p id="pr-version" class="hint"></p>
+      <p id="pr-owner-line" class="hint" role="status"></p>
       <div class="row actions"><button id="pr-save" class="primary">Save as new version</button><button type="button" id="pr-duplicate">Duplicate prompt</button><button type="button" id="pr-use" disabled>Use in new run</button></div>
       <p id="pr-message" class="msg" role="status"></p></form>
     </section>
@@ -56,7 +99,8 @@ const template = () => `
 
 export function create(root, ctx) {
   root.innerHTML = template();
-  const state = { prompts: [], promptId: '', current: '', loaded: false };
+  const state = { prompts: [], promptId: '', current: '', loaded: false, owner: MINE };
+  $('pr-owner').value = MINE;
   fill($('pr-output'), OUTPUT_KEYS.map((key) => ({ key })), 'key', (p) => p.key);
 
   const showFormat = () => { $('pr-format').textContent = formatExample($('pr-output').value); };
@@ -65,6 +109,27 @@ export function create(root, ctx) {
   function setUsable(usable) {
     $('pr-use').disabled = !usable;
     $('pr-try-use').disabled = !usable;
+  }
+
+  // Saving is for names that are free or yours. Under a shared or someone else's
+  // name both Save buttons are disabled, the reason is said, and Duplicate prompt
+  // becomes the main action.
+  function updateSaving() {
+    const name = $('pr-name').value.trim();
+    const reason = readOnlyReason(name, state.prompts);
+    for (const id of ['pr-save', 'pr-try-save']) {
+      $(id).disabled = Boolean(reason);
+      $(id).title = reason;
+    }
+    $('pr-duplicate').className = reason ? 'primary' : '';
+    const owned = state.prompts.find((p) => nameKey(p.name) === nameKey(name));
+    let line = '';
+    if (reason) line = `Read-only: ${reason}`;
+    else if (owned?.owned_by_you) line = 'You own this prompt: only you save new versions of it.';
+    else if (owned) line = 'Shared prompt.';
+    else if (name) line = 'Saving makes this prompt yours.';
+    message('pr-owner-line', line, reason ? 'warn' : '');
+    return reason;
   }
 
   // The checks the server makes, said before sending: the editor's Save and the
@@ -106,18 +171,20 @@ export function create(root, ctx) {
   function renderList() {
     $('pr-list').replaceChildren();
     const term = $('pr-search').value.toLowerCase();
-    const prompts = state.prompts.filter((p) => p.name.toLowerCase().includes(term));
+    const shown = state.prompts.filter((p) => shownFor(state.owner, p));
+    const prompts = shown.filter((p) => p.name.toLowerCase().includes(term));
     if (!prompts.length) {
-      $('pr-list').innerHTML = state.prompts.length
-        ? emptyState('No prompt matches this search. Clear it to see every prompt.')
-        : emptyState('No prompts yet. Write one with New prompt.');
+      if (shown.length) $('pr-list').innerHTML = emptyState('No prompt matches this search. Clear it to see every prompt.');
+      else if (state.owner === MINE && state.prompts.length) {
+        $('pr-list').innerHTML = emptyState('You have no prompts of your own yet. Write one with New prompt, or choose Everyone’s, open a prompt and use Duplicate prompt.', [helpHref('prompts', 'duplicate'), 'How to duplicate a prompt']);
+      } else $('pr-list').innerHTML = emptyState('No prompts yet. Write one with New prompt.', [helpHref('prompts', 'editor'), 'How to write a prompt']);
     }
     for (const prompt of prompts) {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'resource';
       button.setAttribute('aria-pressed', String(prompt.prompt_id === state.promptId));
-      button.innerHTML = `${esc(promptLabel(prompt, state.prompts))}<small>${esc(prompt.output_key)}</small>`;
+      button.innerHTML = `${esc(promptLabel(prompt, state.prompts))}<small>${esc(prompt.output_key)} · ${esc(ownerLabel(prompt))}</small>`;
       button.addEventListener('click', () => ctx.navigate(ctx.href('prompts', [prompt.prompt_id])));
       $('pr-list').append(button);
     }
@@ -135,6 +202,7 @@ export function create(root, ctx) {
       : 'Saving adds this prompt to the library.';
     setUsable(Boolean(prompt));
     message('pr-message');
+    updateSaving();
     renderList();
     loadVersions(prompt?.name || '', prompt?.prompt_id || '');
   }
@@ -143,11 +211,18 @@ export function create(root, ctx) {
     state.prompts = (await phases('/prompts')).prompts;
     state.loaded = true;
     renderList();
+    updateSaving();
+  }
+
+  function chooseOwner(owner) {
+    state.owner = owner === EVERYONE ? EVERYONE : MINE;
+    $('pr-owner').value = state.owner;
+    renderList();
   }
 
   async function save() {
     const previousId = state.promptId;
-    const problem = draftProblem(formValues());
+    const problem = draftProblem(formValues()) || readOnlyReason(formValues().name, state.prompts);
     if (problem) throw new Error(problem);
     const saved = await phases('/prompts', {
       method: 'POST', body: formValues(),
@@ -168,10 +243,11 @@ export function create(root, ctx) {
     state.promptId = '';
     state.current = 'new';
     ctx.replace(ctx.href('prompts', ['new']));
-    $('pr-name').value += ' copy';
+    $('pr-name').value = copyName($('pr-name').value.trim(), state.prompts);
     setUsable(false);
     $('pr-title').textContent = 'New prompt';
-    $('pr-version').textContent = 'Saving adds this copy to the library.';
+    $('pr-version').textContent = 'Saving adds this copy to the library, as your own prompt.';
+    updateSaving();
     $('pr-name').focus();
     renderList();
   }
@@ -191,10 +267,12 @@ export function create(root, ctx) {
   $('pr-output').addEventListener('change', showFormat);
   $('pr-new').addEventListener('click', () => ctx.navigate(ctx.href('prompts', ['new'])));
   $('pr-search').addEventListener('input', renderList);
+  $('pr-owner').addEventListener('change', () => chooseOwner($('pr-owner').value));
   $('pr-form').addEventListener('submit', (event) => { event.preventDefault(); action($('pr-save'), 'pr-message', save); });
   // An edited form is not the saved version any more, so it cannot be added to a run yet.
   $('pr-form').addEventListener('input', () => {
     setUsable(false);
+    updateSaving();
     // A comparison with the editor follows what is typed.
     if ([$('pr-ver-a').value, $('pr-ver-b').value].includes('draft')) versions.compare();
   });
@@ -205,7 +283,8 @@ export function create(root, ctx) {
 
   function select(id) {
     if (id === 'new') return edit(null);
-    const prompt = state.prompts.find((p) => p.prompt_id === id) || (!id && state.prompts[0]);
+    // With no id, the first prompt the library shows; with none shown, a new one.
+    const prompt = state.prompts.find((p) => p.prompt_id === id) || (!id && state.prompts.find((p) => shownFor(state.owner, p)));
     if (!prompt) {
       edit(null);
       if (id) message('pr-message', 'That prompt version was not found. Choose one from the library.', 'warn');
@@ -240,5 +319,5 @@ export function create(root, ctx) {
     if (versions.state.name) await loadVersions(versions.state.name, versions.state.current, $('pr-try-baseline').value);
   }
 
-  return { show, hide() {}, refresh, state, tryPanel, versions, actions: { save, saveFromTry, duplicate, useInRun, edit, reload, tryIt: tryPanel.run } };
+  return { show, hide() {}, refresh, state, tryPanel, versions, actions: { save, saveFromTry, duplicate, useInRun, edit, reload, chooseOwner, tryIt: tryPanel.run } };
 }

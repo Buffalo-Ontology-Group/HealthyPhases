@@ -2,11 +2,16 @@
 //
 // #/runs lists requests, #/runs/<request_id> opens one and #/runs/new is the
 // new-run form. The form is kept between visits, so a draft is never lost.
+//
+// Every run records who requested it. Requests and saved configurations show
+// your own (Mine) unless Everyone's is chosen; anyone may run any configuration,
+// collection or prompt.
 
 import { phases } from '../api.js';
 import { documentPreview } from '../documents.js';
 import {
-  $, action, emptyRow, esc, fill, formatDate, message, plural, selected, selectValues, statusPill, tableHtml,
+  $, EVERYONE, MINE, action, emptyRow, esc, fill, formatDate, helpHref, learnMore, message, ownerFilter, ownerLabel, plural,
+  requesterLabel, selected, selectValues, shownFor, statusPill, tableHtml,
 } from '../ui.js';
 import { promptLabel } from './prompts.js';
 
@@ -29,19 +34,19 @@ export function resultSummary(request) {
 
 const template = () => `
   <header class="page-head"><p class="eyebrow">Step 3 · Run the pipeline</p><h1 tabindex="-1">Runs</h1>
-    <p class="lede">Queue extraction runs over your papers and follow them until they finish.</p></header>
+    <p class="lede">Queue extraction runs over your papers and follow them until they finish. ${learnMore('runs', '', 'Runs')}</p></header>
   <nav class="tabs" aria-label="Run views"><a id="run-tab-list" href="#/runs">Requests</a><a id="run-tab-new" href="#/runs/new">New run</a></nav>
 
   <div id="run-view-list" class="stack" hidden>
     <section class="card">
       <div class="card-head"><div><h2>Run requests</h2><p id="run-updated" class="hint">Refreshes every 10 seconds while this page is open.</p></div>
         <div class="row"><a class="button primary" href="#/runs/new">New run</a><button id="run-refresh-requests" type="button">Refresh</button></div></div>
-      <div class="row"><label for="run-status" class="inline">Status</label><select id="run-status" class="auto"><option value="">All statuses</option>${STATUSES.map((s) => `<option value="${s}">${s}</option>`).join('')}</select><span class="hint">Most recent 100 requests</span></div>
+      <div class="row">${ownerFilter('run-owner', 'run requests')}<label for="run-status" class="inline">Status</label><select id="run-status" class="auto"><option value="">All statuses</option>${STATUSES.map((s) => `<option value="${s}">${s}</option>`).join('')}</select><span class="hint">Most recent 100 requests</span>${learnMore('runs', 'statuses', 'the statuses')}${learnMore('runs', 'requested-by', 'whose runs are shown')}</div>
       <p id="run-requests-message" class="msg" role="status"></p>
-      ${tableHtml('run-requests', ['Run', 'Status', 'Prompts', 'Model'], 'Run requests')}
+      ${tableHtml('run-requests', ['Run', 'Status', 'Prompts', 'Model', 'Requested by'], 'Run requests')}
     </section>
     <section class="card" id="run-detail" hidden aria-labelledby="run-detail-title">
-      <div class="card-head"><h2 id="run-detail-title" tabindex="-1">Run details</h2><a id="run-detail-close" class="button" href="#/runs">Close</a></div>
+      <div class="card-head"><h2 id="run-detail-title" tabindex="-1">Run details</h2><div class="row">${learnMore('runs', 'run-page', 'a run’s page')}<a id="run-detail-close" class="button" href="#/runs">Close</a></div></div>
       <div id="run-detail-content"></div>
       <div class="row actions"><a id="run-detail-papers" class="button" href="#/results" hidden>Papers in this run</a><a id="run-detail-collection" class="button" href="#/collections" hidden>Open the collection</a><a id="run-detail-results" class="button" href="#/search" hidden>Search with this run's prompts and model</a></div>
     </section>
@@ -50,12 +55,13 @@ const template = () => `
   <div id="run-view-new" class="stack" hidden>
     <p id="run-app-message" class="msg" role="status"></p>
     <section class="card">
-      <h2>Saved configurations</h2>
+      <div class="card-head"><h2>Saved configurations</h2>${learnMore('runs', 'saved-configurations', 'Saved configurations')}</div>
+      <div class="row">${ownerFilter('run-saved-owner', 'saved configurations')}</div>
       <div class="row"><label class="sr-only" for="run-saved">Saved configuration</label><select id="run-saved" class="grow"></select><button id="run-load-saved" type="button" disabled>Load into the form</button><button id="run-run-saved" type="button" disabled>Run saved configuration</button></div>
       <p id="run-saved-message" class="msg" role="status"></p>
     </section>
     <section class="card">
-      <h2>1. Choose papers</h2>
+      <div class="card-head"><h2>1. Choose papers</h2>${learnMore('runs', 'new-run', 'New run')}</div>
       <div class="grid">
         <div><label for="run-source">Paper source</label><select id="run-source"><option value="storage">Storage folders</option><option value="collection">Collection</option><option value="pubmed">PubMed search</option></select>
           <p class="hint">A collection holds the papers you gathered; a PubMed source contains the papers downloaded for that search.</p></div>
@@ -93,9 +99,12 @@ export function create(root, ctx) {
   const state = {
     active: false, view: 'list', ready: false, loading: null,
     prompts: [], models: [], chunkers: [], locations: [], collections: [], pipelines: [], pubmedQueries: [],
-    requests: [], requestId: '', requestsLoading: false, warningVersion: 0,
+    requests: [], requestId: '', requestsLoading: false, requestsVersion: 0, warningVersion: 0,
     pending: { collectionId: '', addPrompts: [], removePrompts: [] },
+    owner: MINE, savedOwner: MINE,
   };
+  $('run-owner').value = MINE;
+  $('run-saved-owner').value = MINE;
   const source = () => $('run-source').value || 'storage';
   const folderName = (prefix) => state.locations.find((l) => l.prefix === prefix)?.name || prefix;
   const preview = documentPreview($('run-documents'), $('run-documents-summary'), folderName);
@@ -162,18 +171,30 @@ export function create(root, ctx) {
     const choices = state.collections.length
       ? state.collections
       : [{ collection_id: '', name: 'No collections yet. Create one in Collections.' }];
-    fill($('run-collection'), choices, 'collection_id', (c) => (c.collection_id ? `${c.name} · ${plural(c.member_count ?? 0, 'member')}` : c.name), [current]);
+    // Anyone may run on any collection; someone else's is labelled with its owner.
+    const label = (c) => {
+      if (!c.collection_id) return c.name;
+      const owner = c.owner_name && !c.owned_by_you ? ` · ${c.owner_name}` : '';
+      return `${c.name} · ${plural(c.member_count ?? 0, 'member')}${owner}`;
+    };
+    fill($('run-collection'), choices, 'collection_id', label, [current]);
     chooseCollection($('run-collection').value);
   }
 
+  const shownPipelines = () => state.pipelines.filter((p) => shownFor(state.savedOwner, p));
+
   function renderPipelines(pick) {
     const chosen = pick || $('run-saved').value;
-    if (!state.pipelines.length) {
-      fill($('run-saved'), [{ pipeline_id: '', name: 'No saved configurations yet. Save one below.' }], 'pipeline_id', (p) => p.name);
+    const shown = shownPipelines();
+    if (!shown.length) {
+      const empty = state.savedOwner === MINE && state.pipelines.length
+        ? 'You have no saved configurations yet. Save one below, or show Everyone’s.'
+        : 'No saved configurations yet. Save one below.';
+      fill($('run-saved'), [{ pipeline_id: '', name: empty }], 'pipeline_id', (p) => p.name);
     } else {
-      fill($('run-saved'), state.pipelines, 'pipeline_id', (p) => `${p.name} (${formatDate(p.created_at)})`, chosen ? [chosen] : undefined);
+      fill($('run-saved'), shown, 'pipeline_id', (p) => `${p.name} · ${ownerLabel(p)} (${formatDate(p.created_at)})`, chosen ? [chosen] : undefined);
     }
-    $('run-load-saved').disabled = $('run-run-saved').disabled = !state.pipelines.length;
+    $('run-load-saved').disabled = $('run-run-saved').disabled = !shown.length;
   }
 
   // Reads every list the form offers, keeping whatever is already chosen.
@@ -305,6 +326,9 @@ export function create(root, ctx) {
 
   async function saveConfiguration() {
     const saved = await phases('/pipelines', { method: 'POST', body: { name: $('run-config-name').value.trim(), inputs: runInputs() } });
+    // A new configuration is the user's own, so Mine shows it.
+    state.savedOwner = MINE;
+    $('run-saved-owner').value = MINE;
     await refreshPipelines(saved.pipeline_id);
     message('run-saved-message', 'Configuration saved.', 'ok');
   }
@@ -370,12 +394,14 @@ export function create(root, ctx) {
     const status = $('run-status').value;
     const requests = state.requests.filter((r) => !status || r.status === status);
     if (!requests.length) {
-      $('run-requests').innerHTML = emptyRow(4, state.requests.length ? 'No runs have this status. Choose All statuses.' : 'No runs yet. Start one from New run.');
+      if (state.requests.length) $('run-requests').innerHTML = emptyRow(5, 'No runs have this status. Choose All statuses.');
+      else if (state.owner === MINE) $('run-requests').innerHTML = emptyRow(5, 'You have not requested any runs yet. Start one from New run, or show Everyone’s.', [helpHref('runs', 'new-run'), 'How to start a run']);
+      else $('run-requests').innerHTML = emptyRow(5, 'No runs yet. Start one from New run.', [helpHref('runs', 'new-run'), 'How to start a run']);
     }
     for (const request of requests) {
       const row = document.createElement('tr');
       if (request.request_id === state.requestId) row.className = 'current';
-      row.innerHTML = `<td><a class="row-link" href="${esc(ctx.href('runs', [request.request_id]))}">${esc(sourcesLabel(request.locations, request))}</a><small>Submitted ${esc(formatDate(request.requested_at))}</small></td><td>${statusPill(request.status)}</td><td>${esc((request.prompt_ids || []).map(promptName).join(', '))}</td><td>${esc(modelName(request.model_id))}</td>`;
+      row.innerHTML = `<td><a class="row-link" href="${esc(ctx.href('runs', [request.request_id]))}">${esc(sourcesLabel(request.locations, request))}</a><small>Submitted ${esc(formatDate(request.requested_at))}</small></td><td>${statusPill(request.status)}</td><td>${esc((request.prompt_ids || []).map(promptName).join(', '))}</td><td>${esc(modelName(request.model_id))}</td><td>${esc(requesterLabel(request))}</td>`;
       $('run-requests').append(row);
     }
   }
@@ -391,6 +417,7 @@ export function create(root, ctx) {
       const fields = {
         Source: (request.locations || []).map((location) => sourceName(location, request)).join('\n'),
         Status: request.status,
+        'Requested by': requesterLabel(request),
         Submitted: formatDate(request.requested_at), Started: formatDate(request.started_at), Finished: formatDate(request.finished_at),
         Prompts: (request.prompt_ids || []).map(promptName).join('\n'),
         Model: modelName(request.model_id), Chunker: chunkerName(request.chunker_id),
@@ -411,21 +438,34 @@ export function create(root, ctx) {
     }
   }
 
-  // Never overlaps: a slow refresh is not stacked behind another.
-  async function loadRequests() {
-    if (state.requestsLoading) return;
+  // A refresh (the poll, Refresh) is not stacked behind one still loading;
+  // `force` (a change of filter) asks at once. Only the latest load is shown,
+  // so an older answer never replaces a newer one.
+  async function loadRequests({ force = false } = {}) {
+    if (state.requestsLoading && !force) return;
+    const version = ++state.requestsVersion;
+    const latestLoad = () => version === state.requestsVersion;
     state.requestsLoading = true;
     try {
-      state.requests = (await phases('/requests?limit=100')).requests;
+      const requests = (await phases(`/requests?limit=100&owner=${state.owner}`)).requests;
+      if (!latestLoad()) return;
+      state.requests = requests;
       renderRequests();
       message('run-requests-message');
       $('run-updated').textContent = `Updated ${new Date().toLocaleTimeString()}. Refreshes every 10 seconds.`;
       await loadRequestDetail();
     } catch (error) {
-      message('run-requests-message', `Could not refresh runs: ${error.message}`, 'bad');
+      if (latestLoad()) message('run-requests-message', `Could not refresh runs: ${error.message}`, 'bad');
     } finally {
-      state.requestsLoading = false;
+      if (latestLoad()) state.requestsLoading = false;
     }
+  }
+
+  // Requests are asked again: Mine is your latest 100, not yours among everyone's latest 100.
+  async function chooseOwner(owner) {
+    state.owner = owner === EVERYONE ? EVERYONE : MINE;
+    $('run-owner').value = state.owner;
+    return loadRequests({ force: true });
   }
 
   // ---- Wiring ----
@@ -443,6 +483,11 @@ export function create(root, ctx) {
   $('run-run-saved').addEventListener('click', () => action($('run-run-saved'), 'run-saved-message', runConfiguration));
   $('run-submit').addEventListener('click', () => action($('run-submit'), 'run-message', submit));
   $('run-status').addEventListener('change', renderRequests);
+  $('run-owner').addEventListener('change', () => chooseOwner($('run-owner').value));
+  $('run-saved-owner').addEventListener('change', () => {
+    state.savedOwner = $('run-saved-owner').value === EVERYONE ? EVERYONE : MINE;
+    renderPipelines();
+  });
   $('run-refresh-requests').addEventListener('click', () => action($('run-refresh-requests'), 'run-requests-message', loadRequests));
 
   ctx.every(10000, () => { if (state.active && state.view === 'list' && !document.hidden) loadRequests(); });
@@ -496,7 +541,7 @@ export function create(root, ctx) {
     },
     actions: {
       submit, saveConfiguration, loadConfiguration, runConfiguration, quickSave, loadRequests, loadRequestDetail,
-      loadPubmed, refreshDocuments, loadChoices, sourceChanged, renderRequests,
+      loadPubmed, refreshDocuments, loadChoices, sourceChanged, renderRequests, chooseOwner, renderPipelines,
     },
   };
 }

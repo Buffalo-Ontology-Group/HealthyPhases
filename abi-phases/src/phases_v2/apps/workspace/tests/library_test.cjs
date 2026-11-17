@@ -364,9 +364,29 @@ test('the library handles empty results and clamps a page after the result set s
   assert.deepEqual(pages, [25, 1]);
   globalThis.fetch = async () => response(libraryResult(1, 0, []));
   await a.library();
-  assert.match($('lib-summary').textContent, /No papers match/);
+  assert.match($('lib-summary').textContent, /No papers yet/);
   assert.equal($('lib-prev').disabled, true);
   assert.equal($('lib-next').disabled, true);
+});
+
+test('an empty library says how to fill it, and an empty filter how to clear it; sorting is not a filter', async () => {
+  const { $, a } = await library();
+  globalThis.fetch = async () => response(libraryResult(1, 0, []));
+  await a.clearLibrary();
+  assert.equal($('lib-summary').textContent, 'No papers yet. Search PubMed and download papers first.');
+  assert.match($('lib-papers').innerHTML, /The library is empty\..*href="#\/help\/library\/search"/s);
+
+  $('lib-filter-sort').value = 'title';
+  $('lib-filter-size').value = '100';
+  await a.applyLibrary();
+  assert.equal($('lib-summary').textContent, 'No papers yet. Search PubMed and download papers first.');
+  assert.match($('lib-papers').innerHTML, /The library is empty\./);
+
+  $('lib-filter-search').value = 'solitude';
+  await a.applyLibrary();
+  assert.equal($('lib-summary').textContent, 'No papers match these filters. Clear the filters to see every paper.');
+  assert.match($('lib-papers').innerHTML, /No paper matches these filters\./);
+  assert.doesNotMatch($('lib-papers').innerHTML, /help/);
 });
 
 test('the library escapes metadata and storage locations without starting jobs', async () => {

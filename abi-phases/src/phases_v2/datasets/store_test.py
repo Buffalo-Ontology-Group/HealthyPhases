@@ -163,14 +163,10 @@ def test_store_is_the_only_module_code_that_writes_to_a_dataset():
         for node in ast.walk(tree):
             if not isinstance(node, ast.Call):
                 continue
-            writes = (
-                isinstance(node.func, ast.Attribute) and node.func.attr == "write"
-            )
+            writes = isinstance(node.func, ast.Attribute) and node.func.attr == "write"
             passes_mode = any(kw.arg == "mode" for kw in node.keywords)
             if writes or passes_mode:
-                offenders.append(
-                    f"{path.relative_to(module_root)}:{node.lineno}"
-                )
+                offenders.append(f"{path.relative_to(module_root)}:{node.lineno}")
 
     offenders += _sql_mutations_outside_the_store(module_root)
 
@@ -278,7 +274,10 @@ def test_a_dataset_with_a_stale_column_is_reported(dataset):
     ) + (ColumnSpec(name="left_over", type="string"),)
     dataset.create(
         DatasetSpec(
-            name="papers", namespace=NAMESPACE, columns=columns, primary_key=("paper_id",)
+            name="papers",
+            namespace=NAMESPACE,
+            columns=columns,
+            primary_key=("paper_id",),
         )
     )
 
@@ -341,3 +340,113 @@ def test_delete_rows_treats_values_as_data_not_sql(dataset):
     store.delete_rows(dataset, "papers", "paper_id", ["it's", "x' OR '1'='1"])
 
     assert _paper_ids(dataset) == ["p1"]
+
+
+# -- add_missing_columns: owners on tables that already exist -------------
+
+
+def _as_before_owners(spec):
+    """``spec`` as production created it, before owners were recorded."""
+    return spec.model_copy(
+        update={"columns": tuple(c for c in spec.columns if c.name != "owner_id")}
+    )
+
+
+def test_existing_tables_gain_an_owner_column_and_their_rows_stay_shared(dataset):
+    from datetime import UTC, datetime
+
+    for name in store.ADDED_COLUMNS:
+        dataset.create(_as_before_owners(store._BY_NAME[name]))
+    now = datetime.now(UTC)
+    dataset.write(
+        "prompts",
+        [
+            {
+                "prompt_id": "claims_aaa",
+                "name": "Claims",
+                "prompt_sha256": "aaa",
+                "template": "{chunk_text}",
+                "output_key": "results",
+                "registered_at": now,
+            }
+        ],
+        namespace=NAMESPACE,
+        mode="upsert",
+    )
+    dataset.write(
+        "pipelines",
+        [{"pipeline_id": "p1", "name": "Weekly", "inputs": {}, "created_at": now}],
+        namespace=NAMESPACE,
+        mode="upsert",
+    )
+
+    store.ensure_datasets(dataset)
+
+    for name, columns in store.ADDED_COLUMNS.items():
+        described = {
+            c.name for c in dataset.describe(name, namespace=NAMESPACE).columns
+        }
+        assert set(columns) <= described, name
+    assert store.schema_drift(dataset) == {}
+    rows = dataset.query(
+        "SELECT prompt_id, name, owner_id FROM prompts", namespace=NAMESPACE
+    ).rows
+    assert rows == [{"prompt_id": "claims_aaa", "name": "Claims", "owner_id": None}]
+    assert dataset.query(
+        "SELECT pipeline_id, owner_id FROM pipelines", namespace=NAMESPACE
+    ).rows == [{"pipeline_id": "p1", "owner_id": None}]
+    # Writes that name an owner are accepted now.
+    store.write_rows(
+        dataset,
+        "pipelines",
+        [{"pipeline_id": "p2", "name": "Mine", "inputs": {}, "owner_id": "user-ada"}],
+    )
+    assert dataset.query(
+        "SELECT owner_id FROM pipelines WHERE pipeline_id = 'p2'", namespace=NAMESPACE
+    ).rows == [{"owner_id": "user-ada"}]
+
+
+def test_adding_owner_columns_twice_changes_nothing(dataset):
+    for name in store.ADDED_COLUMNS:
+        dataset.create(_as_before_owners(store._BY_NAME[name]))
+    first = store.add_missing_columns(dataset)
+
+    assert first == {name: list(cols) for name, cols in store.ADDED_COLUMNS.items()}
+    assert store.add_missing_columns(dataset) == {}
+    assert store.ensure_datasets(dataset) == {spec.name for spec in DATASETS} - set(
+        store.ADDED_COLUMNS
+    )
+
+
+def test_a_column_added_but_not_yet_recorded_is_recorded(dataset):
+    """A process stopped between altering the table and recording it."""
+    dataset.create(_as_before_owners(store._BY_NAME["pipelines"]))
+    dataset.query(
+        "ALTER TABLE pipelines ADD COLUMN owner_id VARCHAR", namespace=NAMESPACE
+    )
+
+    assert store.add_missing_columns(dataset) == {"pipelines": ["owner_id"]}
+    described = {
+        c.name for c in dataset.describe("pipelines", namespace=NAMESPACE).columns
+    }
+    assert "owner_id" in described
+
+
+def test_a_table_with_other_drift_is_left_alone_and_named_in_an_error(
+    dataset, monkeypatch
+):
+    errors = []
+    monkeypatch.setattr(store.logger, "error", errors.append)
+    old = _as_before_owners(store._BY_NAME["pipelines"])
+    drifted = old.model_copy(
+        update={"columns": tuple(c for c in old.columns if c.name != "created_at")}
+    )
+    dataset.create(drifted)
+
+    assert store.add_missing_columns(dataset) == {}
+    [error] = errors
+    assert "owner_id was not added to 'pipelines'" in error
+    described = {
+        c.name for c in dataset.describe("pipelines", namespace=NAMESPACE).columns
+    }
+    assert "owner_id" not in described

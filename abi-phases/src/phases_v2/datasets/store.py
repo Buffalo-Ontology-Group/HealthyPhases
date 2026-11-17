@@ -12,6 +12,7 @@ reason.
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from naas_abi_core import logger
@@ -27,6 +28,15 @@ from phases_v2.sql import in_list
 
 _BY_NAME: dict[str, DatasetSpec] = {spec.name: spec for spec in DATASETS}
 
+#: Nullable columns declared after their table already existed in production.
+#: ``ensure_datasets`` adds each to a live table that lacks it; the rows already
+#: there read NULL, which for ``owner_id`` means shared. Only string columns.
+ADDED_COLUMNS: dict[str, tuple[str, ...]] = {
+    "prompts": ("owner_id",),
+    "paper_collections": ("owner_id",),
+    "pipelines": ("owner_id",),
+}
+
 
 def ensure_datasets(dataset: DatasetService) -> set[str]:
     """Create any declared dataset that does not exist yet.
@@ -38,6 +48,10 @@ def ensure_datasets(dataset: DatasetService) -> set[str]:
     """
     live = {info.name: info for info in dataset.list(namespace=NAMESPACE)}
     existing = set(live)
+    added = add_missing_columns(dataset, live)
+    if added:
+        logger.info(f"phases_v2: added columns {added}; existing rows read NULL")
+        live = {info.name: info for info in dataset.list(namespace=NAMESPACE)}
     _warn_about_drift(live)
     created = set()
     for spec in DATASETS:
@@ -50,6 +64,96 @@ def ensure_datasets(dataset: DatasetService) -> set[str]:
             continue
         created.add(spec.name)
     return created
+
+
+def add_missing_columns(
+    dataset: DatasetService, live: dict | None = None
+) -> dict[str, list[str]]:
+    """Add the :data:`ADDED_COLUMNS` a live table lacks. Returns what it added.
+
+    The dataset service creates tables but has no way to change one, so this
+    alters the DuckLake table with SQL and then rewrites the table comment,
+    where the service keeps the declared schema it checks writes against, in
+    the form the service itself writes on creation. Rows are not touched.
+
+    Each step checks first, so a second run, or a second process starting at
+    the same time, finds nothing to do. A table whose schema differs in any
+    other way is left alone, with the drift warning ``ensure_datasets`` gives.
+    """
+    from naas_abi_core.services.dataset.adapters.secondary.DatasetSecondaryAdapterDuckLake import (
+        SPEC_COMMENT_PREFIX,
+    )
+
+    if live is None:
+        live = {info.name: info for info in dataset.list(namespace=NAMESPACE)}
+    added: dict[str, list[str]] = {}
+    for name, columns in ADDED_COLUMNS.items():
+        info = live.get(name)
+        if info is None:
+            continue
+        spec = _BY_NAME[name]
+        declared = [column.name for column in spec.columns]
+        recorded = [column.name for column in info.columns]
+        missing = [column for column in columns if column not in recorded]
+        if not missing:
+            continue
+        if sorted(recorded + missing) != sorted(declared):
+            # Reads of this table name the new columns, so they fail until it
+            # is fixed: say so where a deploy shows it, not only as drift.
+            logger.error(
+                f"phases_v2: {', '.join(missing)} was not added to {name!r}, whose "
+                "schema also differs in other ways (see the drift warning). "
+                f"Listings that read {name} will fail until its schema matches "
+                "phases_v2.datasets.schemas."
+            )
+            continue
+        for column in missing:
+            _add_column(dataset, name, column)
+        comment = SPEC_COMMENT_PREFIX + json.dumps(
+            spec.model_dump(mode="json"), sort_keys=True, separators=(",", ":")
+        )
+        _run_once(
+            dataset,
+            f"COMMENT ON TABLE {name} IS {_sql_string(comment)}",
+            done=lambda: (
+                {c.name for c in dataset.describe(name, namespace=NAMESPACE).columns}
+                >= set(missing)
+            ),
+        )
+        added[name] = missing
+    return added
+
+
+def _physical_columns(dataset: DatasetService, name: str) -> set[str]:
+    rows = dataset.query(f"DESCRIBE {name}", namespace=NAMESPACE).rows  # nosec B608 - a declared dataset name
+    return {row["column_name"] for row in rows}
+
+
+def _add_column(dataset: DatasetService, name: str, column: str) -> None:
+    spec_type = next(c.type for c in _BY_NAME[name].columns if c.name == column)
+    if spec_type != "string":
+        raise ValueError(f"Only string columns can be added; {name}.{column} is not.")
+    if column in _physical_columns(dataset, name):
+        return
+    _run_once(
+        dataset,
+        f"ALTER TABLE {name} ADD COLUMN {column} VARCHAR",
+        done=lambda: column in _physical_columns(dataset, name),
+    )
+
+
+def _run_once(dataset: DatasetService, sql: str, done) -> None:
+    """Run ``sql``; when it fails, accept it only if another process did it."""
+    try:
+        dataset.query(sql, namespace=NAMESPACE)
+    except Exception:
+        if done():
+            return
+        raise
+
+
+def _sql_string(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
 
 
 def write_rows(

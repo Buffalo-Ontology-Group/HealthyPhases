@@ -12,12 +12,22 @@ from datetime import datetime
 from typing import Any
 
 from phases_v2.app.app_resources import AppResources
+from phases_v2.app.app_users import AppUsers
 from phases_v2.app.paper_results import PaperResults
 from phases_v2.app.papers_catalog import PapersCatalog
 from phases_v2.app.pipeline_management import ManagementUnavailable, PipelineManagement
 from phases_v2.app.prompt_versions import PromptVersions
 from phases_v2.chunking.chunkers import DECLARED_CHUNKERS
 from phases_v2.models.catalog import DECLARED_MODELS
+from phases_v2.ownership import (
+    EVERYONE,
+    NOBODY,
+    Actor,
+    NotAllowed,
+    check_filter,
+    creation_refusal,
+    requester_view,
+)
 from phases_v2.paper_collections.interfaces import Resolution
 from phases_v2.requests.domain import submit
 from phases_v2.requests.interfaces import RunRequest
@@ -64,11 +74,14 @@ class PipelineAppService:
         self._papers_root = papers_root.strip("/")
         #: Reads collection members: folders, PubMed searches and papers.
         self.collection_sources = collection_sources
+        #: How Nexus names the people who own items and request runs.
+        self.users = AppUsers(rows)
         self.resources = AppResources(
             rows,
             self._papers_root,
             collection_sources,
             supported=renderer.handles if renderer is not None else None,
+            users=self.users,
         )
         self.management = PipelineManagement(
             rows,
@@ -76,6 +89,7 @@ class PipelineAppService:
             self._papers_root,
             is_model_available,
             paper_collections=self.resources,
+            users=self.users,
         )
         self.papers = PapersCatalog(rows)
         self.paper_results = PaperResults(rows)
@@ -117,16 +131,52 @@ class PipelineAppService:
             offset=query.get("offset", 0),
         )
 
+    def paper(self, paper_id: str, actor: Actor = NOBODY) -> dict[str, Any]:
+        """One paper's page, each run that covered it naming its requester."""
+        detail = self.paper_results.paper(paper_id)
+        people = self.users.names()
+        for request in detail.get("requests", []):
+            request.update(requester_view(request.get("requested_by"), actor, people))
+        return detail
+
     # -- collections ----------------------------------------------------
 
     def upload_to_collection(
-        self, collection_id: str, filename: str, content: bytes
+        self,
+        collection_id: str,
+        filename: str,
+        content: bytes,
+        actor: Actor = NOBODY,
     ) -> dict[str, Any]:
-        """Store a PDF in the collection's own folder, which joins it as a member."""
-        location = self.resources.upload_folder(collection_id)
+        """Store a PDF in the collection's own folder, which joins it as a member.
+
+        Only who may change the collection uploads into it, checked once,
+        before anything is stored.
+        """
+        self.resources.changeable(collection_id, actor)
+        location = self.resources.upload_prefix(collection_id)
         uploaded = self.management.upload(location, filename, content)
         self.resources.add_upload_folder(collection_id)
         return uploaded
+
+    def upload_document(
+        self, location: str, filename: str, content: bytes, actor: Actor = NOBODY
+    ) -> dict[str, Any]:
+        """Store a PDF in a storage folder, as a known caller.
+
+        A collection's upload folder is one of its members, so a PDF stored
+        there joins that collection: only who may change the collection uploads
+        into it, checked before anything is stored. Nobody uploads into an
+        archived collection's folder but the API key, which keeps its old
+        rights.
+        """
+        if refusal := creation_refusal(actor):
+            raise NotAllowed(refusal)
+        location = self.management.location(location)
+        collection_id = self.resources.upload_folder_owner(location)
+        if collection_id is not None:
+            self.resources.check_upload(collection_id, actor)
+        return self.management.upload(location, filename, content)
 
     def collection_run_scope(
         self, collection_id: str
@@ -200,20 +250,34 @@ class PipelineAppService:
             requested_by=requested_by,
         )
 
-    def submit_pubmed(self, payload):
+    def submit_pubmed(self, payload, actor: Actor = NOBODY):
         if self._pubmed is None or self._rows is None:
             raise ValueError("PubMed publication dataset is unavailable")
         from phases_v2.app.contracts.app_validation import validate_command
         from phases_v2.sources.phases_v2_sources import submit_pubmed
 
         validate_command("SubmitPubmedRun", payload)
+        payload = _requested_by(payload, actor)
         self.management.validate_choices(payload)
         return submit_pubmed(self._rows, self._requests, self._pubmed, payload)
 
     # -- what a user chooses from ---------------------------------------
 
-    def prompts(self) -> list[dict[str, Any]]:
-        return self.management.prompts()
+    def prompts(
+        self, actor: Actor = NOBODY, owner: str = EVERYONE
+    ) -> list[dict[str, Any]]:
+        return self.management.prompts(actor, owner)
+
+    def duplicate_prompt(
+        self,
+        name: str,
+        new_name: str = "",
+        prompt_id: str = "",
+        actor: Actor = NOBODY,
+    ) -> dict[str, Any]:
+        """A copy of a prompt version under a new name, owned by ``actor``;
+        see :meth:`PipelineManagement.duplicate_prompt`."""
+        return self.management.duplicate_prompt(name, new_name, prompt_id, actor)
 
     def models(self) -> list[dict[str, Any]]:
         """Declared models, each marked with whether it can actually be built."""
@@ -396,11 +460,18 @@ class PipelineAppService:
 
     # -- submitting -----------------------------------------------------
 
-    def submit_inputs(self, inputs: dict[str, Any]) -> RunRequest:
-        """Queue a run from ``PipelineInputs``: storage folders or a collection."""
+    def submit_inputs(
+        self, inputs: dict[str, Any], actor: Actor = NOBODY
+    ) -> RunRequest:
+        """Queue a run from ``PipelineInputs``: storage folders or a collection.
+
+        A user's run records them as its requester, whatever the inputs say;
+        the API key's keeps the ``requested_by`` it was given.
+        """
         from phases_v2.app.contracts.pipeline_validation import validate_message
 
         validate_message("PipelineInputs", inputs)
+        inputs = _requested_by(inputs, actor)
         common = {
             "chunker_id": inputs.get("chunker_id", ""),
             "prompt_ids": inputs.get("prompt_ids", []),
@@ -442,14 +513,26 @@ class PipelineAppService:
             requested_by=requested_by,
         )
 
-    def recent_requests(self, limit: int = 25) -> list[dict[str, Any]]:
-        requests = self._requests.recent(limit)
-        names = self._collection_names(requests)
-        return [_request_json(request, names) for request in requests]
+    def recent_requests(
+        self, limit: int = 25, actor: Actor = NOBODY, owner: str = EVERYONE
+    ) -> list[dict[str, Any]]:
+        """The latest requests, each with who requested it; ``owner="mine"``
+        keeps those ``actor`` requested."""
+        if check_filter(owner) == EVERYONE:
+            requests = self._requests.recent(limit)
+        else:
+            requests = self._requests.recent(limit, requested_by=actor.identities())
+        collections = self._collection_names(requests)
+        people = self.users.names()
+        return [
+            _request_json(request, collections, actor, people) for request in requests
+        ]
 
-    def request(self, request_id: str) -> dict[str, Any]:
+    def request(self, request_id: str, actor: Actor = NOBODY) -> dict[str, Any]:
         request = self._requests.get(request_id)
-        data = _request_json(request, self._collection_names([request]))
+        data = _request_json(
+            request, self._collection_names([request]), actor, self.users.names()
+        )
         data["counts"] = self._counts_for(request)
         return data
 
@@ -528,10 +611,26 @@ def _collection_of(request: RunRequest) -> str | None:
     return None
 
 
+def _requested_by(inputs: dict[str, Any], actor: Actor) -> dict[str, Any]:
+    """``inputs`` naming ``actor`` as the requester, when ``actor`` is a user."""
+    if actor.system:
+        return inputs
+    if not actor.user_id:
+        raise NotAllowed(
+            "We could not tell who you are, so the run was not queued. Reload "
+            "Nexus and sign in again."
+        )
+    return {**inputs, "requested_by": actor.user_id}
+
+
 def _request_json(
-    request: RunRequest, collections: dict[str, dict] | None = None
+    request: RunRequest,
+    collections: dict[str, dict] | None = None,
+    actor: Actor = NOBODY,
+    people: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     data = asdict(request)
+    data.update(requester_view(request.requested_by, actor, people or {}))
     for field in ("requested_at", "started_at", "finished_at"):
         data[field] = _iso(data.get(field))
     collection_id = _collection_of(request)

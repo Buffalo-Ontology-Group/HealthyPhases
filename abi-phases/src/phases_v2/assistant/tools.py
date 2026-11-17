@@ -26,14 +26,17 @@ def build_tools(actions: WorkspaceActions) -> list[BaseTool]:
     # -- reading ----------------------------------------------------------
 
     @tool
-    def list_collections() -> dict[str, Any]:
-        """Every collection with how many papers and members it has."""
-        return actions.list_collections()
+    def list_collections(owner: str = "all") -> dict[str, Any]:
+        """Collections with how many papers and members each has, and whose
+        each is ("you", another user's name, or "shared"). owner="mine" lists
+        only the user's own; "all" (default) lists everyone's."""
+        return actions.list_collections(owner)
 
     @tool
     def get_collection(collection_id: str) -> dict[str, Any]:
-        """One collection: its members (PubMed searches, folders, single papers)
-        and its papers with their status (not_ingested, ingested, results)."""
+        """One collection: whose it is and whether the user may change it, its
+        members (PubMed searches, folders, single papers) and its papers with
+        their status (not_ingested, ingested, results)."""
         return actions.get_collection(collection_id)
 
     @tool
@@ -58,10 +61,12 @@ def build_tools(actions: WorkspaceActions) -> list[BaseTool]:
         return actions.browse_library(search, search_id, page)
 
     @tool
-    def list_prompts() -> dict[str, Any]:
-        """Every prompt version: prompt_id, name, output format and the start of
-        its text. Versions of one prompt share its name."""
-        return actions.list_prompts()
+    def list_prompts(owner: str = "all") -> dict[str, Any]:
+        """Prompt versions: prompt_id, name, output format, the start of its
+        text, whose it is ("you", another user's name, or "shared") and whether
+        the user may save versions of it. Versions of one prompt share its
+        name. owner="mine" lists only the user's own; "all" (default) all."""
+        return actions.list_prompts(owner)
 
     @tool
     def get_prompt_versions(name: str) -> dict[str, Any]:
@@ -76,9 +81,10 @@ def build_tools(actions: WorkspaceActions) -> list[BaseTool]:
         return actions.list_models_and_chunkers()
 
     @tool
-    def list_runs() -> dict[str, Any]:
-        """The 25 most recent pipeline runs with their status."""
-        return actions.list_runs()
+    def list_runs(owner: str = "all") -> dict[str, Any]:
+        """The 25 most recent pipeline runs with their status and who requested
+        each. owner="mine" lists only the user's own runs."""
+        return actions.list_runs(owner)
 
     @tool
     def get_run(run_id: str) -> dict[str, Any]:
@@ -93,10 +99,11 @@ def build_tools(actions: WorkspaceActions) -> list[BaseTool]:
         return actions.list_downloads_and_enrichments()
 
     @tool
-    def list_run_configurations() -> dict[str, Any]:
+    def list_run_configurations(owner: str = "all") -> dict[str, Any]:
         """Saved run configurations: a collection or folders, prompts, model and
-        chunker kept to run again."""
-        return actions.list_run_configurations()
+        chunker kept to run again, with whose each is. owner="mine" lists only
+        the user's own. Anyone may run any of them."""
+        return actions.list_run_configurations(owner)
 
     @tool
     def list_papers(
@@ -171,9 +178,9 @@ def build_tools(actions: WorkspaceActions) -> list[BaseTool]:
         paper_ids: list[str] | None = None,
         folders: list[str] | None = None,
     ) -> dict[str, Any]:
-        """Create a collection, optionally with members: saved PubMed searches
-        (live: papers they download later join), single PubMed papers by PMID,
-        ingested papers by paper_id, or storage folders."""
+        """Create a collection, owned by the user, optionally with members:
+        saved PubMed searches (live: papers they download later join), single
+        PubMed papers by PMID, ingested papers by paper_id, or storage folders."""
         return actions.create_collection(
             name,
             description,
@@ -188,7 +195,7 @@ def build_tools(actions: WorkspaceActions) -> list[BaseTool]:
         collection_id: str, name: str | None = None, description: str | None = None
     ) -> dict[str, Any]:
         """Rename a collection or change its description. What is not given
-        stays as it is."""
+        stays as it is. Only the user's own or shared collections can change."""
         return actions.update_collection(collection_id, name, description)
 
     @tool
@@ -201,7 +208,8 @@ def build_tools(actions: WorkspaceActions) -> list[BaseTool]:
     ) -> dict[str, Any]:
         """Add members to a collection: saved PubMed searches, PMIDs, paper_ids
         or storage folders. Adding one already there changes nothing. Make one
-        call per collection change rather than several at once."""
+        call per collection change rather than several at once. Only the
+        user's own or shared collections can change."""
         return actions.add_to_collection(
             collection_id,
             pubmed_search_ids or [],
@@ -218,8 +226,19 @@ def build_tools(actions: WorkspaceActions) -> list[BaseTool]:
         name starts a new prompt). The text must contain {chunk_text}.
         output_format is one of results, what, causes, how, when, where,
         effects, conditional_statement, relations; keep the one the prompt
-        already uses. Saving the same text again changes nothing."""
+        already uses. Saving the same text again changes nothing. Only the
+        prompt's owner saves versions of it: shared prompts and other users'
+        prompts are read-only, so duplicate_prompt them first."""
         return actions.save_prompt_version(name, template, output_format)
+
+    @tool
+    def duplicate_prompt(
+        name: str, new_name: str = "", prompt_id: str = ""
+    ) -> dict[str, Any]:
+        """Copy a prompt into a new prompt the user owns, to change it: the
+        newest version of name, or the version prompt_id. Without new_name the
+        copy is called "<name> copy". Works on any prompt, shared or not."""
+        return actions.duplicate_prompt(name, new_name, prompt_id)
 
     @tool
     def try_prompt(
@@ -384,6 +403,7 @@ def build_tools(actions: WorkspaceActions) -> list[BaseTool]:
         update_collection,
         add_to_collection,
         save_prompt_version,
+        duplicate_prompt,
         try_prompt,
         save_run_configuration,
         prepare_run,

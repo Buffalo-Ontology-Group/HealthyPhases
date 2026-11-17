@@ -5,7 +5,7 @@ from __future__ import annotations
 from naas_abi_core import logger
 
 from phases_v2.assistant.confirmations import ConfirmationGuard
-from phases_v2.assistant.request_context import nexus_context
+from phases_v2.assistant.request_context import nexus_actor, nexus_context
 from phases_v2.assistant.workspace import WorkspaceActions
 
 #: One per process, so every copy of the agent honours the same tokens.
@@ -26,6 +26,7 @@ def workspace_actions(engine, configuration) -> WorkspaceActions:
         lambda: app_service(engine, papers_root=configuration.papers_root),
         guard=GUARD,
         context=nexus_context,
+        actor=nexus_actor,
         search=lambda: search_service(engine, configuration=configuration),
         pubmed=_pubmed,
         openalex=_openalex,
