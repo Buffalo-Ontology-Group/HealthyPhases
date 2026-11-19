@@ -1,0 +1,546 @@
+{
+ "measured_at": "2026-11-19T09:33:11+00:00",
+ "source": "prod sample: collect_prod.py sample 400 855",
+ "tokenizers": {
+  "model_calls": "o200k_base",
+  "embeddings": "cl100k_base"
+ },
+ "chunks": 400,
+ "matched_chunks_models": [
+  "openai/gpt-4.1-mini",
+  "openrouter/claude-sonnet-4.6"
+ ],
+ "chunk": {
+  "chars": {
+   "n": 400,
+   "mean": 3463.35,
+   "median": 3474.5,
+   "p10": 3023.3,
+   "p90": 3892.5
+  },
+  "o200k_tokens": {
+   "n": 400,
+   "mean": 855.22,
+   "median": 753.0,
+   "p10": 633.1,
+   "p90": 1208.6
+  },
+  "embedding_tokens": {
+   "n": 400,
+   "mean": 861.5275,
+   "median": 760.5,
+   "p10": 637.0,
+   "p90": 1215.8
+  }
+ },
+ "prompts": {
+  "solitude_what": {
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "output_key": "what",
+   "template_tokens": 169,
+   "tool_schema_tokens": 66,
+   "rendered_prompt_tokens": {
+    "n": 400,
+    "mean": 1024.9725,
+    "median": 923.0,
+    "p10": 802.2,
+    "p90": 1378.5
+   },
+   "input_tokens_mean": 1090.9725
+  },
+  "solitude_causes": {
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "output_key": "causes",
+   "template_tokens": 193,
+   "tool_schema_tokens": 68,
+   "rendered_prompt_tokens": {
+    "n": 400,
+    "mean": 1048.9725,
+    "median": 947.0,
+    "p10": 826.2,
+    "p90": 1402.5
+   },
+   "input_tokens_mean": 1116.9725
+  },
+  "solitude_how": {
+   "prompt_id": "solitude_how_defd55d659be",
+   "output_key": "how",
+   "template_tokens": 165,
+   "tool_schema_tokens": 66,
+   "rendered_prompt_tokens": {
+    "n": 400,
+    "mean": 1020.9725,
+    "median": 919.0,
+    "p10": 798.2,
+    "p90": 1374.5
+   },
+   "input_tokens_mean": 1086.9724999999999
+  },
+  "solitude_when": {
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "output_key": "when",
+   "template_tokens": 156,
+   "tool_schema_tokens": 66,
+   "rendered_prompt_tokens": {
+    "n": 400,
+    "mean": 1011.9725,
+    "median": 910.0,
+    "p10": 789.2,
+    "p90": 1365.5
+   },
+   "input_tokens_mean": 1077.9724999999999
+  },
+  "solitude_where": {
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "output_key": "where",
+   "template_tokens": 159,
+   "tool_schema_tokens": 66,
+   "rendered_prompt_tokens": {
+    "n": 400,
+    "mean": 1014.9725,
+    "median": 913.0,
+    "p10": 792.2,
+    "p90": 1368.5
+   },
+   "input_tokens_mean": 1080.9724999999999
+  },
+  "solitude_effects": {
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "output_key": "effects",
+   "template_tokens": 164,
+   "tool_schema_tokens": 66,
+   "rendered_prompt_tokens": {
+    "n": 400,
+    "mean": 1019.9725,
+    "median": 918.0,
+    "p10": 797.2,
+    "p90": 1373.5
+   },
+   "input_tokens_mean": 1085.9724999999999
+  },
+  "conditional_statement": {
+   "prompt_id": "conditional_statement_06c299d1b873",
+   "output_key": "conditional_statement",
+   "template_tokens": 472,
+   "tool_schema_tokens": 68,
+   "rendered_prompt_tokens": {
+    "n": 400,
+    "mean": 1327.9725,
+    "median": 1226.0,
+    "p10": 1105.2,
+    "p90": 1681.5
+   },
+   "input_tokens_mean": 1395.9725
+  },
+  "probabilistic_processes": {
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "output_key": "relations",
+   "template_tokens": 684,
+   "tool_schema_tokens": 161,
+   "rendered_prompt_tokens": {
+    "n": 400,
+    "mean": 1539.9725,
+    "median": 1438.0,
+    "p10": 1317.2,
+    "p90": 1893.5
+   },
+   "input_tokens_mean": 1700.9725
+  }
+ },
+ "answers": {
+  "openai/gpt-4.1-mini": {
+   "conditional_statement": {
+    "chunks": 400,
+    "output_tokens": {
+     "n": 400,
+     "mean": 191.3175,
+     "median": 206.0,
+     "p10": 6.0,
+     "p90": 303.0
+    },
+    "items_per_chunk": 6.215,
+    "item_embedding_tokens": {
+     "n": 2486,
+     "mean": 29.01206757843926,
+     "median": 28.0,
+     "p10": 20.0,
+     "p90": 39.0
+    }
+   },
+   "probabilistic_processes": {
+    "chunks": 400,
+    "output_tokens": {
+     "n": 400,
+     "mean": 112.6775,
+     "median": 5.0,
+     "p10": 5.0,
+     "p90": 353.7
+    },
+    "items_per_chunk": 1.6275,
+    "item_embedding_tokens": {
+     "n": 651,
+     "mean": 66.09984639016898,
+     "median": 65,
+     "p10": 54.0,
+     "p90": 79.0
+    }
+   },
+   "solitude_causes": {
+    "chunks": 400,
+    "output_tokens": {
+     "n": 400,
+     "mean": 64.8675,
+     "median": 71.5,
+     "p10": 6.0,
+     "p90": 142.0
+    },
+    "items_per_chunk": 3.2675,
+    "item_embedding_tokens": {
+     "n": 1307,
+     "mean": 17.15990818668707,
+     "median": 17,
+     "p10": 12.0,
+     "p90": 23.0
+    }
+   },
+   "solitude_effects": {
+    "chunks": 400,
+    "output_tokens": {
+     "n": 400,
+     "mean": 43.6,
+     "median": 5.0,
+     "p10": 5.0,
+     "p90": 115.0
+    },
+    "items_per_chunk": 2.48,
+    "item_embedding_tokens": {
+     "n": 992,
+     "mean": 14.684475806451612,
+     "median": 14.0,
+     "p10": 10.0,
+     "p90": 20.0
+    }
+   },
+   "solitude_how": {
+    "chunks": 400,
+    "output_tokens": {
+     "n": 400,
+     "mean": 134.58,
+     "median": 149.0,
+     "p10": 5.0,
+     "p90": 210.0
+    },
+    "items_per_chunk": 6.865,
+    "item_embedding_tokens": {
+     "n": 2746,
+     "mean": 17.9796067006555,
+     "median": 17.0,
+     "p10": 13.0,
+     "p90": 24.0
+    }
+   },
+   "solitude_what": {
+    "chunks": 400,
+    "output_tokens": {
+     "n": 400,
+     "mean": 80.26,
+     "median": 83.0,
+     "p10": 5.0,
+     "p90": 194.9
+    },
+    "items_per_chunk": 3.7825,
+    "item_embedding_tokens": {
+     "n": 1513,
+     "mean": 19.036351619299406,
+     "median": 19,
+     "p10": 14.0,
+     "p90": 25.0
+    }
+   },
+   "solitude_when": {
+    "chunks": 400,
+    "output_tokens": {
+     "n": 400,
+     "mean": 74.1575,
+     "median": 80.0,
+     "p10": 5.0,
+     "p90": 127.0
+    },
+    "items_per_chunk": 3.6175,
+    "item_embedding_tokens": {
+     "n": 1447,
+     "mean": 18.246717346233588,
+     "median": 18,
+     "p10": 13.0,
+     "p90": 24.0
+    }
+   },
+   "solitude_where": {
+    "chunks": 400,
+    "output_tokens": {
+     "n": 400,
+     "mean": 73.8925,
+     "median": 76.0,
+     "p10": 5.0,
+     "p90": 124.7
+    },
+    "items_per_chunk": 3.8525,
+    "item_embedding_tokens": {
+     "n": 1541,
+     "mean": 16.91823491239455,
+     "median": 17,
+     "p10": 12.0,
+     "p90": 22.0
+    }
+   }
+  },
+  "openrouter/claude-sonnet-4.6": {
+   "conditional_statement": {
+    "chunks": 6,
+    "output_tokens": {
+     "n": 6,
+     "mean": 257.3333333333333,
+     "median": 268.5,
+     "p10": 200.5,
+     "p90": 311.8
+    },
+    "items_per_chunk": 8.166666666666666,
+    "item_embedding_tokens": {
+     "n": 49,
+     "mean": 30.06122448979592,
+     "median": 29,
+     "p10": 20.0,
+     "p90": 42.0
+    }
+   },
+   "probabilistic_processes": {
+    "chunks": 36,
+    "output_tokens": {
+     "n": 36,
+     "mean": 267.0,
+     "median": 310.0,
+     "p10": 5.0,
+     "p90": 581.7
+    },
+    "items_per_chunk": 3.8333333333333335,
+    "item_embedding_tokens": {
+     "n": 138,
+     "mean": 68.84057971014492,
+     "median": 66.5,
+     "p10": 58.0,
+     "p90": 82.0
+    }
+   },
+   "solitude_causes": {
+    "chunks": 36,
+    "output_tokens": {
+     "n": 36,
+     "mean": 67.72222222222223,
+     "median": 78.0,
+     "p10": 6.0,
+     "p90": 120.0
+    },
+    "items_per_chunk": 3.3333333333333335,
+    "item_embedding_tokens": {
+     "n": 120,
+     "mean": 17.575,
+     "median": 18.0,
+     "p10": 11.0,
+     "p90": 23.9
+    }
+   },
+   "solitude_effects": {
+    "chunks": 36,
+    "output_tokens": {
+     "n": 36,
+     "mean": 52.388888888888886,
+     "median": 5.0,
+     "p10": 5.0,
+     "p90": 147.6
+    },
+    "items_per_chunk": 2.888888888888889,
+    "item_embedding_tokens": {
+     "n": 104,
+     "mean": 15.461538461538462,
+     "median": 15.0,
+     "p10": 10.0,
+     "p90": 21.0
+    }
+   },
+   "solitude_how": {
+    "chunks": 36,
+    "output_tokens": {
+     "n": 36,
+     "mean": 94.0,
+     "median": 95.0,
+     "p10": 5.0,
+     "p90": 201.2
+    },
+    "items_per_chunk": 4.0,
+    "item_embedding_tokens": {
+     "n": 144,
+     "mean": 21.319444444444443,
+     "median": 21.0,
+     "p10": 15.5,
+     "p90": 27.0
+    }
+   },
+   "solitude_what": {
+    "chunks": 36,
+    "output_tokens": {
+     "n": 36,
+     "mean": 61.44444444444444,
+     "median": 11.0,
+     "p10": 5.0,
+     "p90": 177.5
+    },
+    "items_per_chunk": 2.7777777777777777,
+    "item_embedding_tokens": {
+     "n": 100,
+     "mean": 19.4,
+     "median": 19.0,
+     "p10": 14.0,
+     "p90": 26.0
+    }
+   },
+   "solitude_when": {
+    "chunks": 36,
+    "output_tokens": {
+     "n": 36,
+     "mean": 61.69444444444444,
+     "median": 56.5,
+     "p10": 5.0,
+     "p90": 125.9
+    },
+    "items_per_chunk": 2.9444444444444446,
+    "item_embedding_tokens": {
+     "n": 106,
+     "mean": 18.28301886792453,
+     "median": 18.0,
+     "p10": 12.0,
+     "p90": 26.0
+    }
+   },
+   "solitude_where": {
+    "chunks": 36,
+    "output_tokens": {
+     "n": 36,
+     "mean": 30.25,
+     "median": 5.0,
+     "p10": 5.0,
+     "p90": 80.3
+    },
+    "items_per_chunk": 1.25,
+    "item_embedding_tokens": {
+     "n": 45,
+     "mean": 19.244444444444444,
+     "median": 19,
+     "p10": 14.0,
+     "p90": 23.8
+    }
+   }
+  }
+ },
+ "answers_matched_chunks": {
+  "openai/gpt-4.1-mini": {
+   "conditional_statement": {
+    "chunks": 79,
+    "output_tokens_mean": 178.64556962025316,
+    "items_per_chunk": 5.6075949367088604,
+    "item_embedding_tokens_mean": 29.984198645598195
+   },
+   "probabilistic_processes": {
+    "chunks": 331,
+    "output_tokens_mean": 131.25981873111783,
+    "items_per_chunk": 1.6767371601208458,
+    "item_embedding_tokens_mean": 67.1045045045045
+   },
+   "solitude_causes": {
+    "chunks": 331,
+    "output_tokens_mean": 45.196374622356494,
+    "items_per_chunk": 2.3444108761329305,
+    "item_embedding_tokens_mean": 16.565721649484537
+   },
+   "solitude_effects": {
+    "chunks": 331,
+    "output_tokens_mean": 24.356495468277945,
+    "items_per_chunk": 1.2930513595166162,
+    "item_embedding_tokens_mean": 14.684579439252337
+   },
+   "solitude_how": {
+    "chunks": 331,
+    "output_tokens_mean": 76.18126888217523,
+    "items_per_chunk": 3.604229607250755,
+    "item_embedding_tokens_mean": 19.485331098072088
+   },
+   "solitude_what": {
+    "chunks": 331,
+    "output_tokens_mean": 40.65861027190332,
+    "items_per_chunk": 1.8126888217522659,
+    "item_embedding_tokens_mean": 19.2
+   },
+   "solitude_when": {
+    "chunks": 331,
+    "output_tokens_mean": 66.24773413897282,
+    "items_per_chunk": 3.5438066465256797,
+    "item_embedding_tokens_mean": 17.013640238704177
+   },
+   "solitude_where": {
+    "chunks": 331,
+    "output_tokens_mean": 13.570996978851964,
+    "items_per_chunk": 0.49244712990936557,
+    "item_embedding_tokens_mean": 16.828220858895705
+   }
+  },
+  "openrouter/claude-sonnet-4.6": {
+   "conditional_statement": {
+    "chunks": 79,
+    "output_tokens_mean": 217.0,
+    "items_per_chunk": 6.89873417721519,
+    "item_embedding_tokens_mean": 29.825688073394495
+   },
+   "probabilistic_processes": {
+    "chunks": 331,
+    "output_tokens_mean": 287.2930513595166,
+    "items_per_chunk": 3.891238670694864,
+    "item_embedding_tokens_mean": 73.24378881987577
+   },
+   "solitude_causes": {
+    "chunks": 331,
+    "output_tokens_mean": 71.05438066465257,
+    "items_per_chunk": 3.132930513595166,
+    "item_embedding_tokens_mean": 19.891996142719382
+   },
+   "solitude_effects": {
+    "chunks": 331,
+    "output_tokens_mean": 43.4441087613293,
+    "items_per_chunk": 2.1419939577039275,
+    "item_embedding_tokens_mean": 17.0
+   },
+   "solitude_how": {
+    "chunks": 331,
+    "output_tokens_mean": 99.81873111782477,
+    "items_per_chunk": 3.9637462235649545,
+    "item_embedding_tokens_mean": 23.06859756097561
+   },
+   "solitude_what": {
+    "chunks": 331,
+    "output_tokens_mean": 53.48640483383686,
+    "items_per_chunk": 2.2537764350453173,
+    "item_embedding_tokens_mean": 20.613941018766756
+   },
+   "solitude_when": {
+    "chunks": 331,
+    "output_tokens_mean": 60.833836858006045,
+    "items_per_chunk": 2.7613293051359515,
+    "item_embedding_tokens_mean": 19.272428884026258
+   },
+   "solitude_where": {
+    "chunks": 331,
+    "output_tokens_mean": 27.048338368580062,
+    "items_per_chunk": 1.0876132930513596,
+    "item_embedding_tokens_mean": 19.358333333333334
+   }
+  }
+ }
+}

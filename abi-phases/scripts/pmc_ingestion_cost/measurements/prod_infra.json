@@ -1,0 +1,607 @@
+{
+ "measured_at": "2026-11-19T09:31:20+00:00",
+ "host": {
+  "instance_type": "t3.xlarge",
+  "vcpus": 4,
+  "memory_bytes": 16550285312,
+  "disk_bytes": {
+   "size": 102888095744,
+   "used": 68494536704,
+   "free": 34376781824
+  },
+  "container_memory": {
+   "abi-phases-dagster-1": "1.35GiB / 15.41GiB",
+   "abi-phases-abi-1": "1.239GiB / 15.41GiB",
+   "abi-phases-minio-1": "152.9MiB / 15.41GiB",
+   "abi-phases-fuseki-1": "1.575GiB / 4GiB",
+   "abi-phases-postgres-1": "653.8MiB / 15.41GiB",
+   "abi-phases-qdrant-1": "240.8MiB / 15.41GiB"
+  }
+ },
+ "qdrant": {
+  "phases_v2_chunks": {
+   "points": 7441,
+   "segments": 2,
+   "vector_size": 3072,
+   "on_disk_payload": true,
+   "hnsw": {
+    "m": 16,
+    "ef_construct": 100,
+    "full_scan_threshold": 10000,
+    "max_indexing_threads": 0,
+    "on_disk": false
+   },
+   "quantization": null,
+   "disk_bytes": 292884880
+  },
+  "phases_v2_extracted_items": {
+   "points": 294621,
+   "segments": 5,
+   "vector_size": 3072,
+   "on_disk_payload": true,
+   "hnsw": {
+    "m": 16,
+    "ef_construct": 100,
+    "full_scan_threshold": 10000,
+    "max_indexing_threads": 0,
+    "on_disk": false
+   },
+   "quantization": null,
+   "disk_bytes": 4234645463
+  },
+  "storage_bytes": 4527530700
+ },
+ "fuseki": {
+  "triples_by_graph": {
+   "http://ontology.naas.ai/graph/phases/v2/papers": 37793,
+   "http://ontology.naas.ai/graph/phases/v2/extractions": 2420667,
+   "http://ontology.naas.ai/graph/schema": 25542,
+   "http://ontology.naas.ai/graph/nexus-identity": 2866,
+   "http://ontology.naas.ai/graph/nexus": 421
+  },
+  "database_bytes": 4817511287,
+  "compacted": false,
+  "note": "TDB2 keeps superseded blocks until compacted; fuseki-compact has never run"
+ },
+ "storage": {
+  "ducklake_data_dir_bytes": 1343991226,
+  "object_store_abi_bytes": 316260491,
+  "postgres_database_bytes": {
+   "postgres": 7698099,
+   "template1": 7578127,
+   "template0": 7537167,
+   "abi": 443528883,
+   "nexus": 11294387,
+   "ducklake": 177665715,
+   "coder": 16373427,
+   "forgejo": 15996595
+  }
+ },
+ "pipeline_steps": [
+  {
+   "run": "8cd1aefc",
+   "step": "ingest_papers_op",
+   "started": "2026-09-09 08:15:25",
+   "seconds": 284.0,
+   "message": ""
+  },
+  {
+   "run": "8cd1aefc",
+   "step": "chunk_papers_op",
+   "started": "2026-09-09 08:20:38",
+   "seconds": 8.0,
+   "message": "papers_chunked=25 chunks=667"
+  },
+  {
+   "run": "4a7fe7a9",
+   "step": "ingest_papers_op",
+   "started": "2026-09-09 14:05:10",
+   "seconds": 34.0,
+   "message": ""
+  },
+  {
+   "run": "4a7fe7a9",
+   "step": "chunk_papers_op",
+   "started": "2026-09-09 14:06:17",
+   "seconds": 12.0,
+   "message": "papers_chunked=0 chunks=0"
+  },
+  {
+   "run": "4a7fe7a9",
+   "step": "run_extraction_op",
+   "started": "2026-09-09 14:07:05",
+   "seconds": 20057.0,
+   "message": ""
+  },
+  {
+   "run": "f538f9d0",
+   "step": "ingest_papers_op",
+   "started": "2026-09-10 08:22:28",
+   "seconds": 12.0,
+   "message": ""
+  },
+  {
+   "run": "f538f9d0",
+   "step": "chunk_papers_op",
+   "started": "2026-09-10 08:23:01",
+   "seconds": 1.0,
+   "message": "papers_chunked=0 chunks=0"
+  },
+  {
+   "run": "f538f9d0",
+   "step": "run_extraction_op",
+   "started": "2026-09-10 08:23:30",
+   "seconds": 2834.0,
+   "message": ""
+  },
+  {
+   "run": "f538f9d0",
+   "step": "project_graph_op",
+   "started": "2026-09-10 09:11:06",
+   "seconds": 62.0,
+   "message": "projected=5160"
+  },
+  {
+   "run": "f538f9d0",
+   "step": "project_vectors_op",
+   "started": "2026-09-10 09:12:28",
+   "seconds": 9.0,
+   "message": ""
+  },
+  {
+   "run": "770a0437",
+   "step": "ingest_papers_op",
+   "started": "2026-09-10 10:07:23",
+   "seconds": 10.0,
+   "message": ""
+  },
+  {
+   "run": "770a0437",
+   "step": "chunk_papers_op",
+   "started": "2026-09-10 10:07:55",
+   "seconds": 1.0,
+   "message": "papers_chunked=0 chunks=0"
+  },
+  {
+   "run": "770a0437",
+   "step": "run_extraction_op",
+   "started": "2026-09-10 10:08:25",
+   "seconds": 804.0,
+   "message": ""
+  },
+  {
+   "run": "770a0437",
+   "step": "project_graph_op",
+   "started": "2026-09-10 10:22:13",
+   "seconds": 15.0,
+   "message": "projected=176"
+  },
+  {
+   "run": "770a0437",
+   "step": "project_vectors_op",
+   "started": "2026-09-10 10:22:48",
+   "seconds": 13.0,
+   "message": ""
+  },
+  {
+   "run": "3d4de511",
+   "step": "ingest_papers_op",
+   "started": "2026-09-10 10:42:40",
+   "seconds": 154.0,
+   "message": ""
+  },
+  {
+   "run": "3d4de511",
+   "step": "chunk_papers_op",
+   "started": "2026-09-10 10:45:37",
+   "seconds": 3.0,
+   "message": "papers_chunked=1 chunks=27"
+  },
+  {
+   "run": "3d4de511",
+   "step": "run_extraction_op",
+   "started": "2026-09-10 10:45:57",
+   "seconds": 842.0,
+   "message": ""
+  },
+  {
+   "run": "3d4de511",
+   "step": "project_graph_op",
+   "started": "2026-09-10 11:00:25",
+   "seconds": 17.0,
+   "message": "projected=216"
+  },
+  {
+   "run": "3d4de511",
+   "step": "project_vectors_op",
+   "started": "2026-09-10 11:01:03",
+   "seconds": 450.0,
+   "message": "embedded=14624"
+  },
+  {
+   "run": "93ea6fe5",
+   "step": "ingest_papers_op",
+   "started": "2026-09-10 13:41:26",
+   "seconds": 1.0,
+   "message": ""
+  },
+  {
+   "run": "93ea6fe5",
+   "step": "chunk_papers_op",
+   "started": "2026-09-10 13:42:00",
+   "seconds": 1.0,
+   "message": "papers_chunked=0 chunks=0"
+  },
+  {
+   "run": "93ea6fe5",
+   "step": "run_extraction_op",
+   "started": "2026-09-10 13:42:20",
+   "seconds": 20477.0,
+   "message": ""
+  },
+  {
+   "run": "0fae819a",
+   "step": "ingest_papers_op",
+   "started": "2026-09-10 19:32:07",
+   "seconds": 1.0,
+   "message": ""
+  },
+  {
+   "run": "0fae819a",
+   "step": "chunk_papers_op",
+   "started": "2026-09-10 19:32:39",
+   "seconds": 1.0,
+   "message": "papers_chunked=0 chunks=0"
+  },
+  {
+   "run": "0fae819a",
+   "step": "run_extraction_op",
+   "started": "2026-09-10 19:32:59",
+   "seconds": 4523.0,
+   "message": ""
+  },
+  {
+   "run": "0fae819a",
+   "step": "project_graph_op",
+   "started": "2026-09-10 20:48:43",
+   "seconds": 82.0,
+   "message": "projected=5684"
+  },
+  {
+   "run": "0fae819a",
+   "step": "project_vectors_op",
+   "started": "2026-09-10 20:50:29",
+   "seconds": 688.0,
+   "message": "embedded=19403"
+  },
+  {
+   "run": "acb1f47d",
+   "step": "ingest_papers_op",
+   "started": "2026-09-17 16:33:18",
+   "seconds": 5449.0,
+   "message": ""
+  },
+  {
+   "run": "acb1f47d",
+   "step": "chunk_papers_op",
+   "started": "2026-09-17 18:04:31",
+   "seconds": 11.0,
+   "message": "papers_chunked=243 chunks=5419"
+  },
+  {
+   "run": "acb1f47d",
+   "step": "run_extraction_op",
+   "started": "2026-09-17 18:05:00",
+   "seconds": 156453.0,
+   "message": ""
+  },
+  {
+   "run": "443a1080",
+   "step": "ingest_papers_op",
+   "started": "2026-11-03 14:28:19",
+   "seconds": 1.0,
+   "message": ""
+  },
+  {
+   "run": "443a1080",
+   "step": "chunk_papers_op",
+   "started": "2026-11-03 14:28:35",
+   "seconds": 0.0,
+   "message": "papers_chunked=0 chunks=0"
+  },
+  {
+   "run": "443a1080",
+   "step": "run_extraction_op",
+   "started": "2026-11-03 14:28:53",
+   "seconds": 175.0,
+   "message": ""
+  },
+  {
+   "run": "443a1080",
+   "step": "project_graph_op",
+   "started": "2026-11-03 14:32:27",
+   "seconds": 12.0,
+   "message": "projected=660"
+  },
+  {
+   "run": "443a1080",
+   "step": "project_vectors_op",
+   "started": "2026-11-03 14:32:59",
+   "seconds": 117.0,
+   "message": "embedded=2948"
+  },
+  {
+   "run": "50b1976d",
+   "step": "ingest_papers_op",
+   "started": "2026-11-04 22:12:40",
+   "seconds": 8.0,
+   "message": ""
+  },
+  {
+   "run": "50b1976d",
+   "step": "chunk_papers_op",
+   "started": "2026-11-04 22:13:09",
+   "seconds": 0.0,
+   "message": "papers_chunked=0 chunks=0"
+  },
+  {
+   "run": "50b1976d",
+   "step": "run_extraction_op",
+   "started": "2026-11-04 22:13:32",
+   "seconds": 71935.0,
+   "message": ""
+  },
+  {
+   "run": "50b1976d",
+   "step": "project_graph_op",
+   "started": "2026-11-05 18:14:08",
+   "seconds": 222.0,
+   "message": ""
+  },
+  {
+   "run": "773847c1",
+   "step": "ingest_papers_op",
+   "started": "2026-11-05 18:25:14",
+   "seconds": 6.0,
+   "message": ""
+  },
+  {
+   "run": "773847c1",
+   "step": "chunk_papers_op",
+   "started": "2026-11-05 18:25:36",
+   "seconds": 0.0,
+   "message": "papers_chunked=0 chunks=0"
+  },
+  {
+   "run": "773847c1",
+   "step": "run_extraction_op",
+   "started": "2026-11-05 18:25:53",
+   "seconds": 45.0,
+   "message": ""
+  },
+  {
+   "run": "773847c1",
+   "step": "project_graph_op",
+   "started": "2026-11-05 18:27:15",
+   "seconds": 682.0,
+   "message": "projected=48728"
+  },
+  {
+   "run": "773847c1",
+   "step": "project_vectors_op",
+   "started": "2026-11-05 18:38:52",
+   "seconds": 1537.0,
+   "message": ""
+  },
+  {
+   "run": "64011b7a",
+   "step": "ingest_papers_op",
+   "started": "2026-11-05 19:12:04",
+   "seconds": 5.0,
+   "message": ""
+  },
+  {
+   "run": "64011b7a",
+   "step": "chunk_papers_op",
+   "started": "2026-11-05 19:12:24",
+   "seconds": 0.0,
+   "message": "papers_chunked=0 chunks=0"
+  },
+  {
+   "run": "64011b7a",
+   "step": "run_extraction_op",
+   "started": "2026-11-05 19:12:42",
+   "seconds": 15.0,
+   "message": ""
+  },
+  {
+   "run": "64011b7a",
+   "step": "project_graph_op",
+   "started": "2026-11-05 19:13:35",
+   "seconds": 3.0,
+   "message": "projected=0"
+  },
+  {
+   "run": "64011b7a",
+   "step": "project_vectors_op",
+   "started": "2026-11-05 19:13:55",
+   "seconds": 174.0,
+   "message": ""
+  },
+  {
+   "run": "16ea6c25",
+   "step": "ingest_papers_op",
+   "started": "2026-11-05 19:33:56",
+   "seconds": 5.0,
+   "message": ""
+  },
+  {
+   "run": "16ea6c25",
+   "step": "chunk_papers_op",
+   "started": "2026-11-05 19:34:15",
+   "seconds": 0.0,
+   "message": "papers_chunked=0 chunks=0"
+  },
+  {
+   "run": "16ea6c25",
+   "step": "run_extraction_op",
+   "started": "2026-11-05 19:34:32",
+   "seconds": 15.0,
+   "message": ""
+  },
+  {
+   "run": "16ea6c25",
+   "step": "project_graph_op",
+   "started": "2026-11-05 19:35:22",
+   "seconds": 3.0,
+   "message": "projected=0"
+  },
+  {
+   "run": "16ea6c25",
+   "step": "project_vectors_op",
+   "started": "2026-11-05 19:35:41",
+   "seconds": 5393.0,
+   "message": "embedded=167256"
+  },
+  {
+   "run": "50eadcf0",
+   "step": "ingest_papers_op",
+   "started": "2026-11-05 21:16:30",
+   "seconds": 355.0,
+   "message": ""
+  },
+  {
+   "run": "50eadcf0",
+   "step": "chunk_papers_op",
+   "started": "2026-11-05 21:22:45",
+   "seconds": 1.0,
+   "message": "papers_chunked=11 chunks=239"
+  },
+  {
+   "run": "50eadcf0",
+   "step": "run_extraction_op",
+   "started": "2026-11-05 21:23:02",
+   "seconds": 6093.0,
+   "message": ""
+  },
+  {
+   "run": "50eadcf0",
+   "step": "project_graph_op",
+   "started": "2026-11-05 23:05:12",
+   "seconds": 25.0,
+   "message": "projected=1912"
+  },
+  {
+   "run": "50eadcf0",
+   "step": "project_vectors_op",
+   "started": "2026-11-05 23:05:53",
+   "seconds": 248.0,
+   "message": "embedded=7085"
+  },
+  {
+   "run": "6c6b0300",
+   "step": "ingest_papers_op",
+   "started": "2026-11-05 23:28:33",
+   "seconds": 167.0,
+   "message": ""
+  },
+  {
+   "run": "6c6b0300",
+   "step": "chunk_papers_op",
+   "started": "2026-11-05 23:31:38",
+   "seconds": 1.0,
+   "message": "papers_chunked=13 chunks=293"
+  },
+  {
+   "run": "6c6b0300",
+   "step": "run_extraction_op",
+   "started": "2026-11-05 23:31:55",
+   "seconds": 8775.0,
+   "message": ""
+  },
+  {
+   "run": "6c6b0300",
+   "step": "project_graph_op",
+   "started": "2026-11-06 01:58:48",
+   "seconds": 33.0,
+   "message": "projected=2342"
+  },
+  {
+   "run": "6c6b0300",
+   "step": "project_vectors_op",
+   "started": "2026-11-06 01:59:37",
+   "seconds": 752.0,
+   "message": "embedded=9523"
+  },
+  {
+   "run": "657fe5c1",
+   "step": "ingest_papers_op",
+   "started": "2026-11-06 02:21:11",
+   "seconds": 169.0,
+   "message": ""
+  },
+  {
+   "run": "657fe5c1",
+   "step": "chunk_papers_op",
+   "started": "2026-11-06 02:24:20",
+   "seconds": 2.0,
+   "message": "papers_chunked=1 chunks=796"
+  },
+  {
+   "run": "657fe5c1",
+   "step": "run_extraction_op",
+   "started": "2026-11-06 02:24:39",
+   "seconds": 37282.0,
+   "message": ""
+  },
+  {
+   "run": "657fe5c1",
+   "step": "project_graph_op",
+   "started": "2026-11-06 12:47:02",
+   "seconds": 138.0,
+   "message": "projected=7674"
+  },
+  {
+   "run": "657fe5c1",
+   "step": "project_vectors_op",
+   "started": "2026-11-06 12:49:37",
+   "seconds": 1357.0,
+   "message": "embedded=42619"
+  },
+  {
+   "run": "52cbbfbf",
+   "step": "ingest_papers_op",
+   "started": "2026-11-06 13:33:59",
+   "seconds": 1.0,
+   "message": ""
+  },
+  {
+   "run": "52cbbfbf",
+   "step": "chunk_papers_op",
+   "started": "2026-11-06 13:34:16",
+   "seconds": 0.0,
+   "message": "papers_chunked=0 chunks=0"
+  },
+  {
+   "run": "52cbbfbf",
+   "step": "run_extraction_op",
+   "started": "2026-11-06 13:34:33",
+   "seconds": 12.0,
+   "message": ""
+  },
+  {
+   "run": "52cbbfbf",
+   "step": "project_graph_op",
+   "started": "2026-11-06 13:35:21",
+   "seconds": 4.0,
+   "message": "projected=0"
+  },
+  {
+   "run": "52cbbfbf",
+   "step": "project_vectors_op",
+   "started": "2026-11-06 13:35:41",
+   "seconds": 5.0,
+   "message": "embedded=0"
+  }
+ ]
+}

@@ -1,0 +1,1455 @@
+{
+ "chunk_source": "prod",
+ "measured_at": "2026-11-19T09:40:10+00:00",
+ "seed": 855,
+ "chunks_requested": 1,
+ "chunks": [
+  "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd"
+ ],
+ "models": [
+  "openai/gpt-4.1-mini",
+  "openai/gpt-5-mini",
+  "openrouter/claude-sonnet-4.6",
+  "openrouter/claude-haiku-4.5",
+  "openrouter/gemini-3.1-pro-preview",
+  "openai/gpt-6-luna",
+  "openai/gpt-6-luna@effort-none",
+  "openai/gpt-6.1-terra"
+ ],
+ "cap_usd": 1.5,
+ "max_output_tokens": 8000,
+ "spent_usd": 0.269199,
+ "stopped": null,
+ "temperature_dropped": [],
+ "prices_used": {
+  "openai/gpt-4.1-mini": {
+   "input": 0.4,
+   "cached_input": 0.1,
+   "output": 1.6
+  },
+  "openai/gpt-5-mini": {
+   "input": 0.25,
+   "cached_input": 0.025,
+   "output": 2.0
+  },
+  "openrouter/claude-sonnet-4.6": {
+   "input": 3.165,
+   "cached_input": 0.31649999999999995,
+   "output": 15.825
+  },
+  "openrouter/claude-haiku-4.5": {
+   "input": 1.055,
+   "cached_input": 0.1055,
+   "output": 5.2749999999999995
+  },
+  "openrouter/gemini-3.1-pro-preview": {
+   "input": 2.11,
+   "cached_input": 0.211,
+   "output": 12.66
+  },
+  "openai/gpt-6-luna": {
+   "input": 0.1,
+   "cached_input": 0.01,
+   "output": 0.5
+  },
+  "openai/gpt-6-luna@effort-none": {
+   "input": 0.1,
+   "cached_input": 0.01,
+   "output": 0.5
+  },
+  "openai/gpt-6.1-terra": {
+   "input": 1.0,
+   "cached_input": 0.05,
+   "output": 5.0
+  }
+ },
+ "records": [
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt": "solitude_what",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 10,
+   "reference_items": 5,
+   "offline_input_tokens": 907,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 914,
+     "cached_input_tokens": 0,
+     "output_tokens": 199,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "stop",
+     "computed_cost_usd": 0.000684,
+     "seconds": 2.486015829257667
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt": "solitude_causes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 10,
+   "reference_items": 6,
+   "offline_input_tokens": 933,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 939,
+     "cached_input_tokens": 0,
+     "output_tokens": 136,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "stop",
+     "computed_cost_usd": 0.0005932,
+     "seconds": 1.9703449802473187
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt": "solitude_how",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 10,
+   "reference_items": 10,
+   "offline_input_tokens": 903,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 910,
+     "cached_input_tokens": 0,
+     "output_tokens": 165,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "stop",
+     "computed_cost_usd": 0.000628,
+     "seconds": 2.344385108910501
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt": "solitude_when",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 5,
+   "reference_items": 5,
+   "offline_input_tokens": 894,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 901,
+     "cached_input_tokens": 0,
+     "output_tokens": 83,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "stop",
+     "computed_cost_usd": 0.0004932000000000001,
+     "seconds": 1.6026659552007914
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt": "solitude_where",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 5,
+   "reference_items": 5,
+   "offline_input_tokens": 897,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 904,
+     "cached_input_tokens": 0,
+     "output_tokens": 104,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "stop",
+     "computed_cost_usd": 0.000528,
+     "seconds": 2.7747893407940865
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt": "solitude_effects",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 3,
+   "reference_items": 3,
+   "offline_input_tokens": 902,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 909,
+     "cached_input_tokens": 0,
+     "output_tokens": 51,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "stop",
+     "computed_cost_usd": 0.00044520000000000003,
+     "seconds": 0.940106563270092
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt": "conditional_statement",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 8,
+   "reference_items": 6,
+   "offline_input_tokens": 1212,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1218,
+     "cached_input_tokens": 1024,
+     "output_tokens": 304,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "stop",
+     "computed_cost_usd": 0.0006664,
+     "seconds": 4.319824820384383
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt": "probabilistic_processes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 5,
+   "reference_items": 4,
+   "offline_input_tokens": 1517,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1495,
+     "cached_input_tokens": 1280,
+     "output_tokens": 272,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "stop",
+     "computed_cost_usd": 0.0006492000000000001,
+     "seconds": 3.0892572356387973
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-5-mini",
+   "prompt": "solitude_what",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 5,
+   "reference_items": 5,
+   "offline_input_tokens": 907,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 985,
+     "cached_input_tokens": 0,
+     "output_tokens": 1100,
+     "reasoning_tokens": 960,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.00244625,
+     "seconds": 13.450579987838864
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-5-mini",
+   "prompt": "solitude_causes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 4,
+   "reference_items": 6,
+   "offline_input_tokens": 933,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1010,
+     "cached_input_tokens": 0,
+     "output_tokens": 798,
+     "reasoning_tokens": 704,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.0018485,
+     "seconds": 10.268539164215326
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-5-mini",
+   "prompt": "solitude_how",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 8,
+   "reference_items": 10,
+   "offline_input_tokens": 903,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 981,
+     "cached_input_tokens": 0,
+     "output_tokens": 822,
+     "reasoning_tokens": 640,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.00188925,
+     "seconds": 10.384383123368025
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-5-mini",
+   "prompt": "solitude_when",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 6,
+   "reference_items": 5,
+   "offline_input_tokens": 894,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 972,
+     "cached_input_tokens": 0,
+     "output_tokens": 952,
+     "reasoning_tokens": 832,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.002147,
+     "seconds": 11.990993544459343
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-5-mini",
+   "prompt": "solitude_where",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 5,
+   "reference_items": 5,
+   "offline_input_tokens": 897,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 975,
+     "cached_input_tokens": 0,
+     "output_tokens": 888,
+     "reasoning_tokens": 768,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.00201975,
+     "seconds": 10.768582411110401
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-5-mini",
+   "prompt": "solitude_effects",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 5,
+   "reference_items": 3,
+   "offline_input_tokens": 902,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 980,
+     "cached_input_tokens": 0,
+     "output_tokens": 856,
+     "reasoning_tokens": 768,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.001957,
+     "seconds": 10.367035496979952
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-5-mini",
+   "prompt": "conditional_statement",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 9,
+   "reference_items": 6,
+   "offline_input_tokens": 1212,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1289,
+     "cached_input_tokens": 0,
+     "output_tokens": 2169,
+     "reasoning_tokens": 1792,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.00466025,
+     "seconds": 25.326449853368104
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-5-mini",
+   "prompt": "probabilistic_processes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 4,
+   "reference_items": 4,
+   "offline_input_tokens": 1517,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1566,
+     "cached_input_tokens": 0,
+     "output_tokens": 3271,
+     "reasoning_tokens": 3008,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.0069335,
+     "seconds": 37.878758567385375
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt": "solitude_what",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 0,
+   "reference_items": 5,
+   "offline_input_tokens": 907,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1633,
+     "cached_input_tokens": 0,
+     "output_tokens": 24,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": 0.005259,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.005548245,
+     "seconds": 1.3225569520145655
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt": "solitude_causes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 5,
+   "reference_items": 6,
+   "offline_input_tokens": 933,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1660,
+     "cached_input_tokens": 0,
+     "output_tokens": 146,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": 0.00717,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.007564349999999999,
+     "seconds": 4.544856491498649
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt": "solitude_how",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 7,
+   "reference_items": 10,
+   "offline_input_tokens": 903,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1626,
+     "cached_input_tokens": 0,
+     "output_tokens": 210,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": 0.008028,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.008469540000000001,
+     "seconds": 5.006261853501201
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt": "solitude_when",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 5,
+   "reference_items": 5,
+   "offline_input_tokens": 894,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1613,
+     "cached_input_tokens": 0,
+     "output_tokens": 137,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": 0.006894,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.00727317,
+     "seconds": 3.789526895619929
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt": "solitude_where",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 3,
+   "reference_items": 5,
+   "offline_input_tokens": 897,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1617,
+     "cached_input_tokens": 0,
+     "output_tokens": 101,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": 0.006366,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.00671613,
+     "seconds": 3.0973349791020155
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt": "solitude_effects",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 0,
+   "reference_items": 3,
+   "offline_input_tokens": 902,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1626,
+     "cached_input_tokens": 0,
+     "output_tokens": 24,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": 0.005238,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.00552609,
+     "seconds": 1.31111010722816
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt": "conditional_statement",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 9,
+   "reference_items": 6,
+   "offline_input_tokens": 1212,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1959,
+     "cached_input_tokens": 0,
+     "output_tokens": 393,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": 0.011772,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.012419459999999998,
+     "seconds": 6.482954271137714
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt": "probabilistic_processes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 4,
+   "reference_items": 4,
+   "offline_input_tokens": 1517,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 2331,
+     "cached_input_tokens": 0,
+     "output_tokens": 485,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": 0.014268,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.01505274,
+     "seconds": 6.358720370568335
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/claude-haiku-4.5",
+   "prompt": "solitude_what",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 0,
+   "reference_items": 5,
+   "offline_input_tokens": 907,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1632,
+     "cached_input_tokens": 0,
+     "output_tokens": 24,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": 0.001752,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.0018483599999999998,
+     "seconds": 1.1065614763647318
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/claude-haiku-4.5",
+   "prompt": "solitude_causes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 0,
+   "reference_items": 6,
+   "offline_input_tokens": 933,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1659,
+     "cached_input_tokens": 0,
+     "output_tokens": 24,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": 0.001779,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.0018768449999999998,
+     "seconds": 0.9942811643704772
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/claude-haiku-4.5",
+   "prompt": "solitude_how",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 6,
+   "reference_items": 10,
+   "offline_input_tokens": 903,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1625,
+     "cached_input_tokens": 0,
+     "output_tokens": 164,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": 0.002445,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.002579475,
+     "seconds": 1.9614708116278052
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/claude-haiku-4.5",
+   "prompt": "solitude_when",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 3,
+   "reference_items": 5,
+   "offline_input_tokens": 894,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1612,
+     "cached_input_tokens": 0,
+     "output_tokens": 90,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": 0.002062,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.00217541,
+     "seconds": 1.5042576659470797
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/claude-haiku-4.5",
+   "prompt": "solitude_where",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 4,
+   "reference_items": 5,
+   "offline_input_tokens": 897,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1616,
+     "cached_input_tokens": 0,
+     "output_tokens": 111,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": 0.002171,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.0022904049999999997,
+     "seconds": 1.68417944945395
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/claude-haiku-4.5",
+   "prompt": "solitude_effects",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 0,
+   "reference_items": 3,
+   "offline_input_tokens": 902,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1625,
+     "cached_input_tokens": 0,
+     "output_tokens": 24,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": 0.001745,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.001840975,
+     "seconds": 2.2806044965982437
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/claude-haiku-4.5",
+   "prompt": "conditional_statement",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 4,
+   "reference_items": 6,
+   "offline_input_tokens": 1212,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1958,
+     "cached_input_tokens": 0,
+     "output_tokens": 171,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": 0.002813,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.002967715,
+     "seconds": 1.933121887035668
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/claude-haiku-4.5",
+   "prompt": "probabilistic_processes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 3,
+   "reference_items": 4,
+   "offline_input_tokens": 1517,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 2330,
+     "cached_input_tokens": 0,
+     "output_tokens": 281,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": 0.003735,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.003940424999999999,
+     "seconds": 2.37469741422683
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/gemini-3.1-pro-preview",
+   "prompt": "solitude_what",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 0,
+   "reference_items": 5,
+   "offline_input_tokens": 907,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 889,
+     "cached_input_tokens": 0,
+     "output_tokens": 481,
+     "reasoning_tokens": 468,
+     "provider_cost_usd": 0.00755,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.00796525,
+     "seconds": 7.501372347585857
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/gemini-3.1-pro-preview",
+   "prompt": "solitude_causes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 0,
+   "reference_items": 6,
+   "offline_input_tokens": 933,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 914,
+     "cached_input_tokens": 0,
+     "output_tokens": 1055,
+     "reasoning_tokens": 1042,
+     "provider_cost_usd": 0.014488,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.015284840000000001,
+     "seconds": 15.96042793057859
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/gemini-3.1-pro-preview",
+   "prompt": "solitude_how",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 5,
+   "reference_items": 10,
+   "offline_input_tokens": 903,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 884,
+     "cached_input_tokens": 0,
+     "output_tokens": 1312,
+     "reasoning_tokens": 1194,
+     "provider_cost_usd": 0.017512,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.018475160000000004,
+     "seconds": 12.653017847798765
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/gemini-3.1-pro-preview",
+   "prompt": "solitude_when",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 2,
+   "reference_items": 5,
+   "offline_input_tokens": 894,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 873,
+     "cached_input_tokens": 0,
+     "output_tokens": 1402,
+     "reasoning_tokens": 1354,
+     "provider_cost_usd": 0.01857,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.019591349999999997,
+     "seconds": 17.77025991398841
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/gemini-3.1-pro-preview",
+   "prompt": "solitude_where",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 2,
+   "reference_items": 5,
+   "offline_input_tokens": 897,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 877,
+     "cached_input_tokens": 0,
+     "output_tokens": 1213,
+     "reasoning_tokens": 1157,
+     "provider_cost_usd": 0.01631,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.017207049999999998,
+     "seconds": 16.19998579006642
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/gemini-3.1-pro-preview",
+   "prompt": "solitude_effects",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 4,
+   "reference_items": 3,
+   "offline_input_tokens": 902,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 0,
+     "cached_input_tokens": 0,
+     "output_tokens": 0,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": 0,
+     "finish_reason": "error",
+     "computed_cost_usd": 0.0,
+     "seconds": 15.650578414089978
+    },
+    {
+     "ok": true,
+     "input_tokens": 886,
+     "cached_input_tokens": 0,
+     "output_tokens": 2147,
+     "reasoning_tokens": 2075,
+     "provider_cost_usd": 0.027536,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.02905048,
+     "seconds": 27.31177452020347
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/gemini-3.1-pro-preview",
+   "prompt": "conditional_statement",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 4,
+   "reference_items": 6,
+   "offline_input_tokens": 1212,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1207,
+     "cached_input_tokens": 0,
+     "output_tokens": 1605,
+     "reasoning_tokens": 1461,
+     "provider_cost_usd": 0.021674,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.02286607,
+     "seconds": 14.897331423126161
+    }
+   ]
+  },
+  {
+   "model_id": "openrouter/gemini-3.1-pro-preview",
+   "prompt": "probabilistic_processes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 2,
+   "reference_items": 4,
+   "offline_input_tokens": 1517,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1488,
+     "cached_input_tokens": 0,
+     "output_tokens": 1404,
+     "reasoning_tokens": 1246,
+     "provider_cost_usd": 0.019824,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.02091432,
+     "seconds": 15.194077257066965
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna",
+   "prompt": "solitude_what",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param",
+   "items": 0,
+   "reference_items": 5,
+   "offline_input_tokens": 907,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna",
+   "prompt": "solitude_causes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param",
+   "items": 0,
+   "reference_items": 6,
+   "offline_input_tokens": 933,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna",
+   "prompt": "solitude_how",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param",
+   "items": 0,
+   "reference_items": 10,
+   "offline_input_tokens": 903,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna",
+   "prompt": "solitude_when",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param",
+   "items": 0,
+   "reference_items": 5,
+   "offline_input_tokens": 894,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna",
+   "prompt": "solitude_where",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param",
+   "items": 0,
+   "reference_items": 5,
+   "offline_input_tokens": 897,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna",
+   "prompt": "solitude_effects",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param",
+   "items": 0,
+   "reference_items": 3,
+   "offline_input_tokens": 902,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna",
+   "prompt": "conditional_statement",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param",
+   "items": 0,
+   "reference_items": 6,
+   "offline_input_tokens": 1212,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna",
+   "prompt": "probabilistic_processes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6-luna in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'param",
+   "items": 0,
+   "reference_items": 4,
+   "offline_input_tokens": 1517,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna@effort-none",
+   "prompt": "solitude_what",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 0,
+   "reference_items": 5,
+   "offline_input_tokens": 907,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 985,
+     "cached_input_tokens": 0,
+     "output_tokens": 17,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.000107,
+     "seconds": 1.266258322633803
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna@effort-none",
+   "prompt": "solitude_causes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 3,
+   "reference_items": 6,
+   "offline_input_tokens": 933,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1010,
+     "cached_input_tokens": 0,
+     "output_tokens": 65,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.0001335,
+     "seconds": 1.536393796093762
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna@effort-none",
+   "prompt": "solitude_how",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 4,
+   "reference_items": 10,
+   "offline_input_tokens": 903,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 981,
+     "cached_input_tokens": 0,
+     "output_tokens": 89,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.00014260000000000002,
+     "seconds": 1.607464692555368
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna@effort-none",
+   "prompt": "solitude_when",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 3,
+   "reference_items": 5,
+   "offline_input_tokens": 894,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 972,
+     "cached_input_tokens": 0,
+     "output_tokens": 61,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.00012770000000000001,
+     "seconds": 1.142762734554708
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna@effort-none",
+   "prompt": "solitude_where",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 2,
+   "reference_items": 5,
+   "offline_input_tokens": 897,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 975,
+     "cached_input_tokens": 0,
+     "output_tokens": 59,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.000127,
+     "seconds": 1.161604075692594
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna@effort-none",
+   "prompt": "solitude_effects",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 2,
+   "reference_items": 3,
+   "offline_input_tokens": 902,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 980,
+     "cached_input_tokens": 0,
+     "output_tokens": 58,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.000127,
+     "seconds": 1.1779961045831442
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna@effort-none",
+   "prompt": "conditional_statement",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 3,
+   "reference_items": 6,
+   "offline_input_tokens": 1212,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1289,
+     "cached_input_tokens": 0,
+     "output_tokens": 112,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.0001849,
+     "seconds": 1.5536590171977878
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna@effort-none",
+   "prompt": "probabilistic_processes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 2,
+   "reference_items": 4,
+   "offline_input_tokens": 1517,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1566,
+     "cached_input_tokens": 0,
+     "output_tokens": 121,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.00021710000000000002,
+     "seconds": 1.5474634896963835
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra",
+   "prompt": "solitude_what",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6.1-terra in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'pa",
+   "items": 0,
+   "reference_items": 5,
+   "offline_input_tokens": 907,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra",
+   "prompt": "solitude_causes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6.1-terra in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'pa",
+   "items": 0,
+   "reference_items": 6,
+   "offline_input_tokens": 933,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra",
+   "prompt": "solitude_how",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6.1-terra in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'pa",
+   "items": 0,
+   "reference_items": 10,
+   "offline_input_tokens": 903,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra",
+   "prompt": "solitude_when",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6.1-terra in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'pa",
+   "items": 0,
+   "reference_items": 5,
+   "offline_input_tokens": 894,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra",
+   "prompt": "solitude_where",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6.1-terra in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'pa",
+   "items": 0,
+   "reference_items": 5,
+   "offline_input_tokens": 897,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra",
+   "prompt": "solitude_effects",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6.1-terra in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'pa",
+   "items": 0,
+   "reference_items": 3,
+   "offline_input_tokens": 902,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra",
+   "prompt": "conditional_statement",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6.1-terra in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'pa",
+   "items": 0,
+   "reference_items": 6,
+   "offline_input_tokens": 1212,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra",
+   "prompt": "probabilistic_processes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Function tools with reasoning_effort are not supported for gpt-6.1-terra in /v1/chat/completions. To use function tools, use /v1/responses or set reasoning_effort to 'none'.\", 'type': 'invalid_request_error', 'pa",
+   "items": 0,
+   "reference_items": 4,
+   "offline_input_tokens": 1517,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ]
+  }
+ ]
+}

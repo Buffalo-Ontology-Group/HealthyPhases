@@ -1,0 +1,881 @@
+{
+ "chunk_source": "prod",
+ "measured_at": "2026-11-19T09:41:08+00:00",
+ "seed": 855,
+ "chunks_requested": 1,
+ "chunks": [
+  "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd"
+ ],
+ "models": [
+  "openai/gpt-6-luna@responses",
+  "openai/gpt-6.1-terra@effort-none",
+  "openai/gpt-6.1-terra@responses"
+ ],
+ "cap_usd": 0.6,
+ "max_output_tokens": 8000,
+ "spent_usd": 0.029565,
+ "stopped": null,
+ "temperature_dropped": [
+  "openai/gpt-6-luna@responses",
+  "openai/gpt-6.1-terra@responses"
+ ],
+ "prices_used": {
+  "openai/gpt-6-luna@responses": {
+   "input": 0.1,
+   "cached_input": 0.01,
+   "output": 0.5
+  },
+  "openai/gpt-6.1-terra@effort-none": {
+   "input": 1.0,
+   "cached_input": 0.05,
+   "output": 5.0
+  },
+  "openai/gpt-6.1-terra@responses": {
+   "input": 1.0,
+   "cached_input": 0.05,
+   "output": 5.0
+  }
+ },
+ "records": [
+  {
+   "model_id": "openai/gpt-6-luna@responses",
+   "prompt": "solitude_what",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Unsupported parameter: 'temperature' is not supported with this model.\", 'type': 'invalid_request_error', 'param': 'temperature', 'code': None}}",
+   "items": 0,
+   "reference_items": 5,
+   "offline_input_tokens": 907,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ],
+   "superseded": "retried without temperature"
+  },
+  {
+   "model_id": "openai/gpt-6-luna@responses",
+   "prompt": "solitude_causes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Unsupported parameter: 'temperature' is not supported with this model.\", 'type': 'invalid_request_error', 'param': 'temperature', 'code': None}}",
+   "items": 0,
+   "reference_items": 6,
+   "offline_input_tokens": 933,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ],
+   "superseded": "retried without temperature"
+  },
+  {
+   "model_id": "openai/gpt-6-luna@responses",
+   "prompt": "solitude_how",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Unsupported parameter: 'temperature' is not supported with this model.\", 'type': 'invalid_request_error', 'param': 'temperature', 'code': None}}",
+   "items": 0,
+   "reference_items": 10,
+   "offline_input_tokens": 903,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ],
+   "superseded": "retried without temperature"
+  },
+  {
+   "model_id": "openai/gpt-6-luna@responses",
+   "prompt": "solitude_when",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Unsupported parameter: 'temperature' is not supported with this model.\", 'type': 'invalid_request_error', 'param': 'temperature', 'code': None}}",
+   "items": 0,
+   "reference_items": 5,
+   "offline_input_tokens": 894,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ],
+   "superseded": "retried without temperature"
+  },
+  {
+   "model_id": "openai/gpt-6-luna@responses",
+   "prompt": "solitude_where",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Unsupported parameter: 'temperature' is not supported with this model.\", 'type': 'invalid_request_error', 'param': 'temperature', 'code': None}}",
+   "items": 0,
+   "reference_items": 5,
+   "offline_input_tokens": 897,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ],
+   "superseded": "retried without temperature"
+  },
+  {
+   "model_id": "openai/gpt-6-luna@responses",
+   "prompt": "solitude_effects",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Unsupported parameter: 'temperature' is not supported with this model.\", 'type': 'invalid_request_error', 'param': 'temperature', 'code': None}}",
+   "items": 0,
+   "reference_items": 3,
+   "offline_input_tokens": 902,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ],
+   "superseded": "retried without temperature"
+  },
+  {
+   "model_id": "openai/gpt-6-luna@responses",
+   "prompt": "conditional_statement",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Unsupported parameter: 'temperature' is not supported with this model.\", 'type': 'invalid_request_error', 'param': 'temperature', 'code': None}}",
+   "items": 0,
+   "reference_items": 6,
+   "offline_input_tokens": 1212,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ],
+   "superseded": "retried without temperature"
+  },
+  {
+   "model_id": "openai/gpt-6-luna@responses",
+   "prompt": "probabilistic_processes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Unsupported parameter: 'temperature' is not supported with this model.\", 'type': 'invalid_request_error', 'param': 'temperature', 'code': None}}",
+   "items": 0,
+   "reference_items": 4,
+   "offline_input_tokens": 1517,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ],
+   "superseded": "retried without temperature"
+  },
+  {
+   "model_id": "openai/gpt-6-luna@responses",
+   "prompt": "solitude_what",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 0,
+   "reference_items": 5,
+   "offline_input_tokens": 907,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 981,
+     "cached_input_tokens": 0,
+     "output_tokens": 51,
+     "reasoning_tokens": 31,
+     "provider_cost_usd": null,
+     "finish_reason": null,
+     "computed_cost_usd": 0.0001236,
+     "seconds": 1.5325694046914577
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna@responses",
+   "prompt": "solitude_causes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 1,
+   "reference_items": 6,
+   "offline_input_tokens": 933,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1006,
+     "cached_input_tokens": 0,
+     "output_tokens": 232,
+     "reasoning_tokens": 197,
+     "provider_cost_usd": null,
+     "finish_reason": null,
+     "computed_cost_usd": 0.00021660000000000003,
+     "seconds": 3.121116789057851
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna@responses",
+   "prompt": "solitude_how",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 4,
+   "reference_items": 10,
+   "offline_input_tokens": 903,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 977,
+     "cached_input_tokens": 0,
+     "output_tokens": 186,
+     "reasoning_tokens": 96,
+     "provider_cost_usd": null,
+     "finish_reason": null,
+     "computed_cost_usd": 0.0001907,
+     "seconds": 2.545944267883897
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna@responses",
+   "prompt": "solitude_when",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 3,
+   "reference_items": 5,
+   "offline_input_tokens": 894,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 968,
+     "cached_input_tokens": 0,
+     "output_tokens": 73,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": null,
+     "computed_cost_usd": 0.00013330000000000001,
+     "seconds": 1.6024124091491103
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna@responses",
+   "prompt": "solitude_where",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 2,
+   "reference_items": 5,
+   "offline_input_tokens": 897,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 971,
+     "cached_input_tokens": 0,
+     "output_tokens": 62,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": null,
+     "computed_cost_usd": 0.00012810000000000002,
+     "seconds": 1.6507471054792404
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna@responses",
+   "prompt": "solitude_effects",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 2,
+   "reference_items": 3,
+   "offline_input_tokens": 902,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 976,
+     "cached_input_tokens": 0,
+     "output_tokens": 130,
+     "reasoning_tokens": 77,
+     "provider_cost_usd": null,
+     "finish_reason": null,
+     "computed_cost_usd": 0.00016260000000000002,
+     "seconds": 1.98143551312387
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna@responses",
+   "prompt": "conditional_statement",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 4,
+   "reference_items": 6,
+   "offline_input_tokens": 1212,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1285,
+     "cached_input_tokens": 0,
+     "output_tokens": 143,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": null,
+     "computed_cost_usd": 0.0002,
+     "seconds": 2.2563897212967277
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6-luna@responses",
+   "prompt": "probabilistic_processes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 2,
+   "reference_items": 4,
+   "offline_input_tokens": 1517,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1562,
+     "cached_input_tokens": 0,
+     "output_tokens": 459,
+     "reasoning_tokens": 325,
+     "provider_cost_usd": null,
+     "finish_reason": null,
+     "computed_cost_usd": 0.00038570000000000005,
+     "seconds": 5.473659767769277
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@effort-none",
+   "prompt": "solitude_what",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 0,
+   "reference_items": 5,
+   "offline_input_tokens": 907,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 985,
+     "cached_input_tokens": 0,
+     "output_tokens": 17,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.00107,
+     "seconds": 1.2050931919366121
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@effort-none",
+   "prompt": "solitude_causes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 2,
+   "reference_items": 6,
+   "offline_input_tokens": 933,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1010,
+     "cached_input_tokens": 0,
+     "output_tokens": 56,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.00129,
+     "seconds": 1.6840944355353713
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@effort-none",
+   "prompt": "solitude_how",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 4,
+   "reference_items": 10,
+   "offline_input_tokens": 903,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 981,
+     "cached_input_tokens": 0,
+     "output_tokens": 93,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.001446,
+     "seconds": 2.9359889840707183
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@effort-none",
+   "prompt": "solitude_when",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 2,
+   "reference_items": 5,
+   "offline_input_tokens": 894,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 972,
+     "cached_input_tokens": 0,
+     "output_tokens": 49,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.001217,
+     "seconds": 2.4012598413974047
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@effort-none",
+   "prompt": "solitude_where",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 3,
+   "reference_items": 5,
+   "offline_input_tokens": 897,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 975,
+     "cached_input_tokens": 0,
+     "output_tokens": 73,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.00134,
+     "seconds": 2.2794173741713166
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@effort-none",
+   "prompt": "solitude_effects",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 3,
+   "reference_items": 3,
+   "offline_input_tokens": 902,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 980,
+     "cached_input_tokens": 0,
+     "output_tokens": 73,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.001345,
+     "seconds": 2.377985702827573
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@effort-none",
+   "prompt": "conditional_statement",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 8,
+   "reference_items": 6,
+   "offline_input_tokens": 1212,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1289,
+     "cached_input_tokens": 0,
+     "output_tokens": 236,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.002469,
+     "seconds": 4.577068530954421
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@effort-none",
+   "prompt": "probabilistic_processes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 3,
+   "reference_items": 4,
+   "offline_input_tokens": 1517,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1566,
+     "cached_input_tokens": 0,
+     "output_tokens": 194,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "tool_calls",
+     "computed_cost_usd": 0.002536,
+     "seconds": 3.174791314639151
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@responses",
+   "prompt": "solitude_what",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Unsupported parameter: 'temperature' is not supported with this model.\", 'type': 'invalid_request_error', 'param': 'temperature', 'code': None}}",
+   "items": 0,
+   "reference_items": 5,
+   "offline_input_tokens": 907,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ],
+   "superseded": "retried without temperature"
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@responses",
+   "prompt": "solitude_causes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Unsupported parameter: 'temperature' is not supported with this model.\", 'type': 'invalid_request_error', 'param': 'temperature', 'code': None}}",
+   "items": 0,
+   "reference_items": 6,
+   "offline_input_tokens": 933,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ],
+   "superseded": "retried without temperature"
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@responses",
+   "prompt": "solitude_how",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Unsupported parameter: 'temperature' is not supported with this model.\", 'type': 'invalid_request_error', 'param': 'temperature', 'code': None}}",
+   "items": 0,
+   "reference_items": 10,
+   "offline_input_tokens": 903,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ],
+   "superseded": "retried without temperature"
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@responses",
+   "prompt": "solitude_when",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Unsupported parameter: 'temperature' is not supported with this model.\", 'type': 'invalid_request_error', 'param': 'temperature', 'code': None}}",
+   "items": 0,
+   "reference_items": 5,
+   "offline_input_tokens": 894,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ],
+   "superseded": "retried without temperature"
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@responses",
+   "prompt": "solitude_where",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Unsupported parameter: 'temperature' is not supported with this model.\", 'type': 'invalid_request_error', 'param': 'temperature', 'code': None}}",
+   "items": 0,
+   "reference_items": 5,
+   "offline_input_tokens": 897,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ],
+   "superseded": "retried without temperature"
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@responses",
+   "prompt": "solitude_effects",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Unsupported parameter: 'temperature' is not supported with this model.\", 'type': 'invalid_request_error', 'param': 'temperature', 'code': None}}",
+   "items": 0,
+   "reference_items": 3,
+   "offline_input_tokens": 902,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ],
+   "superseded": "retried without temperature"
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@responses",
+   "prompt": "conditional_statement",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Unsupported parameter: 'temperature' is not supported with this model.\", 'type': 'invalid_request_error', 'param': 'temperature', 'code': None}}",
+   "items": 0,
+   "reference_items": 6,
+   "offline_input_tokens": 1212,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ],
+   "superseded": "retried without temperature"
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@responses",
+   "prompt": "probabilistic_processes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "failed",
+   "error": "provider failure: extraction tool call failed: Error code: 400 - {'error': {'message': \"Unsupported parameter: 'temperature' is not supported with this model.\", 'type': 'invalid_request_error', 'param': 'temperature', 'code': None}}",
+   "items": 0,
+   "reference_items": 4,
+   "offline_input_tokens": 1517,
+   "calls": [
+    {
+     "ok": false,
+     "error": "BadRequestError",
+     "seconds": 0.0
+    }
+   ],
+   "superseded": "retried without temperature"
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@responses",
+   "prompt": "solitude_what",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 0,
+   "reference_items": 5,
+   "offline_input_tokens": 907,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 981,
+     "cached_input_tokens": 0,
+     "output_tokens": 42,
+     "reasoning_tokens": 22,
+     "provider_cost_usd": null,
+     "finish_reason": null,
+     "computed_cost_usd": 0.001191,
+     "seconds": 2.0386778777465224
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@responses",
+   "prompt": "solitude_causes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 3,
+   "reference_items": 6,
+   "offline_input_tokens": 933,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1006,
+     "cached_input_tokens": 0,
+     "output_tokens": 155,
+     "reasoning_tokens": 81,
+     "provider_cost_usd": null,
+     "finish_reason": null,
+     "computed_cost_usd": 0.001781,
+     "seconds": 3.8480085926130414
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@responses",
+   "prompt": "solitude_how",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 4,
+   "reference_items": 10,
+   "offline_input_tokens": 903,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 977,
+     "cached_input_tokens": 0,
+     "output_tokens": 146,
+     "reasoning_tokens": 49,
+     "provider_cost_usd": null,
+     "finish_reason": null,
+     "computed_cost_usd": 0.001707,
+     "seconds": 3.8475001249462366
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@responses",
+   "prompt": "solitude_when",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 2,
+   "reference_items": 5,
+   "offline_input_tokens": 894,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 968,
+     "cached_input_tokens": 0,
+     "output_tokens": 81,
+     "reasoning_tokens": 33,
+     "provider_cost_usd": null,
+     "finish_reason": null,
+     "computed_cost_usd": 0.001373,
+     "seconds": 2.106022751890123
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@responses",
+   "prompt": "solitude_where",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 2,
+   "reference_items": 5,
+   "offline_input_tokens": 897,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 971,
+     "cached_input_tokens": 0,
+     "output_tokens": 64,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": null,
+     "computed_cost_usd": 0.001291,
+     "seconds": 2.925899342633784
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@responses",
+   "prompt": "solitude_effects",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 3,
+   "reference_items": 3,
+   "offline_input_tokens": 902,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 976,
+     "cached_input_tokens": 0,
+     "output_tokens": 99,
+     "reasoning_tokens": 18,
+     "provider_cost_usd": null,
+     "finish_reason": null,
+     "computed_cost_usd": 0.001471,
+     "seconds": 2.7789950044825673
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@responses",
+   "prompt": "conditional_statement",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 10,
+   "reference_items": 6,
+   "offline_input_tokens": 1212,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1285,
+     "cached_input_tokens": 0,
+     "output_tokens": 337,
+     "reasoning_tokens": 50,
+     "provider_cost_usd": null,
+     "finish_reason": null,
+     "computed_cost_usd": 0.00297,
+     "seconds": 5.9855055175721645
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-6.1-terra@responses",
+   "prompt": "probabilistic_processes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 4,
+   "reference_items": 4,
+   "offline_input_tokens": 1517,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1562,
+     "cached_input_tokens": 0,
+     "output_tokens": 393,
+     "reasoning_tokens": 120,
+     "provider_cost_usd": null,
+     "finish_reason": null,
+     "computed_cost_usd": 0.003527,
+     "seconds": 6.490567878820002
+    }
+   ]
+  }
+ ]
+}

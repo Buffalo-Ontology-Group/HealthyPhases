@@ -1,0 +1,78 @@
+# Choices the cost model makes that are neither a measurement nor a price.
+# Each is stated in the report; change one and re-run `cost_model.py report`.
+
+# Corpora. Counts come from measurements/pmc_entrez.json.
+corpora:
+  oa: {label: "PMC open access subset", entrez: open_access, growth: open_access}
+  all: {label: "All of PMC", entrez: all, growth: all}
+headline_corpus: oa
+
+# The models in the headline table, in order. A variant id ("model@how")
+# names how a model was called in calibration; prices are its model's.
+headline_models:
+  - openai/gpt-4.1-mini
+  - openai/gpt-6-luna@effort-none
+  - openai/gpt-6-luna@responses
+  - openai/gpt-5-mini
+  - openai/gpt-6.1-terra@effort-none
+  - openai/gpt-6.1-terra@responses
+  - openrouter/claude-haiku-4.5
+  - openrouter/claude-sonnet-4.6
+  - openrouter/gemini-3.1-pro-preview
+reference_model: openai/gpt-4.1-mini
+
+# Which length figures drive the per-paper counts: the seeded sample of OA
+# PDFs rendered by our renderer ("pdf_rendered") or PMC's own text ("pmc_text").
+paper_source: pdf_rendered
+
+# Which chunks the per-call figures stand for. "pmc_sample": chunks of random
+# PMC papers (a model calibrated on them uses that run; the others are scaled
+# through the reference model, which ran on both). "prod": production's
+# chunks, from papers chosen for their topic, which hold more of what the
+# prompts ask for.
+chunk_level: pmc_sample
+
+embedding:
+  model: text-embedding-3-large
+  dimensions: 3072
+
+# Production throughput is the mean over extraction runs that started on or
+# after this date (the 20-worker pool landed on 2026-09-10) and made at least
+# this many calls.
+throughput:
+  runs_since: "2026-09-11"
+  min_calls: 200
+
+# Concurrent extraction calls (phases_v2 `extraction_workers`, default 20).
+extraction_workers: 20
+
+# OpenAI usage tier for the rate-limit estimate. The account's tier is not
+# visible from here; time-to-complete is given for every tier, and this one is
+# used where a single figure is needed.
+openai_tier: launch
+# Share of the tokens-per-minute limit a long run can sustain (retries,
+# uneven load, embeddings sharing the account).
+rate_limit_utilisation: 0.7
+
+# Self-hosted AWS sizing (instance types priced in prices.yaml).
+self_hosted:
+  qdrant_node: r7i.16xlarge     # 512 GiB; RAM-bound
+  qdrant_vectors_in_ram: true   # production keeps vectors and HNSW in RAM
+  fuseki_node: r7i.8xlarge      # one TDB2 store; disk-bound
+  app_node: m7i.2xlarge         # API, Dagster, Postgres, DuckLake
+  render_worker: c7i.4xlarge    # PDF rendering, 16 vCPU
+  disk_headroom: 0.2            # Qdrant's "~20% headroom", applied to every volume
+
+# Managed side: Neptune for the triples, S3 Vectors (or Qdrant Cloud when a
+# quote is set in prices.yaml) for the vectors, AWS for the rest.
+managed:
+  neptune_instance: db.r6g.8xlarge
+  neptune_storage: io_optimized     # or "standard" (adds I/O per request)
+  s3_vectors_key_and_metadata_bytes: 200   # id, paper_id, prompt_id, seq
+
+# DuckLake keeps every snapshot's files until they are expired. "live" sizes
+# the data files current rows use; "measured" applies production's ratio of
+# data directory to live files.
+ducklake_size: live
+
+hours_per_month: 730

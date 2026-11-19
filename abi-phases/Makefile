@@ -1,4 +1,4 @@
-.PHONY: install test test-app test-search test-pubmed test-pubmed-network test-psych-defgen test-psych-defgen-network test-terms lint build proto
+.PHONY: install test test-app test-search test-pubmed test-pubmed-network test-psych-defgen test-psych-defgen-network test-terms test-pmc-cost lint build proto
 install:
 	uv sync
 
@@ -28,8 +28,16 @@ TERMS_DEPS = --with pytest --with numpy --with pandas --with pyarrow --with scik
 test-terms:
 	uv run --no-project $(TERMS_DEPS) pytest $(TERMS_DIR)/tests -q
 
+# The PMC ingestion cost model: offline, no network, no production. Also
+# checks that PMC_INGESTION_COST.md's tables match the committed data.
+PMC_COST_DIR = scripts/pmc_ingestion_cost
+PMC_COST_DEPS = --with pytest --with pyyaml
+
+test-pmc-cost:
+	uv run --no-project $(PMC_COST_DEPS) pytest $(PMC_COST_DIR)/tests -q
+
 lint:
-	uv run ruff check tests src/phases_v2 src/pubmed src/openalex src/psych_defgen $(TERMS_DIR)
+	uv run ruff check tests src/phases_v2 src/pubmed src/openalex src/psych_defgen $(TERMS_DIR) $(PMC_COST_DIR)
 
 build:
 	uv build

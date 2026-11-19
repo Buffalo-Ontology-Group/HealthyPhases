@@ -1,0 +1,142 @@
+{
+ "chunk_source": "prod",
+ "measured_at": "2026-11-19T09:37:33+00:00",
+ "seed": 855,
+ "chunks_requested": 1,
+ "chunks": [
+  "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd"
+ ],
+ "models": [
+  "openai/gpt-4.1-mini"
+ ],
+ "cap_usd": 0.05,
+ "max_output_tokens": 8000,
+ "spent_usd": 0.002476,
+ "stopped": "cap reached at chunk 2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd, model openai/gpt-4.1-mini",
+ "temperature_dropped": [],
+ "prices_used": {
+  "openai/gpt-4.1-mini": {
+   "input": 0.4,
+   "cached_input": 0.1,
+   "output": 1.6
+  }
+ },
+ "records": [
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt": "solitude_what",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 10,
+   "reference_items": 5,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 914,
+     "cached_input_tokens": 0,
+     "output_tokens": 183,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "stop",
+     "computed_cost_usd": 0.0006584000000000001,
+     "seconds": 3.1753431987017393
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt": "solitude_causes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "not_run",
+   "error": "spent 0.0000 + reserved 0.0417 + 0.0137 would pass the cap 0.05",
+   "items": null,
+   "reference_items": 6,
+   "calls": []
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt": "solitude_how",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "not_run",
+   "error": "spent 0.0000 + reserved 0.0417 + 0.0136 would pass the cap 0.05",
+   "items": null,
+   "reference_items": 10,
+   "calls": []
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt": "solitude_when",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "not_run",
+   "error": "spent 0.0000 + reserved 0.0417 + 0.0136 would pass the cap 0.05",
+   "items": null,
+   "reference_items": 5,
+   "calls": []
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt": "solitude_where",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "not_run",
+   "error": "spent 0.0000 + reserved 0.0417 + 0.0136 would pass the cap 0.05",
+   "items": null,
+   "reference_items": 5,
+   "calls": []
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt": "solitude_effects",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "not_run",
+   "error": "spent 0.0000 + reserved 0.0417 + 0.0137 would pass the cap 0.05",
+   "items": null,
+   "reference_items": 3,
+   "calls": []
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt": "conditional_statement",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 8,
+   "reference_items": 6,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1218,
+     "cached_input_tokens": 0,
+     "output_tokens": 292,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "stop",
+     "computed_cost_usd": 0.0009544000000000001,
+     "seconds": 3.926697543822229
+    }
+   ]
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt": "probabilistic_processes",
+   "chunk_id": "2aa73736f0f433e7d0c4c931ac0626b163501cd03bd261a7764b1463b18740cd",
+   "status": "succeeded",
+   "error": null,
+   "items": 3,
+   "reference_items": 4,
+   "calls": [
+    {
+     "ok": true,
+     "input_tokens": 1495,
+     "cached_input_tokens": 0,
+     "output_tokens": 166,
+     "reasoning_tokens": 0,
+     "provider_cost_usd": null,
+     "finish_reason": "stop",
+     "computed_cost_usd": 0.0008636000000000001,
+     "seconds": 3.4992373501881957
+    }
+   ]
+  }
+ ]
+}

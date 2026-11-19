@@ -1,0 +1,1996 @@
+{
+ "measured_at": "2026-11-19T09:29:18+00:00",
+ "papers": {
+  "n": 294,
+  "total_bytes": 283607307,
+  "mean": 964650.7040816327,
+  "median": 598814.5,
+  "p10": 240823.0,
+  "p90": 2091789.899999998,
+  "min": 62612,
+  "max": 8387083
+ },
+ "chunks_per_paper": {
+  "papers": 294,
+  "chunks": 7441,
+  "mean": 25.30952380952381,
+  "median": 22.0,
+  "p10": 11.3,
+  "p90": 35.0,
+  "min": 1,
+  "max": 796
+ },
+ "chunk_chars": {
+  "mean": 3490.2337051471577,
+  "median": 3486.0,
+  "p10": 3121.0,
+  "p90": 3891.0,
+  "min": 675,
+  "max": 10437
+ },
+ "chunk_whitespace_tokens": {
+  "mean": 504.1357344442951,
+  "median": 512.0,
+  "p10": 512.0,
+  "p90": 512.0,
+  "min": 129,
+  "max": 512
+ },
+ "paper_rendered_chars": {
+  "mean": 67289.99659863945,
+  "median": 59229.5,
+  "p10": 31054.100000000002,
+  "p90": 90413.69999999998,
+  "min": 3415,
+  "max": 2107271
+ },
+ "extractions_by_model_prompt": [
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "conditional_statement_06c299d1b873",
+   "extractions": 7441,
+   "succeeded": 7441,
+   "failed": 0,
+   "gave_up_after_retries": 0,
+   "items_per_chunk": 6.239349549791695,
+   "answer_chars": 1092.164494019621,
+   "prompt": "conditional_statement"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "extractions": 7441,
+   "succeeded": 7440,
+   "failed": 1,
+   "gave_up_after_retries": 1,
+   "items_per_chunk": 1.8243279569892472,
+   "answer_chars": 584.1430107526882,
+   "prompt": "probabilistic_processes"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "extractions": 7441,
+   "succeeded": 7441,
+   "failed": 0,
+   "gave_up_after_retries": 0,
+   "items_per_chunk": 3.241499798414192,
+   "answer_chars": 358.35116247816154,
+   "prompt": "solitude_causes"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "extractions": 7441,
+   "succeeded": 7441,
+   "failed": 0,
+   "gave_up_after_retries": 0,
+   "items_per_chunk": 2.6913049321327778,
+   "answer_chars": 255.15495229135868,
+   "prompt": "solitude_effects"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_how_defd55d659be",
+   "extractions": 7441,
+   "succeeded": 7441,
+   "failed": 0,
+   "gave_up_after_retries": 0,
+   "items_per_chunk": 6.901491734981858,
+   "answer_chars": 754.8887246337857,
+   "prompt": "solitude_how"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "extractions": 7441,
+   "succeeded": 7441,
+   "failed": 0,
+   "gave_up_after_retries": 0,
+   "items_per_chunk": 3.605563768310711,
+   "answer_chars": 416.55476414460423,
+   "prompt": "solitude_what"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "extractions": 7441,
+   "succeeded": 7441,
+   "failed": 0,
+   "gave_up_after_retries": 0,
+   "items_per_chunk": 3.778255610804999,
+   "answer_chars": 406.4570622228195,
+   "prompt": "solitude_when"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "extractions": 7441,
+   "succeeded": 7437,
+   "failed": 4,
+   "gave_up_after_retries": 4,
+   "items_per_chunk": 3.765093451660616,
+   "answer_chars": 394.37421003092646,
+   "prompt": "solitude_where"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "conditional_statement_06c299d1b873",
+   "extractions": 144,
+   "succeeded": 144,
+   "failed": 0,
+   "gave_up_after_retries": 0,
+   "items_per_chunk": 6.833333333333333,
+   "answer_chars": 1251.0,
+   "prompt": "conditional_statement"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "extractions": 694,
+   "succeeded": 693,
+   "failed": 1,
+   "gave_up_after_retries": 0,
+   "items_per_chunk": 4.083694083694084,
+   "answer_chars": 1409.18759018759,
+   "prompt": "probabilistic_processes"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "extractions": 694,
+   "succeeded": 694,
+   "failed": 0,
+   "gave_up_after_retries": 0,
+   "items_per_chunk": 3.1988472622478388,
+   "answer_chars": 390.8933717579251,
+   "prompt": "solitude_causes"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "extractions": 694,
+   "succeeded": 694,
+   "failed": 0,
+   "gave_up_after_retries": 0,
+   "items_per_chunk": 2.361671469740634,
+   "answer_chars": 253.38040345821327,
+   "prompt": "solitude_effects"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_how_defd55d659be",
+   "extractions": 694,
+   "succeeded": 694,
+   "failed": 0,
+   "gave_up_after_retries": 0,
+   "items_per_chunk": 4.136887608069165,
+   "answer_chars": 553.7824207492796,
+   "prompt": "solitude_how"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "extractions": 694,
+   "succeeded": 694,
+   "failed": 0,
+   "gave_up_after_retries": 0,
+   "items_per_chunk": 2.4755043227665707,
+   "answer_chars": 298.3976945244957,
+   "prompt": "solitude_what"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "extractions": 694,
+   "succeeded": 694,
+   "failed": 0,
+   "gave_up_after_retries": 0,
+   "items_per_chunk": 2.7478386167146973,
+   "answer_chars": 306.5619596541787,
+   "prompt": "solitude_when"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "extractions": 694,
+   "succeeded": 694,
+   "failed": 0,
+   "gave_up_after_retries": 0,
+   "items_per_chunk": 1.1181556195965419,
+   "answer_chars": 136.19596541786743,
+   "prompt": "solitude_where"
+  }
+ ],
+ "extractions_matched_chunks": [
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "conditional_statement_06c299d1b873",
+   "extractions": 144,
+   "items_per_chunk": 5.763888888888889,
+   "answer_chars": 1022.6944444444445,
+   "prompt": "conditional_statement"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "extractions": 693,
+   "items_per_chunk": 1.7041847041847042,
+   "answer_chars": 581.4949494949495,
+   "prompt": "probabilistic_processes"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "extractions": 694,
+   "items_per_chunk": 2.42507204610951,
+   "answer_chars": 257.37896253602304,
+   "prompt": "solitude_causes"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "extractions": 694,
+   "items_per_chunk": 1.34149855907781,
+   "answer_chars": 131.1729106628242,
+   "prompt": "solitude_effects"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_how_defd55d659be",
+   "extractions": 694,
+   "items_per_chunk": 3.749279538904899,
+   "answer_chars": 442.6368876080692,
+   "prompt": "solitude_how"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "extractions": 694,
+   "items_per_chunk": 1.8328530259365994,
+   "answer_chars": 217.94668587896254,
+   "prompt": "solitude_what"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "extractions": 694,
+   "items_per_chunk": 3.389048991354467,
+   "answer_chars": 349.171469740634,
+   "prompt": "solitude_when"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "extractions": 694,
+   "items_per_chunk": 0.46253602305475505,
+   "answer_chars": 60.04178674351585,
+   "prompt": "solitude_where"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "conditional_statement_06c299d1b873",
+   "extractions": 144,
+   "items_per_chunk": 6.833333333333333,
+   "answer_chars": 1251.0,
+   "prompt": "conditional_statement"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "extractions": 693,
+   "items_per_chunk": 4.083694083694084,
+   "answer_chars": 1409.18759018759,
+   "prompt": "probabilistic_processes"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "extractions": 694,
+   "items_per_chunk": 3.1988472622478388,
+   "answer_chars": 390.8933717579251,
+   "prompt": "solitude_causes"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "extractions": 694,
+   "items_per_chunk": 2.361671469740634,
+   "answer_chars": 253.38040345821327,
+   "prompt": "solitude_effects"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_how_defd55d659be",
+   "extractions": 694,
+   "items_per_chunk": 4.136887608069165,
+   "answer_chars": 553.7824207492796,
+   "prompt": "solitude_how"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "extractions": 694,
+   "items_per_chunk": 2.4755043227665707,
+   "answer_chars": 298.3976945244957,
+   "prompt": "solitude_what"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "extractions": 694,
+   "items_per_chunk": 2.7478386167146973,
+   "answer_chars": 306.5619596541787,
+   "prompt": "solitude_when"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "extractions": 694,
+   "items_per_chunk": 1.1181556195965419,
+   "answer_chars": 136.19596541786743,
+   "prompt": "solitude_where"
+  }
+ ],
+ "item_chars_by_model_prompt": [
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "conditional_statement_06c299d1b873",
+   "items": 46427,
+   "item_chars": 166.67307816572253,
+   "prompt": "conditional_statement"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "items": 13573,
+   "item_chars": 307.14492006188755,
+   "prompt": "probabilistic_processes"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "items": 24120,
+   "item_chars": 102.63640132669984,
+   "prompt": "solitude_causes"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "items": 20026,
+   "item_chars": 85.6327274543094,
+   "prompt": "solitude_effects"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_how_defd55d659be",
+   "items": 51354,
+   "item_chars": 104.07508665342525,
+   "prompt": "solitude_how"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "items": 26829,
+   "item_chars": 108.50974691565098,
+   "prompt": "solitude_what"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "items": 28114,
+   "item_chars": 100.87828128334638,
+   "prompt": "solitude_when"
+  },
+  {
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "items": 28001,
+   "item_chars": 97.73043819863577,
+   "prompt": "solitude_where"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "conditional_statement_06c299d1b873",
+   "items": 984,
+   "item_chars": 175.0752032520325,
+   "prompt": "conditional_statement"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "items": 2830,
+   "item_chars": 339.2579505300353,
+   "prompt": "probabilistic_processes"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "items": 2220,
+   "item_chars": 114.25585585585586,
+   "prompt": "solitude_causes"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "items": 1639,
+   "item_chars": 97.34350213544845,
+   "prompt": "solitude_effects"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_how_defd55d659be",
+   "items": 2871,
+   "item_chars": 127.52873563218391,
+   "prompt": "solitude_how"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "items": 1718,
+   "item_chars": 112.07799767171129,
+   "prompt": "solitude_what"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "items": 1907,
+   "item_chars": 103.73571054011536,
+   "prompt": "solitude_when"
+  },
+  {
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "items": 776,
+   "item_chars": 106.86340206185567,
+   "prompt": "solitude_where"
+  }
+ ],
+ "extraction_runs": [
+  {
+   "run_id": "511190a3-749d-409f-9556-bcdd27b2db1c:solitude_what_bd3c4b6de030",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "started_at": "2026-09-09 08:21:13.959324",
+   "finished_at": "2026-09-09 08:46:13.411851",
+   "succeeded": 592,
+   "failed": 75,
+   "skipped": 0,
+   "seconds": 1499.452527,
+   "prompt": "solitude_what"
+  },
+  {
+   "run_id": "511190a3-749d-409f-9556-bcdd27b2db1c:solitude_causes_f240dcd5f927",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "started_at": "2026-09-09 08:46:23.221820",
+   "finished_at": "2026-09-09 09:17:47.534410",
+   "succeeded": 664,
+   "failed": 3,
+   "skipped": 0,
+   "seconds": 1884.31259,
+   "prompt": "solitude_causes"
+  },
+  {
+   "run_id": "511190a3-749d-409f-9556-bcdd27b2db1c:solitude_how_defd55d659be",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_how_defd55d659be",
+   "started_at": "2026-09-09 09:17:53.262503",
+   "finished_at": "2026-09-09 09:52:45.642480",
+   "succeeded": 591,
+   "failed": 76,
+   "skipped": 0,
+   "seconds": 2092.379977,
+   "prompt": "solitude_how"
+  },
+  {
+   "run_id": "efc13189-aa34-4b42-9712-7b7b9831ea35:solitude_what_bd3c4b6de030",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "started_at": "2026-09-09 14:07:23.123886",
+   "finished_at": "2026-09-09 14:13:03.428515",
+   "succeeded": 11,
+   "failed": 64,
+   "skipped": 592,
+   "seconds": 340.304629,
+   "prompt": "solitude_what"
+  },
+  {
+   "run_id": "efc13189-aa34-4b42-9712-7b7b9831ea35:solitude_causes_f240dcd5f927",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "started_at": "2026-09-09 14:13:12.207323",
+   "finished_at": "2026-09-09 14:13:36.161527",
+   "succeeded": 1,
+   "failed": 2,
+   "skipped": 664,
+   "seconds": 23.954204,
+   "prompt": "solitude_causes"
+  },
+  {
+   "run_id": "efc13189-aa34-4b42-9712-7b7b9831ea35:solitude_how_defd55d659be",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_how_defd55d659be",
+   "started_at": "2026-09-09 14:13:47.837841",
+   "finished_at": "2026-09-09 14:21:03.725369",
+   "succeeded": 24,
+   "failed": 52,
+   "skipped": 591,
+   "seconds": 435.887528,
+   "prompt": "solitude_how"
+  },
+  {
+   "run_id": "efc13189-aa34-4b42-9712-7b7b9831ea35:solitude_when_dffb22ac3cdc",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "started_at": "2026-09-09 14:21:16.578761",
+   "finished_at": "2026-09-09 15:17:09.882114",
+   "succeeded": 616,
+   "failed": 51,
+   "skipped": 0,
+   "seconds": 3353.303353,
+   "prompt": "solitude_when"
+  },
+  {
+   "run_id": "efc13189-aa34-4b42-9712-7b7b9831ea35:solitude_where_eadbe78f900c",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "started_at": "2026-09-09 15:17:15.725766",
+   "finished_at": "2026-09-09 15:42:05.089988",
+   "succeeded": 655,
+   "failed": 12,
+   "skipped": 0,
+   "seconds": 1489.364222,
+   "prompt": "solitude_where"
+  },
+  {
+   "run_id": "efc13189-aa34-4b42-9712-7b7b9831ea35:solitude_effects_03b778eb43f1",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "started_at": "2026-09-09 15:42:18.764063",
+   "finished_at": "2026-09-09 16:11:33.656577",
+   "succeeded": 648,
+   "failed": 19,
+   "skipped": 0,
+   "seconds": 1754.892514,
+   "prompt": "solitude_effects"
+  },
+  {
+   "run_id": "0a488ccc-3f1b-4044-a111-25f24a34d7e6:solitude_what_bd3c4b6de030",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "started_at": "2026-09-10 08:23:30.365783",
+   "finished_at": "2026-09-10 08:26:45.079729",
+   "succeeded": 5,
+   "failed": 59,
+   "skipped": 603,
+   "seconds": 194.713946,
+   "prompt": "solitude_what"
+  },
+  {
+   "run_id": "0a488ccc-3f1b-4044-a111-25f24a34d7e6:solitude_causes_f240dcd5f927",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "started_at": "2026-09-10 08:26:46.234771",
+   "finished_at": "2026-09-10 08:26:54.754341",
+   "succeeded": 0,
+   "failed": 2,
+   "skipped": 665,
+   "seconds": 8.51957,
+   "prompt": "solitude_causes"
+  },
+  {
+   "run_id": "0a488ccc-3f1b-4044-a111-25f24a34d7e6:solitude_how_defd55d659be",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_how_defd55d659be",
+   "started_at": "2026-09-10 08:26:55.491386",
+   "finished_at": "2026-09-10 08:29:39.011447",
+   "succeeded": 1,
+   "failed": 51,
+   "skipped": 615,
+   "seconds": 163.520061,
+   "prompt": "solitude_how"
+  },
+  {
+   "run_id": "0a488ccc-3f1b-4044-a111-25f24a34d7e6:solitude_when_dffb22ac3cdc",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "started_at": "2026-09-10 08:29:39.708453",
+   "finished_at": "2026-09-10 08:32:02.319954",
+   "succeeded": 8,
+   "failed": 43,
+   "skipped": 616,
+   "seconds": 142.611501,
+   "prompt": "solitude_when"
+  },
+  {
+   "run_id": "0a488ccc-3f1b-4044-a111-25f24a34d7e6:solitude_where_eadbe78f900c",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "started_at": "2026-09-10 08:32:03.198838",
+   "finished_at": "2026-09-10 08:32:31.651978",
+   "succeeded": 5,
+   "failed": 7,
+   "skipped": 655,
+   "seconds": 28.45314,
+   "prompt": "solitude_where"
+  },
+  {
+   "run_id": "0a488ccc-3f1b-4044-a111-25f24a34d7e6:solitude_effects_03b778eb43f1",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "started_at": "2026-09-10 08:32:33.735571",
+   "finished_at": "2026-09-10 08:33:23.354931",
+   "succeeded": 6,
+   "failed": 13,
+   "skipped": 648,
+   "seconds": 49.61936,
+   "prompt": "solitude_effects"
+  },
+  {
+   "run_id": "0a488ccc-3f1b-4044-a111-25f24a34d7e6:probabilistic_processes_023d15a2ea4a",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "started_at": "2026-09-10 08:33:26.879030",
+   "finished_at": "2026-09-10 09:10:43.725743",
+   "succeeded": 627,
+   "failed": 1,
+   "skipped": 39,
+   "seconds": 2236.846713,
+   "prompt": "probabilistic_processes"
+  },
+  {
+   "run_id": "7c265e0e-9e4f-4dc4-83d5-b7b48c0cfade:solitude_what_bd3c4b6de030",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "started_at": "2026-09-10 10:08:25.546376",
+   "finished_at": "2026-09-10 10:12:48.249336",
+   "succeeded": 59,
+   "failed": 0,
+   "skipped": 608,
+   "seconds": 262.70296,
+   "prompt": "solitude_what"
+  },
+  {
+   "run_id": "7c265e0e-9e4f-4dc4-83d5-b7b48c0cfade:solitude_causes_f240dcd5f927",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "started_at": "2026-09-10 10:12:49.136632",
+   "finished_at": "2026-09-10 10:13:00.041884",
+   "succeeded": 2,
+   "failed": 0,
+   "skipped": 665,
+   "seconds": 10.905252,
+   "prompt": "solitude_causes"
+  },
+  {
+   "run_id": "7c265e0e-9e4f-4dc4-83d5-b7b48c0cfade:solitude_how_defd55d659be",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_how_defd55d659be",
+   "started_at": "2026-09-10 10:13:01.135133",
+   "finished_at": "2026-09-10 10:17:11.944130",
+   "succeeded": 51,
+   "failed": 0,
+   "skipped": 616,
+   "seconds": 250.808997,
+   "prompt": "solitude_how"
+  },
+  {
+   "run_id": "7c265e0e-9e4f-4dc4-83d5-b7b48c0cfade:solitude_when_dffb22ac3cdc",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "started_at": "2026-09-10 10:17:13.147234",
+   "finished_at": "2026-09-10 10:20:10.790123",
+   "succeeded": 43,
+   "failed": 0,
+   "skipped": 624,
+   "seconds": 177.642889,
+   "prompt": "solitude_when"
+  },
+  {
+   "run_id": "7c265e0e-9e4f-4dc4-83d5-b7b48c0cfade:solitude_where_eadbe78f900c",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "started_at": "2026-09-10 10:20:11.571662",
+   "finished_at": "2026-09-10 10:20:41.702244",
+   "succeeded": 7,
+   "failed": 0,
+   "skipped": 660,
+   "seconds": 30.130582,
+   "prompt": "solitude_where"
+  },
+  {
+   "run_id": "7c265e0e-9e4f-4dc4-83d5-b7b48c0cfade:solitude_effects_03b778eb43f1",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "started_at": "2026-09-10 10:20:42.590763",
+   "finished_at": "2026-09-10 10:21:36.775780",
+   "succeeded": 13,
+   "failed": 0,
+   "skipped": 654,
+   "seconds": 54.185017,
+   "prompt": "solitude_effects"
+  },
+  {
+   "run_id": "7c265e0e-9e4f-4dc4-83d5-b7b48c0cfade:probabilistic_processes_023d15a2ea4a",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "started_at": "2026-09-10 10:21:41.311662",
+   "finished_at": "2026-09-10 10:21:48.953066",
+   "succeeded": 1,
+   "failed": 0,
+   "skipped": 666,
+   "seconds": 7.641404,
+   "prompt": "probabilistic_processes"
+  },
+  {
+   "run_id": "9b45bc29-e264-4e77-bf88-b4f6c389c1a7:solitude_what_bd3c4b6de030",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "started_at": "2026-09-10 10:45:57.833521",
+   "finished_at": "2026-09-10 10:47:59.266434",
+   "succeeded": 27,
+   "failed": 0,
+   "skipped": 667,
+   "seconds": 121.432913,
+   "prompt": "solitude_what"
+  },
+  {
+   "run_id": "9b45bc29-e264-4e77-bf88-b4f6c389c1a7:solitude_causes_f240dcd5f927",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "started_at": "2026-09-10 10:48:00.466651",
+   "finished_at": "2026-09-10 10:49:31.151273",
+   "succeeded": 27,
+   "failed": 0,
+   "skipped": 667,
+   "seconds": 90.684622,
+   "prompt": "solitude_causes"
+  },
+  {
+   "run_id": "9b45bc29-e264-4e77-bf88-b4f6c389c1a7:solitude_how_defd55d659be",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_how_defd55d659be",
+   "started_at": "2026-09-10 10:49:32.106085",
+   "finished_at": "2026-09-10 10:51:31.617246",
+   "succeeded": 27,
+   "failed": 0,
+   "skipped": 667,
+   "seconds": 119.511161,
+   "prompt": "solitude_how"
+  },
+  {
+   "run_id": "9b45bc29-e264-4e77-bf88-b4f6c389c1a7:solitude_when_dffb22ac3cdc",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "started_at": "2026-09-10 10:51:33.140565",
+   "finished_at": "2026-09-10 10:53:06.248968",
+   "succeeded": 27,
+   "failed": 0,
+   "skipped": 667,
+   "seconds": 93.108403,
+   "prompt": "solitude_when"
+  },
+  {
+   "run_id": "9b45bc29-e264-4e77-bf88-b4f6c389c1a7:solitude_where_eadbe78f900c",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "started_at": "2026-09-10 10:53:07.014800",
+   "finished_at": "2026-09-10 10:54:53.265961",
+   "succeeded": 27,
+   "failed": 0,
+   "skipped": 667,
+   "seconds": 106.251161,
+   "prompt": "solitude_where"
+  },
+  {
+   "run_id": "9b45bc29-e264-4e77-bf88-b4f6c389c1a7:solitude_effects_03b778eb43f1",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "started_at": "2026-09-10 10:54:54.042391",
+   "finished_at": "2026-09-10 10:56:20.521097",
+   "succeeded": 27,
+   "failed": 0,
+   "skipped": 667,
+   "seconds": 86.478706,
+   "prompt": "solitude_effects"
+  },
+  {
+   "run_id": "9b45bc29-e264-4e77-bf88-b4f6c389c1a7:probabilistic_processes_023d15a2ea4a",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "started_at": "2026-09-10 10:58:28.812317",
+   "finished_at": "2026-09-10 10:59:58.632886",
+   "succeeded": 27,
+   "failed": 0,
+   "skipped": 667,
+   "seconds": 89.820569,
+   "prompt": "probabilistic_processes"
+  },
+  {
+   "run_id": "9eb9a96b-14e6-4b55-ae1c-11a3d9147902:solitude_what_bd3c4b6de030",
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "started_at": "2026-09-10 13:42:20.658984",
+   "finished_at": "2026-09-10 14:32:23.231822",
+   "succeeded": 694,
+   "failed": 0,
+   "skipped": 0,
+   "seconds": 3002.572838,
+   "prompt": "solitude_what"
+  },
+  {
+   "run_id": "9eb9a96b-14e6-4b55-ae1c-11a3d9147902:solitude_causes_f240dcd5f927",
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "started_at": "2026-09-10 14:32:23.997492",
+   "finished_at": "2026-09-10 15:32:04.442018",
+   "succeeded": 694,
+   "failed": 0,
+   "skipped": 0,
+   "seconds": 3580.444526,
+   "prompt": "solitude_causes"
+  },
+  {
+   "run_id": "9eb9a96b-14e6-4b55-ae1c-11a3d9147902:solitude_how_defd55d659be",
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_how_defd55d659be",
+   "started_at": "2026-09-10 15:32:06.157268",
+   "finished_at": "2026-09-10 16:38:55.427507",
+   "succeeded": 694,
+   "failed": 0,
+   "skipped": 0,
+   "seconds": 4009.270239,
+   "prompt": "solitude_how"
+  },
+  {
+   "run_id": "9eb9a96b-14e6-4b55-ae1c-11a3d9147902:solitude_when_dffb22ac3cdc",
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "started_at": "2026-09-10 16:38:56.438223",
+   "finished_at": "2026-09-10 17:26:18.449117",
+   "succeeded": 520,
+   "failed": 174,
+   "skipped": 0,
+   "seconds": 2842.010894,
+   "prompt": "solitude_when"
+  },
+  {
+   "run_id": "9eb9a96b-14e6-4b55-ae1c-11a3d9147902:solitude_where_eadbe78f900c",
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "started_at": "2026-09-10 17:26:19.265168",
+   "finished_at": "2026-09-10 18:08:33.816366",
+   "succeeded": 694,
+   "failed": 0,
+   "skipped": 0,
+   "seconds": 2534.551198,
+   "prompt": "solitude_where"
+  },
+  {
+   "run_id": "9eb9a96b-14e6-4b55-ae1c-11a3d9147902:solitude_effects_03b778eb43f1",
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "started_at": "2026-09-10 18:08:34.611769",
+   "finished_at": "2026-09-10 18:57:54.096726",
+   "succeeded": 694,
+   "failed": 0,
+   "skipped": 0,
+   "seconds": 2959.484957,
+   "prompt": "solitude_effects"
+  },
+  {
+   "run_id": "8350f3d8-f5fa-4312-8f86-157413304449:solitude_what_bd3c4b6de030",
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "started_at": "2026-09-10 19:32:59.266999",
+   "finished_at": "2026-09-10 19:32:59.812176",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 694,
+   "seconds": 0.545177,
+   "prompt": "solitude_what"
+  },
+  {
+   "run_id": "8350f3d8-f5fa-4312-8f86-157413304449:solitude_causes_f240dcd5f927",
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "started_at": "2026-09-10 19:33:00.736700",
+   "finished_at": "2026-09-10 19:33:01.283046",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 694,
+   "seconds": 0.546346,
+   "prompt": "solitude_causes"
+  },
+  {
+   "run_id": "8350f3d8-f5fa-4312-8f86-157413304449:solitude_how_defd55d659be",
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_how_defd55d659be",
+   "started_at": "2026-09-10 19:33:02.138387",
+   "finished_at": "2026-09-10 19:33:02.841436",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 694,
+   "seconds": 0.703049,
+   "prompt": "solitude_how"
+  },
+  {
+   "run_id": "8350f3d8-f5fa-4312-8f86-157413304449:solitude_when_dffb22ac3cdc",
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "started_at": "2026-09-10 19:33:03.972491",
+   "finished_at": "2026-09-10 19:41:05.637489",
+   "succeeded": 174,
+   "failed": 0,
+   "skipped": 520,
+   "seconds": 481.664998,
+   "prompt": "solitude_when"
+  },
+  {
+   "run_id": "8350f3d8-f5fa-4312-8f86-157413304449:solitude_where_eadbe78f900c",
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "started_at": "2026-09-10 19:41:06.439379",
+   "finished_at": "2026-09-10 19:41:07.198269",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 694,
+   "seconds": 0.75889,
+   "prompt": "solitude_where"
+  },
+  {
+   "run_id": "8350f3d8-f5fa-4312-8f86-157413304449:solitude_effects_03b778eb43f1",
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "started_at": "2026-09-10 19:41:08.123193",
+   "finished_at": "2026-09-10 19:41:08.924833",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 694,
+   "seconds": 0.80164,
+   "prompt": "solitude_effects"
+  },
+  {
+   "run_id": "8350f3d8-f5fa-4312-8f86-157413304449:probabilistic_processes_023d15a2ea4a",
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "started_at": "2026-09-10 20:17:16.661520",
+   "finished_at": "2026-09-10 20:48:20.193209",
+   "succeeded": 632,
+   "failed": 62,
+   "skipped": 0,
+   "seconds": 1863.531689,
+   "prompt": "probabilistic_processes"
+  },
+  {
+   "run_id": "8953710b-d1c6-4715-ae7c-2658490064d0:probabilistic_processes_023d15a2ea4a",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "started_at": "2026-09-17 22:57:52.951833",
+   "finished_at": "2026-09-18 03:20:57.907820",
+   "succeeded": 5227,
+   "failed": 192,
+   "skipped": 139,
+   "seconds": 15784.955987,
+   "prompt": "probabilistic_processes"
+  },
+  {
+   "run_id": "8953710b-d1c6-4715-ae7c-2658490064d0:solitude_causes_f240dcd5f927",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "started_at": "2026-09-18 03:20:59.767752",
+   "finished_at": "2026-09-18 09:39:57.293595",
+   "succeeded": 5419,
+   "failed": 0,
+   "skipped": 139,
+   "seconds": 22737.525843,
+   "prompt": "solitude_causes"
+  },
+  {
+   "run_id": "8953710b-d1c6-4715-ae7c-2658490064d0:solitude_effects_03b778eb43f1",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "started_at": "2026-09-18 09:39:59.001315",
+   "finished_at": "2026-09-18 16:38:14.833714",
+   "succeeded": 5419,
+   "failed": 0,
+   "skipped": 139,
+   "seconds": 25095.832399,
+   "prompt": "solitude_effects"
+  },
+  {
+   "run_id": "8953710b-d1c6-4715-ae7c-2658490064d0:solitude_how_defd55d659be",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_how_defd55d659be",
+   "started_at": "2026-09-18 16:38:16.181260",
+   "finished_at": "2026-09-19 06:40:11.672981",
+   "succeeded": 181,
+   "failed": 5238,
+   "skipped": 139,
+   "seconds": 50515.491721,
+   "prompt": "solitude_how"
+  },
+  {
+   "run_id": "8953710b-d1c6-4715-ae7c-2658490064d0:solitude_what_bd3c4b6de030",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "started_at": "2026-09-19 06:40:12.876843",
+   "finished_at": "2026-09-19 08:51:30.239285",
+   "succeeded": 0,
+   "failed": 5419,
+   "skipped": 139,
+   "seconds": 7877.362442,
+   "prompt": "solitude_what"
+  },
+  {
+   "run_id": "8953710b-d1c6-4715-ae7c-2658490064d0:solitude_when_dffb22ac3cdc",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "started_at": "2026-09-19 08:51:31.262613",
+   "finished_at": "2026-09-19 11:08:40.787411",
+   "succeeded": 0,
+   "failed": 5419,
+   "skipped": 139,
+   "seconds": 8229.524798,
+   "prompt": "solitude_when"
+  },
+  {
+   "run_id": "8953710b-d1c6-4715-ae7c-2658490064d0:solitude_where_eadbe78f900c",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "started_at": "2026-09-19 11:08:42.705058",
+   "finished_at": "2026-09-19 13:32:32.160747",
+   "succeeded": 0,
+   "failed": 5419,
+   "skipped": 139,
+   "seconds": 8629.455689,
+   "prompt": "solitude_where"
+  },
+  {
+   "run_id": "dd67cff6-1415-4c1a-8f32-67bd646d2684:conditional_statement_06c299d1b873",
+   "model_id": "openrouter/claude-sonnet-4.6",
+   "prompt_id": "conditional_statement_06c299d1b873",
+   "started_at": "2026-11-03 14:28:53.004904",
+   "finished_at": "2026-11-03 14:31:46.899211",
+   "succeeded": 144,
+   "failed": 0,
+   "skipped": 0,
+   "seconds": 173.894307,
+   "prompt": "conditional_statement"
+  },
+  {
+   "run_id": "ef543e81-0486-4a30-967a-cdb3588c7753:solitude_what_bd3c4b6de030",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "started_at": "2026-11-04 22:13:32.620367",
+   "finished_at": "2026-11-05 00:01:52.527261",
+   "succeeded": 5419,
+   "failed": 0,
+   "skipped": 139,
+   "seconds": 6499.906894,
+   "prompt": "solitude_what"
+  },
+  {
+   "run_id": "ef543e81-0486-4a30-967a-cdb3588c7753:solitude_causes_f240dcd5f927",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "started_at": "2026-11-05 00:01:53.326595",
+   "finished_at": "2026-11-05 00:01:53.808469",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 0.481874,
+   "prompt": "solitude_causes"
+  },
+  {
+   "run_id": "ef543e81-0486-4a30-967a-cdb3588c7753:solitude_how_defd55d659be",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_how_defd55d659be",
+   "started_at": "2026-11-05 00:01:54.629170",
+   "finished_at": "2026-11-05 03:13:13.577376",
+   "succeeded": 5238,
+   "failed": 0,
+   "skipped": 320,
+   "seconds": 11478.948206,
+   "prompt": "solitude_how"
+  },
+  {
+   "run_id": "ef543e81-0486-4a30-967a-cdb3588c7753:solitude_when_dffb22ac3cdc",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "started_at": "2026-11-05 03:13:14.373382",
+   "finished_at": "2026-11-05 06:55:07.613791",
+   "succeeded": 5414,
+   "failed": 5,
+   "skipped": 139,
+   "seconds": 13313.240409,
+   "prompt": "solitude_when"
+  },
+  {
+   "run_id": "ef543e81-0486-4a30-967a-cdb3588c7753:solitude_where_eadbe78f900c",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "started_at": "2026-11-05 06:55:08.331535",
+   "finished_at": "2026-11-05 11:43:51.490618",
+   "succeeded": 5414,
+   "failed": 5,
+   "skipped": 139,
+   "seconds": 17323.159083,
+   "prompt": "solitude_where"
+  },
+  {
+   "run_id": "ef543e81-0486-4a30-967a-cdb3588c7753:solitude_effects_03b778eb43f1",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "started_at": "2026-11-05 11:43:52.235835",
+   "finished_at": "2026-11-05 11:43:52.793039",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 0.557204,
+   "prompt": "solitude_effects"
+  },
+  {
+   "run_id": "ef543e81-0486-4a30-967a-cdb3588c7753:conditional_statement_06c299d1b873",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "conditional_statement_06c299d1b873",
+   "started_at": "2026-11-05 11:43:53.877719",
+   "finished_at": "2026-11-05 18:11:31.278850",
+   "succeeded": 5558,
+   "failed": 0,
+   "skipped": 0,
+   "seconds": 23257.401131,
+   "prompt": "conditional_statement"
+  },
+  {
+   "run_id": "ef543e81-0486-4a30-967a-cdb3588c7753:probabilistic_processes_023d15a2ea4a",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "started_at": "2026-11-05 18:11:32.244665",
+   "finished_at": "2026-11-05 18:12:25.808275",
+   "succeeded": 11,
+   "failed": 0,
+   "skipped": 5547,
+   "seconds": 53.56361,
+   "prompt": "probabilistic_processes"
+  },
+  {
+   "run_id": "a087ca55-ce41-4785-923f-a90099d484f9:solitude_what_bd3c4b6de030",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "started_at": "2026-11-05 18:25:53.443331",
+   "finished_at": "2026-11-05 18:25:54.059046",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 0.615715,
+   "prompt": "solitude_what"
+  },
+  {
+   "run_id": "a087ca55-ce41-4785-923f-a90099d484f9:solitude_causes_f240dcd5f927",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "started_at": "2026-11-05 18:25:54.730330",
+   "finished_at": "2026-11-05 18:25:55.314403",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 0.584073,
+   "prompt": "solitude_causes"
+  },
+  {
+   "run_id": "a087ca55-ce41-4785-923f-a90099d484f9:solitude_how_defd55d659be",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_how_defd55d659be",
+   "started_at": "2026-11-05 18:25:55.981371",
+   "finished_at": "2026-11-05 18:25:56.523862",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 0.542491,
+   "prompt": "solitude_how"
+  },
+  {
+   "run_id": "a087ca55-ce41-4785-923f-a90099d484f9:solitude_when_dffb22ac3cdc",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "started_at": "2026-11-05 18:25:57.163740",
+   "finished_at": "2026-11-05 18:26:15.533912",
+   "succeeded": 5,
+   "failed": 0,
+   "skipped": 5553,
+   "seconds": 18.370172,
+   "prompt": "solitude_when"
+  },
+  {
+   "run_id": "a087ca55-ce41-4785-923f-a90099d484f9:solitude_where_eadbe78f900c",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "started_at": "2026-11-05 18:26:16.252851",
+   "finished_at": "2026-11-05 18:26:32.074281",
+   "succeeded": 3,
+   "failed": 2,
+   "skipped": 5553,
+   "seconds": 15.82143,
+   "prompt": "solitude_where"
+  },
+  {
+   "run_id": "a087ca55-ce41-4785-923f-a90099d484f9:solitude_effects_03b778eb43f1",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "started_at": "2026-11-05 18:26:32.743486",
+   "finished_at": "2026-11-05 18:26:33.466254",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 0.722768,
+   "prompt": "solitude_effects"
+  },
+  {
+   "run_id": "a087ca55-ce41-4785-923f-a90099d484f9:conditional_statement_06c299d1b873",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "conditional_statement_06c299d1b873",
+   "started_at": "2026-11-05 18:26:34.273089",
+   "finished_at": "2026-11-05 18:26:35.630454",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 1.357365,
+   "prompt": "conditional_statement"
+  },
+  {
+   "run_id": "a087ca55-ce41-4785-923f-a90099d484f9:probabilistic_processes_023d15a2ea4a",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "started_at": "2026-11-05 18:26:36.443184",
+   "finished_at": "2026-11-05 18:26:37.134294",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 0.69111,
+   "prompt": "probabilistic_processes"
+  },
+  {
+   "run_id": "2221c871-ad82-4087-ac40-82c1031e9e3c:solitude_what_bd3c4b6de030",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "started_at": "2026-11-05 19:12:41.838303",
+   "finished_at": "2026-11-05 19:12:42.476493",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 0.63819,
+   "prompt": "solitude_what"
+  },
+  {
+   "run_id": "2221c871-ad82-4087-ac40-82c1031e9e3c:solitude_causes_f240dcd5f927",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "started_at": "2026-11-05 19:12:43.172752",
+   "finished_at": "2026-11-05 19:12:43.723164",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 0.550412,
+   "prompt": "solitude_causes"
+  },
+  {
+   "run_id": "2221c871-ad82-4087-ac40-82c1031e9e3c:solitude_how_defd55d659be",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_how_defd55d659be",
+   "started_at": "2026-11-05 19:12:44.403304",
+   "finished_at": "2026-11-05 19:12:44.930766",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 0.527462,
+   "prompt": "solitude_how"
+  },
+  {
+   "run_id": "2221c871-ad82-4087-ac40-82c1031e9e3c:solitude_when_dffb22ac3cdc",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "started_at": "2026-11-05 19:12:45.605154",
+   "finished_at": "2026-11-05 19:12:46.137107",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 0.531953,
+   "prompt": "solitude_when"
+  },
+  {
+   "run_id": "2221c871-ad82-4087-ac40-82c1031e9e3c:solitude_where_eadbe78f900c",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "started_at": "2026-11-05 19:12:46.808527",
+   "finished_at": "2026-11-05 19:12:50.790795",
+   "succeeded": 0,
+   "failed": 2,
+   "skipped": 5556,
+   "seconds": 3.982268,
+   "prompt": "solitude_where"
+  },
+  {
+   "run_id": "2221c871-ad82-4087-ac40-82c1031e9e3c:solitude_effects_03b778eb43f1",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "started_at": "2026-11-05 19:12:51.479669",
+   "finished_at": "2026-11-05 19:12:52.109278",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 0.629609,
+   "prompt": "solitude_effects"
+  },
+  {
+   "run_id": "2221c871-ad82-4087-ac40-82c1031e9e3c:conditional_statement_06c299d1b873",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "conditional_statement_06c299d1b873",
+   "started_at": "2026-11-05 19:12:52.842071",
+   "finished_at": "2026-11-05 19:12:54.145536",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 1.303465,
+   "prompt": "conditional_statement"
+  },
+  {
+   "run_id": "2221c871-ad82-4087-ac40-82c1031e9e3c:probabilistic_processes_023d15a2ea4a",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "started_at": "2026-11-05 19:12:54.870256",
+   "finished_at": "2026-11-05 19:12:55.618543",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 0.748287,
+   "prompt": "probabilistic_processes"
+  },
+  {
+   "run_id": "a8808eb4-208c-4f59-a214-019f0b53ffad:solitude_what_bd3c4b6de030",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "started_at": "2026-11-05 19:34:32.280651",
+   "finished_at": "2026-11-05 19:34:32.887370",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 0.606719,
+   "prompt": "solitude_what"
+  },
+  {
+   "run_id": "a8808eb4-208c-4f59-a214-019f0b53ffad:solitude_causes_f240dcd5f927",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "started_at": "2026-11-05 19:34:33.552330",
+   "finished_at": "2026-11-05 19:34:34.106235",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 0.553905,
+   "prompt": "solitude_causes"
+  },
+  {
+   "run_id": "a8808eb4-208c-4f59-a214-019f0b53ffad:solitude_how_defd55d659be",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_how_defd55d659be",
+   "started_at": "2026-11-05 19:34:34.749108",
+   "finished_at": "2026-11-05 19:34:35.292228",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 0.54312,
+   "prompt": "solitude_how"
+  },
+  {
+   "run_id": "a8808eb4-208c-4f59-a214-019f0b53ffad:solitude_when_dffb22ac3cdc",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "started_at": "2026-11-05 19:34:35.914803",
+   "finished_at": "2026-11-05 19:34:36.448003",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 0.5332,
+   "prompt": "solitude_when"
+  },
+  {
+   "run_id": "a8808eb4-208c-4f59-a214-019f0b53ffad:solitude_where_eadbe78f900c",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "started_at": "2026-11-05 19:34:37.115408",
+   "finished_at": "2026-11-05 19:34:42.077686",
+   "succeeded": 0,
+   "failed": 2,
+   "skipped": 5556,
+   "seconds": 4.962278,
+   "prompt": "solitude_where"
+  },
+  {
+   "run_id": "a8808eb4-208c-4f59-a214-019f0b53ffad:solitude_effects_03b778eb43f1",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "started_at": "2026-11-05 19:34:42.698654",
+   "finished_at": "2026-11-05 19:34:43.223832",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 0.525178,
+   "prompt": "solitude_effects"
+  },
+  {
+   "run_id": "a8808eb4-208c-4f59-a214-019f0b53ffad:conditional_statement_06c299d1b873",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "conditional_statement_06c299d1b873",
+   "started_at": "2026-11-05 19:34:43.843239",
+   "finished_at": "2026-11-05 19:34:45.085671",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 1.242432,
+   "prompt": "conditional_statement"
+  },
+  {
+   "run_id": "a8808eb4-208c-4f59-a214-019f0b53ffad:probabilistic_processes_023d15a2ea4a",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "started_at": "2026-11-05 19:34:45.778998",
+   "finished_at": "2026-11-05 19:34:46.391349",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 5558,
+   "seconds": 0.612351,
+   "prompt": "probabilistic_processes"
+  },
+  {
+   "run_id": "f605e578-9cd2-4a2f-b4f9-eac764359029:solitude_what_bd3c4b6de030",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "started_at": "2026-11-05 21:23:02.530247",
+   "finished_at": "2026-11-05 21:32:38.250669",
+   "succeeded": 239,
+   "failed": 0,
+   "skipped": 19,
+   "seconds": 575.720422,
+   "prompt": "solitude_what"
+  },
+  {
+   "run_id": "f605e578-9cd2-4a2f-b4f9-eac764359029:solitude_causes_f240dcd5f927",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "started_at": "2026-11-05 21:32:39.013885",
+   "finished_at": "2026-11-05 21:40:30.392455",
+   "succeeded": 239,
+   "failed": 0,
+   "skipped": 19,
+   "seconds": 471.37857,
+   "prompt": "solitude_causes"
+  },
+  {
+   "run_id": "f605e578-9cd2-4a2f-b4f9-eac764359029:solitude_how_defd55d659be",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_how_defd55d659be",
+   "started_at": "2026-11-05 21:40:31.071820",
+   "finished_at": "2026-11-05 21:56:14.749470",
+   "succeeded": 239,
+   "failed": 0,
+   "skipped": 19,
+   "seconds": 943.67765,
+   "prompt": "solitude_how"
+  },
+  {
+   "run_id": "f605e578-9cd2-4a2f-b4f9-eac764359029:solitude_when_dffb22ac3cdc",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "started_at": "2026-11-05 21:56:15.429205",
+   "finished_at": "2026-11-05 22:10:23.819585",
+   "succeeded": 239,
+   "failed": 0,
+   "skipped": 19,
+   "seconds": 848.39038,
+   "prompt": "solitude_when"
+  },
+  {
+   "run_id": "f605e578-9cd2-4a2f-b4f9-eac764359029:solitude_where_eadbe78f900c",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "started_at": "2026-11-05 22:10:24.665070",
+   "finished_at": "2026-11-05 22:27:26.469582",
+   "succeeded": 239,
+   "failed": 0,
+   "skipped": 19,
+   "seconds": 1021.804512,
+   "prompt": "solitude_where"
+  },
+  {
+   "run_id": "f605e578-9cd2-4a2f-b4f9-eac764359029:solitude_effects_03b778eb43f1",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "started_at": "2026-11-05 22:27:27.230073",
+   "finished_at": "2026-11-05 22:40:04.128407",
+   "succeeded": 239,
+   "failed": 0,
+   "skipped": 19,
+   "seconds": 756.898334,
+   "prompt": "solitude_effects"
+  },
+  {
+   "run_id": "f605e578-9cd2-4a2f-b4f9-eac764359029:conditional_statement_06c299d1b873",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "conditional_statement_06c299d1b873",
+   "started_at": "2026-11-05 22:40:04.953838",
+   "finished_at": "2026-11-05 22:55:59.991504",
+   "succeeded": 239,
+   "failed": 0,
+   "skipped": 19,
+   "seconds": 955.037666,
+   "prompt": "conditional_statement"
+  },
+  {
+   "run_id": "f605e578-9cd2-4a2f-b4f9-eac764359029:probabilistic_processes_023d15a2ea4a",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "started_at": "2026-11-05 22:56:00.731041",
+   "finished_at": "2026-11-05 23:04:33.956369",
+   "succeeded": 239,
+   "failed": 0,
+   "skipped": 19,
+   "seconds": 513.225328,
+   "prompt": "probabilistic_processes"
+  },
+  {
+   "run_id": "ce524ea9-5e91-40eb-8ed0-3f80343f8d6d:solitude_what_bd3c4b6de030",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "started_at": "2026-11-05 23:31:55.476708",
+   "finished_at": "2026-11-05 23:44:11.683930",
+   "succeeded": 293,
+   "failed": 0,
+   "skipped": 101,
+   "seconds": 736.207222,
+   "prompt": "solitude_what"
+  },
+  {
+   "run_id": "ce524ea9-5e91-40eb-8ed0-3f80343f8d6d:solitude_causes_f240dcd5f927",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "started_at": "2026-11-05 23:44:12.410741",
+   "finished_at": "2026-11-05 23:55:33.950301",
+   "succeeded": 293,
+   "failed": 0,
+   "skipped": 101,
+   "seconds": 681.53956,
+   "prompt": "solitude_causes"
+  },
+  {
+   "run_id": "ce524ea9-5e91-40eb-8ed0-3f80343f8d6d:solitude_how_defd55d659be",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_how_defd55d659be",
+   "started_at": "2026-11-05 23:55:34.719739",
+   "finished_at": "2026-11-06 00:18:40.866026",
+   "succeeded": 293,
+   "failed": 0,
+   "skipped": 101,
+   "seconds": 1386.146287,
+   "prompt": "solitude_how"
+  },
+  {
+   "run_id": "ce524ea9-5e91-40eb-8ed0-3f80343f8d6d:solitude_when_dffb22ac3cdc",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "started_at": "2026-11-06 00:18:41.800455",
+   "finished_at": "2026-11-06 00:43:02.518883",
+   "succeeded": 293,
+   "failed": 0,
+   "skipped": 101,
+   "seconds": 1460.718428,
+   "prompt": "solitude_when"
+  },
+  {
+   "run_id": "ce524ea9-5e91-40eb-8ed0-3f80343f8d6d:solitude_where_eadbe78f900c",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "started_at": "2026-11-06 00:43:03.459264",
+   "finished_at": "2026-11-06 01:06:50.080700",
+   "succeeded": 291,
+   "failed": 2,
+   "skipped": 101,
+   "seconds": 1426.621436,
+   "prompt": "solitude_where"
+  },
+  {
+   "run_id": "ce524ea9-5e91-40eb-8ed0-3f80343f8d6d:solitude_effects_03b778eb43f1",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "started_at": "2026-11-06 01:06:50.784556",
+   "finished_at": "2026-11-06 01:22:16.419226",
+   "succeeded": 293,
+   "failed": 0,
+   "skipped": 101,
+   "seconds": 925.63467,
+   "prompt": "solitude_effects"
+  },
+  {
+   "run_id": "ce524ea9-5e91-40eb-8ed0-3f80343f8d6d:conditional_statement_06c299d1b873",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "conditional_statement_06c299d1b873",
+   "started_at": "2026-11-06 01:22:17.162584",
+   "finished_at": "2026-11-06 01:46:07.317861",
+   "succeeded": 293,
+   "failed": 0,
+   "skipped": 101,
+   "seconds": 1430.155277,
+   "prompt": "conditional_statement"
+  },
+  {
+   "run_id": "ce524ea9-5e91-40eb-8ed0-3f80343f8d6d:probabilistic_processes_023d15a2ea4a",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "started_at": "2026-11-06 01:46:08.067704",
+   "finished_at": "2026-11-06 01:58:09.031767",
+   "succeeded": 293,
+   "failed": 0,
+   "skipped": 101,
+   "seconds": 720.964063,
+   "prompt": "probabilistic_processes"
+  },
+  {
+   "run_id": "a4f38e80-8a4a-451c-89eb-cfe8d474b795:solitude_what_bd3c4b6de030",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "started_at": "2026-11-06 02:24:38.700314",
+   "finished_at": "2026-11-06 03:22:12.495824",
+   "succeeded": 796,
+   "failed": 0,
+   "skipped": 694,
+   "seconds": 3453.79551,
+   "prompt": "solitude_what"
+  },
+  {
+   "run_id": "a4f38e80-8a4a-451c-89eb-cfe8d474b795:solitude_causes_f240dcd5f927",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "started_at": "2026-11-06 03:22:13.201228",
+   "finished_at": "2026-11-06 04:31:34.685319",
+   "succeeded": 796,
+   "failed": 0,
+   "skipped": 694,
+   "seconds": 4161.484091,
+   "prompt": "solitude_causes"
+  },
+  {
+   "run_id": "a4f38e80-8a4a-451c-89eb-cfe8d474b795:solitude_how_defd55d659be",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_how_defd55d659be",
+   "started_at": "2026-11-06 04:31:35.427791",
+   "finished_at": "2026-11-06 05:53:03.516484",
+   "succeeded": 796,
+   "failed": 0,
+   "skipped": 694,
+   "seconds": 4888.088693,
+   "prompt": "solitude_how"
+  },
+  {
+   "run_id": "a4f38e80-8a4a-451c-89eb-cfe8d474b795:solitude_when_dffb22ac3cdc",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "started_at": "2026-11-06 05:53:04.267351",
+   "finished_at": "2026-11-06 07:14:50.040355",
+   "succeeded": 796,
+   "failed": 0,
+   "skipped": 694,
+   "seconds": 4905.773004,
+   "prompt": "solitude_when"
+  },
+  {
+   "run_id": "a4f38e80-8a4a-451c-89eb-cfe8d474b795:solitude_where_eadbe78f900c",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "started_at": "2026-11-06 07:14:50.941100",
+   "finished_at": "2026-11-06 08:33:15.762002",
+   "succeeded": 796,
+   "failed": 0,
+   "skipped": 694,
+   "seconds": 4704.820902,
+   "prompt": "solitude_where"
+  },
+  {
+   "run_id": "a4f38e80-8a4a-451c-89eb-cfe8d474b795:solitude_effects_03b778eb43f1",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "started_at": "2026-11-06 08:33:16.486362",
+   "finished_at": "2026-11-06 09:33:15.679095",
+   "succeeded": 796,
+   "failed": 0,
+   "skipped": 694,
+   "seconds": 3599.192733,
+   "prompt": "solitude_effects"
+  },
+  {
+   "run_id": "a4f38e80-8a4a-451c-89eb-cfe8d474b795:conditional_statement_06c299d1b873",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "conditional_statement_06c299d1b873",
+   "started_at": "2026-11-06 09:33:16.571720",
+   "finished_at": "2026-11-06 11:50:39.587928",
+   "succeeded": 1351,
+   "failed": 0,
+   "skipped": 139,
+   "seconds": 8243.016208,
+   "prompt": "conditional_statement"
+  },
+  {
+   "run_id": "a4f38e80-8a4a-451c-89eb-cfe8d474b795:probabilistic_processes_023d15a2ea4a",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "started_at": "2026-11-06 11:50:40.437159",
+   "finished_at": "2026-11-06 12:45:59.374665",
+   "succeeded": 795,
+   "failed": 1,
+   "skipped": 694,
+   "seconds": 3318.937506,
+   "prompt": "probabilistic_processes"
+  },
+  {
+   "run_id": "4ce35103-1154-4888-b1fa-b8d327d3dc8e:solitude_what_bd3c4b6de030",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_what_bd3c4b6de030",
+   "started_at": "2026-11-06 13:34:33.185566",
+   "finished_at": "2026-11-06 13:34:33.991074",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 144,
+   "seconds": 0.805508,
+   "prompt": "solitude_what"
+  },
+  {
+   "run_id": "4ce35103-1154-4888-b1fa-b8d327d3dc8e:solitude_causes_f240dcd5f927",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_causes_f240dcd5f927",
+   "started_at": "2026-11-06 13:34:34.658382",
+   "finished_at": "2026-11-06 13:34:35.436052",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 144,
+   "seconds": 0.77767,
+   "prompt": "solitude_causes"
+  },
+  {
+   "run_id": "4ce35103-1154-4888-b1fa-b8d327d3dc8e:solitude_how_defd55d659be",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_how_defd55d659be",
+   "started_at": "2026-11-06 13:34:36.091105",
+   "finished_at": "2026-11-06 13:34:36.848837",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 144,
+   "seconds": 0.757732,
+   "prompt": "solitude_how"
+  },
+  {
+   "run_id": "4ce35103-1154-4888-b1fa-b8d327d3dc8e:solitude_when_dffb22ac3cdc",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_when_dffb22ac3cdc",
+   "started_at": "2026-11-06 13:34:37.494581",
+   "finished_at": "2026-11-06 13:34:38.220045",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 144,
+   "seconds": 0.725464,
+   "prompt": "solitude_when"
+  },
+  {
+   "run_id": "4ce35103-1154-4888-b1fa-b8d327d3dc8e:solitude_where_eadbe78f900c",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_where_eadbe78f900c",
+   "started_at": "2026-11-06 13:34:38.926886",
+   "finished_at": "2026-11-06 13:34:39.669346",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 144,
+   "seconds": 0.74246,
+   "prompt": "solitude_where"
+  },
+  {
+   "run_id": "4ce35103-1154-4888-b1fa-b8d327d3dc8e:solitude_effects_03b778eb43f1",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "solitude_effects_03b778eb43f1",
+   "started_at": "2026-11-06 13:34:40.355562",
+   "finished_at": "2026-11-06 13:34:41.120337",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 144,
+   "seconds": 0.764775,
+   "prompt": "solitude_effects"
+  },
+  {
+   "run_id": "4ce35103-1154-4888-b1fa-b8d327d3dc8e:conditional_statement_06c299d1b873",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "conditional_statement_06c299d1b873",
+   "started_at": "2026-11-06 13:34:41.763114",
+   "finished_at": "2026-11-06 13:34:43.161793",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 144,
+   "seconds": 1.398679,
+   "prompt": "conditional_statement"
+  },
+  {
+   "run_id": "4ce35103-1154-4888-b1fa-b8d327d3dc8e:probabilistic_processes_023d15a2ea4a",
+   "model_id": "openai/gpt-4.1-mini",
+   "prompt_id": "probabilistic_processes_023d15a2ea4a",
+   "started_at": "2026-11-06 13:34:43.977126",
+   "finished_at": "2026-11-06 13:34:44.738961",
+   "succeeded": 0,
+   "failed": 0,
+   "skipped": 144,
+   "seconds": 0.761835,
+   "prompt": "probabilistic_processes"
+  }
+ ],
+ "table_rows": {
+  "papers": 294,
+  "chunks": 7441,
+  "extractions": 71672,
+  "extracted_items": 294621,
+  "probabilistic_relations": 16402,
+  "projections": 390128
+ },
+ "data_file_bytes": [
+  {
+   "table_name": "extractions",
+   "bytes": 47944322,
+   "files": 1
+  },
+  {
+   "table_name": "extracted_items",
+   "bytes": 44995068,
+   "files": 1
+  },
+  {
+   "table_name": "projections",
+   "bytes": 26077100,
+   "files": 1
+  },
+  {
+   "table_name": "chunks",
+   "bytes": 15418208,
+   "files": 1
+  },
+  {
+   "table_name": "probabilistic_relations",
+   "bytes": 5682598,
+   "files": 1
+  },
+  {
+   "table_name": "run_requests",
+   "bytes": 829112,
+   "files": 3
+  },
+  {
+   "table_name": "papers",
+   "bytes": 516034,
+   "files": 2
+  },
+  {
+   "table_name": "prompts",
+   "bytes": 267044,
+   "files": 1
+  },
+  {
+   "table_name": "models",
+   "bytes": 168926,
+   "files": 1
+  },
+  {
+   "table_name": "source_manifests",
+   "bytes": 125517,
+   "files": 1
+  },
+  {
+   "table_name": "chunkers",
+   "bytes": 114186,
+   "files": 1
+  },
+  {
+   "table_name": "works",
+   "bytes": 94833,
+   "files": 1
+  },
+  {
+   "table_name": "paper_paths",
+   "bytes": 89429,
+   "files": 1
+  },
+  {
+   "table_name": "artifacts",
+   "bytes": 84453,
+   "files": 1
+  },
+  {
+   "table_name": "backfills",
+   "bytes": 38775,
+   "files": 1
+  },
+  {
+   "table_name": "schedules",
+   "bytes": 29184,
+   "files": 1
+  },
+  {
+   "table_name": "definition_runs",
+   "bytes": 21303,
+   "files": 1
+  },
+  {
+   "table_name": "paper_enrichments",
+   "bytes": 18530,
+   "files": 1
+  },
+  {
+   "table_name": "query_papers",
+   "bytes": 15545,
+   "files": 1
+  },
+  {
+   "table_name": "extraction_runs",
+   "bytes": 10390,
+   "files": 1
+  },
+  {
+   "table_name": "queries",
+   "bytes": 4442,
+   "files": 1
+  },
+  {
+   "table_name": "paper_collections",
+   "bytes": 3527,
+   "files": 1
+  },
+  {
+   "table_name": "app_users",
+   "bytes": 2574,
+   "files": 1
+  },
+  {
+   "table_name": "request_results",
+   "bytes": 2369,
+   "files": 1
+  },
+  {
+   "table_name": "input_collections",
+   "bytes": 2145,
+   "files": 1
+  },
+  {
+   "table_name": "input_locations",
+   "bytes": 855,
+   "files": 1
+  },
+  {
+   "table_name": "pipelines",
+   "bytes": 0,
+   "files": 1
+  }
+ ]
+}

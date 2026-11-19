@@ -1,0 +1,317 @@
+# Every price the cost model uses, with where it was read and when.
+#
+# Model prices are USD per 1M tokens. Change a figure here and re-run
+# `cost_model.py report` to regenerate every table in PMC_INGESTION_COST.md.
+# OpenAI's docs moved from platform.openai.com/docs to developers.openai.com/api/docs
+# (the old URLs redirect); the URLs below are the pages actually read.
+retrieved: 2026-11-19
+
+# OpenAI's "Upcoming deprecations" table, read 2026-11-19. Columns: shutdown
+# date | affected model | status | recommended replacement | notice date.
+deprecations:
+  openai/gpt-4.1-mini:
+    notice: 2026-10-14
+    shutdown: 2027-01-14
+    replacement: openai/gpt-6-luna
+    quote: "Jan 14, 2027 | GPT-4.1 mini (gpt-4.1-mini-2025-04-14) | Deprecated | gpt-6-luna | Oct 14, 2026"
+    source: https://developers.openai.com/api/docs/deprecations
+    retrieved: 2026-11-19
+  openai/gpt-5-mini:
+    notice: 2026-06-11
+    shutdown: 2026-12-11
+    replacement: openai/gpt-6.1-terra
+    quote: "Dec 11, 2026 | gpt-5-mini, gpt-5-mini-2025-08-07 | Deprecated | gpt-6.1-terra | Jun 11, 2026"
+    source: https://developers.openai.com/api/docs/deprecations
+    retrieved: 2026-11-19
+
+# `route` decides the fee: OpenRouter passes provider prices through and
+# charges `openrouter.fee_percent` on credit purchases. `declared` is whether
+# phases_v2/models/catalog.py declares the model today.
+models:
+  openai/gpt-4.1-mini:
+    display: GPT-4.1 mini
+    declared: true
+    route: openai
+    input: 0.40
+    cached_input: 0.10
+    output: 1.60
+    batch_input: 0.20
+    batch_output: 0.80
+    source: https://developers.openai.com/api/docs/pricing
+    retrieved: 2026-11-19
+    note: Batch table lists no cached-input price for this model.
+  openai/gpt-6-luna:
+    display: GPT-6 Luna
+    declared: false
+    route: openai
+    input: 0.10
+    cached_input: 0.01
+    output: 0.50
+    batch_input: 0.05
+    batch_output: 0.25
+    source: https://developers.openai.com/api/docs/pricing
+    retrieved: 2026-11-19
+    note: >-
+      Short-context rates (<= 272K input tokens). Reasoning model: reasoning
+      tokens bill as output. Cache writes bill at 1.25x input
+      (https://developers.openai.com/api/docs/models/gpt-6-luna); our prompts
+      share no long prefix, so caching is not assumed.
+  openai/gpt-5-mini:
+    display: GPT-5 mini
+    declared: true
+    route: openai
+    input: 0.25
+    cached_input: 0.025
+    output: 2.00
+    batch_input: 0.125
+    batch_output: 1.00
+    source: https://developers.openai.com/api/docs/pricing
+    retrieved: 2026-11-19
+  openai/gpt-6.1-terra:
+    display: GPT-6.1 Terra
+    declared: false
+    route: openai
+    input: 1.00
+    cached_input: 0.05
+    output: 5.00
+    batch_input: 0.50
+    batch_output: 2.50
+    source: https://developers.openai.com/api/docs/pricing
+    retrieved: 2026-11-19
+    note: OpenAI's replacement for gpt-5-mini. Short-context rates.
+  openrouter/claude-sonnet-4.6:
+    display: Claude Sonnet 4.6
+    declared: true
+    route: openrouter
+    input: 3.00
+    cached_input: 0.30
+    output: 15.00
+    batch_input: 1.50
+    batch_output: 7.50
+    source: https://openrouter.ai/api/v1/models
+    retrieved: 2026-11-19
+    note: >-
+      API prices per token x 1e6, ids anthropic/claude-sonnet-4.6 and its
+      :batch variant. Same as Anthropic's list price
+      (https://platform.claude.com/docs/en/about-claude/pricing).
+  openrouter/claude-haiku-4.5:
+    display: Claude Haiku 4.5
+    declared: true
+    route: openrouter
+    input: 1.00
+    cached_input: 0.10
+    output: 5.00
+    batch_input: 0.50
+    batch_output: 2.50
+    source: https://openrouter.ai/api/v1/models
+    retrieved: 2026-11-19
+  openrouter/gemini-3.1-pro-preview:
+    display: Gemini 3.1 Pro (preview)
+    declared: true
+    route: openrouter
+    input: 2.00
+    cached_input: 0.20
+    output: 12.00
+    batch_input: 1.00
+    batch_output: 6.00
+    source: https://openrouter.ai/api/v1/models
+    retrieved: 2026-11-19
+    note: >-
+      Prompts <= 200k tokens (ours are ~1.7k). Output includes reasoning
+      ("internal_reasoning" 0.000012/token). Same as Google's list price
+      (https://aistudio.google.com/docs/pricing).
+
+openrouter:
+  fee_percent: 5.5
+  quote: >-
+    "OpenRouter charges a 5.5% ($0.80 minimum) fee when you purchase credits.
+    We pass through the pricing of the underlying model providers without any
+    markup"
+  source: https://openrouter.ai/docs/faq
+  retrieved: 2026-11-19
+  batch:
+    available: true
+    discount: "Typically 50% of the sync per-token price"
+    completion_window_hours: 24
+    source: https://openrouter.ai/docs/guides/features/batch-api
+    retrieved: 2026-11-19
+  rate_limits:
+    quote: >-
+      "switch to the paid variant of the model, which has no platform-level
+      request cap"; upstream providers may still answer 429.
+    source: https://openrouter.ai/docs/api-reference/limits
+    retrieved: 2026-11-19
+
+embeddings:
+  text-embedding-3-large:
+    input: 0.13
+    batch_input: 0.065
+    dimensions: 3072
+    source: https://developers.openai.com/api/docs/pricing
+    retrieved: 2026-11-19
+    note: >-
+      The pricing page prints only the standard price. batch_input is derived
+      from the Batch guide's "50% cost discount compared to synchronous APIs",
+      which lists /v1/embeddings (https://developers.openai.com/api/docs/guides/batch).
+  text-embedding-3-small:
+    input: 0.02
+    batch_input: 0.01
+    dimensions: 1536
+    source: https://developers.openai.com/api/docs/pricing
+    retrieved: 2026-11-19
+    note: batch_input derived the same way.
+
+# OpenAI rate limits by usage tier. OpenAI now has three paid tiers (Build,
+# Launch, Grow) reached at $5 / $100 / $500 of total credit purchases.
+openai_tiers:
+  thresholds_usd: {build: 5, launch: 100, grow: 500}
+  monthly_usage_limit_usd: {build: 500, launch: 5000, grow: 200000}
+  source: https://developers.openai.com/api/docs/guides/rate-limits
+  retrieved: 2026-11-19
+openai_rate_limits:
+  # tpm: tokens per minute; batch_queue: input tokens enqueued per model.
+  openai/gpt-4.1-mini:
+    build: {rpm: 5000, tpm: 2000000, batch_queue: 20000000}
+    launch: {rpm: 10000, tpm: 10000000, batch_queue: 1000000000}
+    grow: {rpm: 30000, tpm: 150000000, batch_queue: 15000000000}
+    source: https://developers.openai.com/api/docs/models/gpt-4.1-mini
+  openai/gpt-6-luna:
+    build: {rpm: 5000, tpm: 2000000, batch_queue: 20000000}
+    launch: {rpm: 10000, tpm: 10000000, batch_queue: 1000000000}
+    grow: {rpm: 30000, tpm: 180000000, batch_queue: 15000000000}
+    source: https://developers.openai.com/api/docs/models/gpt-6-luna
+  openai/gpt-5-mini:
+    build: {rpm: 5000, tpm: 2000000, batch_queue: 20000000}
+    launch: {rpm: 10000, tpm: 10000000, batch_queue: 1000000000}
+    grow: {rpm: 30000, tpm: 180000000, batch_queue: 15000000000}
+    source: https://developers.openai.com/api/docs/models/gpt-5-mini
+  openai/gpt-6.1-terra:
+    build: {rpm: 5000, tpm: 1000000, batch_queue: 3000000}
+    launch: {rpm: 10000, tpm: 4000000, batch_queue: 200000000}
+    grow: {rpm: 15000, tpm: 40000000, batch_queue: 15000000000}
+    source: https://developers.openai.com/api/docs/models/gpt-6.1-terra
+  text-embedding-3-large:
+    build: {rpm: 5000, tpm: 1000000, batch_queue: 20000000}
+    launch: {rpm: 10000, tpm: 5000000, batch_queue: 500000000}
+    grow: {rpm: 10000, tpm: 10000000, batch_queue: 4000000000}
+    source: https://developers.openai.com/api/docs/models/text-embedding-3-large
+openai_batch:
+  completion_window_hours: 24
+  quote: >-
+    "Each batch completes within 24 hours (and often more quickly)". "Batch API
+    jobs don't count toward standard per-model request or token rate limits."
+  max_requests_per_batch: 50000
+  source: https://developers.openai.com/api/docs/guides/batch
+  retrieved: 2026-11-19
+
+aws_us_east_1:
+  ec2_hourly:
+    t3.xlarge: 0.1664
+    m7i.xlarge: 0.2016
+    m7i.2xlarge: 0.4032
+    r7i.xlarge: 0.2646
+    r7i.2xlarge: 0.5292
+    r7i.4xlarge: 1.0584
+    r7i.8xlarge: 2.1168
+    r7i.16xlarge: 4.2336
+    c7i.2xlarge: 0.3570
+    c7i.4xlarge: 0.7140
+    source: https://aws.amazon.com/ec2/pricing/on-demand/
+    retrieved: 2026-11-19
+    note: On-demand, Linux, shared tenancy. Read from the JSON the pricing page loads (published 2026-11-18).
+  ec2_specs:
+    # vCPU and GiB of memory, from the same page.
+    t3.xlarge: [4, 16]
+    m7i.xlarge: [4, 16]
+    m7i.2xlarge: [8, 32]
+    r7i.xlarge: [4, 32]
+    r7i.2xlarge: [8, 64]
+    r7i.4xlarge: [16, 128]
+    r7i.8xlarge: [32, 256]
+    r7i.16xlarge: [64, 512]
+    c7i.2xlarge: [8, 16]
+    c7i.4xlarge: [16, 32]
+  ebs_gp3_gb_month: 0.08
+  ebs_gp3_note: 3,000 IOPS and 125 MB/s included; more is billed separately and not assumed here.
+  ebs_source: https://aws.amazon.com/ebs/pricing/
+  s3_standard_gb_month: {first_50tb: 0.023, next_450tb: 0.022, over_500tb: 0.021}
+  s3_get_per_1000: 0.0004
+  s3_put_per_1000: 0.005
+  s3_source: https://aws.amazon.com/s3/pricing/
+  s3_to_ec2_same_region_gb: 0.0
+  s3_to_ec2_quote: >-
+    "Data transferred from an Amazon S3 bucket to any AWS service(s) within
+    the same AWS Region as the S3 bucket" is free.
+  retrieved: 2026-11-19
+
+managed:
+  neptune:
+    # Neptune Database, provisioned, on-demand, us-east-1. Standard storage
+    # bills I/O per request; I/O-Optimized bills none.
+    instance_hourly:
+      db.r6g.xlarge: 0.6574
+      db.r6g.2xlarge: 1.3149
+      db.r6g.4xlarge: 2.6420
+      db.r6g.8xlarge: 5.2842
+      db.r6g.16xlarge: 10.5684
+    instance_memory_gib:
+      db.r6g.xlarge: 32
+      db.r6g.2xlarge: 64
+      db.r6g.4xlarge: 128
+      db.r6g.8xlarge: 256
+      db.r6g.16xlarge: 512
+    storage_gb_month: 0.10
+    io_per_million: 0.20
+    io_optimized_storage_gb_month: 0.225
+    cluster_volume_max_tib: 128
+    source: https://aws.amazon.com/neptune/pricing/
+    source_limits: https://docs.aws.amazon.com/neptune/latest/userguide/limits.html
+    retrieved: 2026-11-19
+    note: AWS's Neptune price list was last published 2026-09-11.
+  qdrant_cloud:
+    # Qdrant Cloud bills "CPU, memory, and disk storage usage" but publishes no
+    # unit rate; prices come only from https://cloud.qdrant.io/calculator. Put a
+    # calculator quote here (USD per GB of RAM per month, all-in) and re-run:
+    # the managed vector column then prices Qdrant Cloud instead of S3 Vectors.
+    usd_per_gb_ram_month: null
+    quote: >-
+      "Qdrant database clusters in Qdrant Cloud are priced based on CPU,
+      memory, and disk storage usage. To get a clearer idea for the pricing
+      structure, based on the amounts of vectors you want to store, please use
+      our Pricing Calculator."
+    source: https://qdrant.tech/documentation/cloud-pricing-payments/
+    source_tiers: https://qdrant.tech/pricing/
+    retrieved: 2026-11-19
+  s3_vectors:
+    # Amazon S3 Vectors, us-east-1: the managed vector store with published prices.
+    storage_gb_month: 0.06
+    put_per_gb: 0.20
+    query_per_1000: 0.0025
+    max_vectors_per_index: 2000000000
+    max_indexes_per_bucket: 10000
+    max_dimension: 4096
+    writes_per_second_per_index: 2500
+    quote: >-
+      "$0.06 per GB-Mo of Storage in Vectors", "$0.20 per GB fee for bytes put
+      to S3 Vectors"; "Vector data - sum of vectors per index multiplied by
+      average vector size (vector data, key, and filterable metadata)". PUT has
+      a 128 KB minimum per request, so vectors are written 500 per call.
+    source: https://aws.amazon.com/s3/pricing/
+    source_limits: https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-vectors-limitations.html
+    retrieved: 2026-11-19
+
+# How much RAM and disk a self-hosted Qdrant needs, by Qdrant's own formulas.
+qdrant_sizing:
+  hnsw_bytes_per_point: 153.6      # "hnsw_size = base * m * 2 * 4 bytes * 1.2" with m = 16
+  id_tracker_bytes_per_point: 52   # "id_tracker_size = base * 52 bytes"
+  headroom: 0.2                    # "~20% headroom on top of your final RAM and disk totals"
+  node_ram_usable: 0.8             # "ceil(total_ram_estimate / (node_ram * 0.8))"
+  quantization_ratio: {scalar_int8: 4, binary_1bit: 32}
+  quote: >-
+    "Scalar Quantization ... achieving 4x compression"; "Binary Quantization
+    reduces each vector component to one to two bits for up to 32x
+    compression". The quantized copy is kept besides the originals: RAM falls
+    only when the originals move to disk, and disk holds both.
+  source: https://qdrant.tech/documentation/capacity-planning/
+  source_quantization: https://qdrant.tech/documentation/manage-data/quantization/
+  retrieved: 2026-11-19

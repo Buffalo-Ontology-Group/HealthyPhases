@@ -1,0 +1,23 @@
+{
+ "retrieved": "2026-11-19T09:45:10+00:00",
+ "source": "https://pmc-oa-opendata.s3.amazonaws.com/inventory-reports/pmc-oa-opendata/metadata/<snapshot>/manifest.json",
+ "snapshot": "2026-11-18T01-00Z",
+ "article_versions": 9509797,
+ "articles": 9348126,
+ "versions_per_article": {
+  "1": 9191366,
+  "2": 152623,
+  "3": 3536,
+  "4": 476,
+  "6": 19,
+  "5": 95,
+  "7": 6,
+  "8": 4,
+  "10": 1
+ },
+ "compared_with": "2026-10-19T01-00Z",
+ "days_between": 30,
+ "added_versions": 90331,
+ "added_articles": 87500,
+ "removed_versions": 10676
+}

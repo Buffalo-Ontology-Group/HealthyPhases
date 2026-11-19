@@ -1,0 +1,101 @@
+{
+ "retrieved": "2026-11-19T09:43:20+00:00",
+ "source": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pmc",
+ "date_field": "PmcLiveDate (the date an article went live in PMC)",
+ "totals": {
+  "all": 12807846,
+  "open_access": 8402308,
+  "author_manuscript": 1090948,
+  "open_access_and_manuscript": 64441,
+  "historical_ocr": 681831
+ },
+ "license_filters": {
+  "cc0 license[filter]": 169304,
+  "cc by license[filter]": 5372779,
+  "cc by-sa license[filter]": 2141,
+  "cc by-nd license[filter]": 12284,
+  "cc by-nc license[filter]": 1019874,
+  "cc by-nc-sa license[filter]": 303559,
+  "cc by-nc-nd license[filter]": 1116646
+ },
+ "open_access_by_license_group": {
+  "commercial": 5556508,
+  "non_commercial": 2440079,
+  "other": 405758
+ },
+ "per_30_days": [
+  {
+   "start": "2026-10-20",
+   "end": "2026-11-18",
+   "all": 103024,
+   "open_access": 89103
+  },
+  {
+   "start": "2026-09-20",
+   "end": "2026-10-19",
+   "all": 92643,
+   "open_access": 80857
+  },
+  {
+   "start": "2026-08-21",
+   "end": "2026-09-19",
+   "all": 99446,
+   "open_access": 83405
+  },
+  {
+   "start": "2026-07-22",
+   "end": "2026-08-20",
+   "all": 106301,
+   "open_access": 87567
+  },
+  {
+   "start": "2026-06-22",
+   "end": "2026-07-21",
+   "all": 101362,
+   "open_access": 86334
+  },
+  {
+   "start": "2026-05-23",
+   "end": "2026-06-21",
+   "all": 93041,
+   "open_access": 80325
+  },
+  {
+   "start": "2026-04-23",
+   "end": "2026-05-22",
+   "all": 98337,
+   "open_access": 84232
+  },
+  {
+   "start": "2026-03-24",
+   "end": "2026-04-22",
+   "all": 97758,
+   "open_access": 82178
+  },
+  {
+   "start": "2026-02-22",
+   "end": "2026-03-23",
+   "all": 86476,
+   "open_access": 72804
+  },
+  {
+   "start": "2026-01-23",
+   "end": "2026-02-21",
+   "all": 103433,
+   "open_access": 90118
+  },
+  {
+   "start": "2025-12-24",
+   "end": "2026-01-22",
+   "all": 99794,
+   "open_access": 89537
+  },
+  {
+   "start": "2025-11-24",
+   "end": "2025-12-23",
+   "all": 84661,
+   "open_access": 73423
+  }
+ ],
+ "requests": 37
+}
