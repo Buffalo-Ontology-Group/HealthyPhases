@@ -70,14 +70,23 @@ an engine start publishes the module's declarations, which is a dataset write.
 
 ```sh
 PRICES=$(uv run $S/cost_model.py calibration-prices)
+SPENT=$(uv run $S/cost_model.py calibration-spent)   # every committed run's spend
 ssh phases "docker exec -i -e LOG_LEVEL=WARNING -w /app abi-phases-abi-1 .venv/bin/python - \
-    --chunks 10 --seed 855 --cap 4.65 --prices '$PRICES'" < $S/calibrate.py > $S/measurements/calibration.json
+    --chunks 10 --seed 855 --cap 0.3 --already-spent $SPENT --prices '$PRICES'" \
+    < $S/calibrate.py > $S/measurements/calibration_<name>.json
 ```
 
-Before each call it reserves the call's worst case (its input, plus
-`--max-output` tokens, at list price) and refuses a call that would take the
-spend past `--cap`; the cap itself cannot be set above 5 USD. The spend of
-every calibration file counts toward the same 5 USD: the report adds them up.
+Every calibration run shares one 5 USD budget: the script refuses to start
+when `--cap` plus `--already-spent` would pass it. Within a run:
+
+- the client's own retries are off (`max_retries=0`), so every HTTP request
+  goes through the ledger; the domain's retry policy does the retrying;
+- before each request its worst case is reserved (its input with slack for a
+  vendor's preamble, tool schema included, plus `--max-output` tokens, at list
+  price), and a request that would take the spend past `--cap` is not sent;
+- a request that fails or times out is charged its worst case;
+- a record that fails for any other reason is kept as an error, and the run
+  still prints its report and spend.
 
 `--chunks-file` takes chunks of random PMC papers instead of production's
 (from `sample_lengths.py --chunks-out`, copied to the container's `/tmp`):
@@ -93,7 +102,14 @@ ssh phases 'docker exec abi-phases-abi-1 rm /tmp/pmc_chunks.json'
 The committed runs: `calibration.json` (production chunks, every model),
 `calibration_pmc.json` and `calibration_pmc_responses.json` (PMC chunks), and
 the single-chunk smoke test and probes that found the replacement models'
-tool-call restriction. The report adds up the spend of all of them.
+tool-call restriction. The report adds up the spend of all of them: 4.61 USD.
+
+Those runs were made before the cap was hardened as above: the client could
+retry on its own, a failed request was charged nothing, and each run's cap was
+chosen by hand to keep the total under 5 USD. Their 64 failed requests are all
+HTTP 400 rejections of the request's parameters, which the providers refuse
+before generating anything, and no request timed out, so the recorded spend
+stands.
 
 ## Tests
 

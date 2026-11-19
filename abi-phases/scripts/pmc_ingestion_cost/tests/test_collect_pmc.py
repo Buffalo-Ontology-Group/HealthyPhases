@@ -6,6 +6,7 @@ Run with ``make test-pmc-cost``.
 import gzip
 import json
 import sys
+import urllib.parse
 from datetime import date
 from pathlib import Path
 
@@ -105,6 +106,38 @@ def test_classify_marks_manuscripts_outside_the_open_access_subset():
     assert record["license_group"] == "not_oa"
     assert record["manuscript"] is True
     assert record["has_pdf"] is False
+
+
+def test_snapshots_follow_every_page_of_the_listing():
+    prefix = b"inventory-reports/pmc-oa-opendata/metadata/"
+    pages = {
+        None: b"<r><IsTruncated>true</IsTruncated><NextContinuationToken>t+1/=</NextContinuationToken>"
+        b"<CommonPrefixes><Prefix>"
+        + prefix
+        + b"2026-11-18T01-00Z/</Prefix></CommonPrefixes></r>",
+        "t+1/=": b"<r><IsTruncated>false</IsTruncated>"
+        b"<CommonPrefixes><Prefix>"
+        + prefix
+        + b"2026-10-19T01-00Z/</Prefix></CommonPrefixes></r>",
+    }
+    requested = []
+
+    def fake_fetch(url):
+        query = dict(urllib.parse.parse_qsl(urllib.parse.urlparse(url).query))
+        token = query.get("continuation-token")
+        requested.append(token)
+        return pages[token]
+
+    assert collect_pmc.snapshots(fake_fetch) == [
+        "2026-10-19T01-00Z",
+        "2026-11-18T01-00Z",
+    ]
+    assert requested == [None, "t+1/="]
+
+
+def test_a_truncated_listing_without_a_token_is_an_error():
+    with pytest.raises(ValueError):
+        collect_pmc.next_token(b"<r><IsTruncated>true</IsTruncated></r>")
 
 
 def test_inventory_snapshot_reads_cached_files_without_network(tmp_path, monkeypatch):

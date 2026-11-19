@@ -57,7 +57,10 @@ rate_limit_utilisation: 0.7
 # Self-hosted AWS sizing (instance types priced in prices.yaml).
 self_hosted:
   qdrant_node: r7i.16xlarge     # 512 GiB; RAM-bound
-  qdrant_vectors_in_ram: true   # production keeps vectors and HNSW in RAM
+  # true: float32 vectors in RAM, as production keeps them; false: vectors on
+  # disk, only the index and ID tracker in RAM (quantization scenarios set
+  # their own layout).
+  qdrant_vectors_in_ram: true
   fuseki_node: r7i.8xlarge      # one TDB2 store; disk-bound
   app_node: m7i.2xlarge         # API, Dagster, Postgres, DuckLake
   render_worker: c7i.4xlarge    # PDF rendering, 16 vCPU

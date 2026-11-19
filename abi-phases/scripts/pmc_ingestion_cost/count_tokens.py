@@ -41,6 +41,11 @@ from phases_v2.extraction.adapters.secondary.extraction_tool_schema import (
 from phases_v2.prompts.templates import current_prompts
 
 
+def tokens(encoding, text: str) -> int:
+    """Token count, treating special-token text in a paper as plain text."""
+    return len(encoding.encode(text, disallowed_special=()))
+
+
 def describe(values: list[float]) -> dict:
     """Mean, median, p10 and p90 of ``values``."""
     if not values:
@@ -84,15 +89,15 @@ def count(path: Path) -> dict:
     for chunk in drawn:
         text = chunk["text"]
         chunk_chars.append(len(text))
-        chunk_o200k.append(len(o200k.encode(text)))
-        chunk_cl100k.append(len(cl100k.encode(text)))
+        chunk_o200k.append(tokens(o200k, text))
+        chunk_cl100k.append(tokens(cl100k, text))
         for name, prompt in prompts.items():
-            rendered[name].append(len(o200k.encode(prompt.rendered_for(text))))
+            rendered[name].append(tokens(o200k, prompt.rendered_for(text)))
         for answer in chunk["answers"]:
             key = (answer["model_id"], answer["prompt"])
-            output[key].append(len(o200k.encode(answer["answer"] or "")))
+            output[key].append(tokens(o200k, answer["answer"] or ""))
             items[key].append(answer["item_count"] or 0)
-            item_tokens[key].extend(len(cl100k.encode(t)) for t in answer["items"])
+            item_tokens[key].extend(tokens(cl100k, t) for t in answer["items"])
 
     for chunk in chunks:
         by_prompt: dict[str, list[dict]] = defaultdict(list)
@@ -103,16 +108,16 @@ def count(path: Path) -> dict:
                 continue
             for answer in answers:
                 key = (answer["model_id"], prompt)
-                matched_output[key].append(len(o200k.encode(answer["answer"] or "")))
+                matched_output[key].append(tokens(o200k, answer["answer"] or ""))
                 matched_items[key].append(answer["item_count"] or 0)
                 matched_item_tokens[key].extend(
-                    len(cl100k.encode(t)) for t in answer["items"]
+                    tokens(cl100k, t) for t in answer["items"]
                 )
 
     per_prompt = {}
     for name, prompt in prompts.items():
-        template_tokens = len(o200k.encode(prompt.template.replace("{chunk_text}", "")))
-        tool_tokens = len(o200k.encode(tools[name]))
+        template_tokens = tokens(o200k, prompt.template.replace("{chunk_text}", ""))
+        tool_tokens = tokens(o200k, tools[name])
         prompt_tokens = describe(rendered[name])
         per_prompt[name] = {
             "prompt_id": prompt.prompt_id,

@@ -133,6 +133,18 @@ def snapshot_names(listing: bytes) -> list[str]:
     return sorted(names)
 
 
+def next_token(listing: bytes) -> str | None:
+    """The continuation token of a truncated ListObjectsV2 page, or None on the last page."""
+    if re.search(rb"<IsTruncated>true</IsTruncated>", listing):
+        match = re.search(
+            rb"<NextContinuationToken>([^<]+)</NextContinuationToken>", listing
+        )
+        if not match:
+            raise ValueError("a truncated listing carries no continuation token")
+        return match.group(1).decode()
+    return None
+
+
 def classify(metadata: dict) -> dict:
     """What our ingestion cares about in one article version's metadata."""
     code = (metadata.get("license_code") or "").strip()
@@ -242,9 +254,20 @@ def inventory_snapshot(name: str, cache: Path) -> list[tuple[str, int, str]]:
     return rows
 
 
-def snapshots() -> list[str]:
-    listing = fetch(f"{BUCKET}/?list-type=2&delimiter=/&prefix={INVENTORY}")
-    return snapshot_names(listing)
+def snapshots(fetch_page=None) -> list[str]:
+    """Every inventory snapshot, oldest first, following the listing's pages."""
+    fetch_page = fetch_page or fetch
+    names: list[str] = []
+    token = None
+    while True:
+        params = {"list-type": "2", "delimiter": "/", "prefix": INVENTORY}
+        if token:
+            params["continuation-token"] = token
+        listing = fetch_page(f"{BUCKET}/?{urllib.parse.urlencode(params)}")
+        names += snapshot_names(listing)
+        token = next_token(listing)
+        if not token:
+            return sorted(names)
 
 
 def inventory(cache: Path, days: int = 30) -> dict:

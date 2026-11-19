@@ -32,7 +32,7 @@ they are stale). Each per-paper figure says where it came from:
 | … in the open access subset | 8.40 million | Entrez, 2026-11-19: `open access[filter]` |
 | … of which commercial / non-commercial / other license | 5.56 million / 2.44 million / 405,758 | Entrez, 2026-11-19: license filters (license table) |
 | Author manuscripts | 1.09 million | Entrez, 2026-11-19: `author manuscript[filter]` |
-| Article versions in the PMC Cloud bucket | 9.51 million | bucket inventory, 2026-11-19: snapshot 2026-11-18T01-00Z |
+| Articles in the PMC Cloud bucket (article versions) | 9.35 million (9.51 million) | bucket inventory, 2026-11-19: snapshot 2026-11-18T01-00Z |
 | Articles added to the bucket in 30 days | 87,500 | bucket inventory, 2026-11-19: 2026-10-19T01-00Z vs 2026-11-18T01-00Z |
 | Paper length, PMC text (words, mean / median) | 6,805 / 6,556 | sample (seed 855), 2026-11-19: 1,000 texts |
 | Paper length, PMC text (o200k tokens, mean / median) | 12,008 / 11,502 | sample (seed 855), 2026-11-19: 1,000 texts |
@@ -98,13 +98,13 @@ calibrated:
 <!-- table:headline-oa -->
 | Model | Backfill: model calls | 90% range | … with Batch | Backfill: embeddings | Per 30 days: model calls | Per 30 days: embeddings | Backfill total¹ | Per 30 days, self-hosted² | Per 30 days, managed² |
 |---|---|---|---|---|---|---|---|---|---|
-| GPT-4.1 mini (retiring 2027-01-14; measured reference) | $675k | $625k–$726k | $338k | $24k | $6,694 | $237 | $700k | $261k | $23k |
-| GPT-6 Luna (effort none) (not declared) | $178k | $170k–$188k | $89k | $21k | $1,770 | $209 | $201k | $113k | $13k |
-| GPT-6 Luna (Responses API) (not declared) | $221k | $202k–$238k | $110k | $21k | $2,188 | $205 | $243k | $114k | $13k |
+| GPT-4.1 mini (retiring 2027-01-14; measured reference) | $675k | $624k–$731k | $338k | $24k | $6,694 | $237 | $700k | $261k | $23k |
+| GPT-6 Luna (effort none) (not declared) | $178k | $166k–$192k | $89k | $21k | $1,770 | $209 | $201k | $113k | $13k |
+| GPT-6 Luna (Responses API) (not declared) | $221k | $203k–$239k | $110k | $21k | $2,188 | $205 | $243k | $114k | $13k |
 | GPT-5 mini (retiring 2026-12-11) | $2.72M | $2.29M–$3.14M | $1.36M | $23k | $27k | $230 | $2.74M | $262k | $42k |
-| GPT-6.1 Terra (effort none) (not declared) | $1.85M | $1.73M–$1.97M | $926k | $23k | $18k | $224 | $1.88M | $158k | $31k |
-| GPT-6.1 Terra (Responses API) (not declared) | $2.05M | $1.87M–$2.24M | $1.03M | $23k | $20k | $224 | $2.08M | $164k | $33k |
-| Claude Haiku 4.5 | $2.84M | $2.69M–$3.00M | $1.42M | $20k | $28k | $201 | $2.86M | $127k | $39k |
+| GPT-6.1 Terra (effort none) (not declared) | $1.85M | $1.73M–$1.99M | $926k | $23k | $18k | $224 | $1.88M | $158k | $31k |
+| GPT-6.1 Terra (Responses API) (not declared) | $2.05M | $1.92M–$2.18M | $1.03M | $23k | $20k | $224 | $2.08M | $164k | $33k |
+| Claude Haiku 4.5 | $2.84M | $2.68M–$3.01M | $1.42M | $20k | $28k | $201 | $2.86M | $127k | $39k |
 | Claude Sonnet 4.6 | $9.13M | $8.49M–$9.78M | $4.57M | $21k | $91k | $207 | $9.15M | $246k | $103k |
 | Gemini 3.1 Pro (preview) | $16.51M | $13.81M–$19.27M | $8.26M | $19k | $164k | $191 | $16.53M | $269k | $175k |
 <!-- /table:headline-oa -->
@@ -113,8 +113,10 @@ calibrated:
 hosting the stack needs while the backfill runs; see the time table.
 ² Model calls, embeddings and rendering for one month of new open access
 papers, plus a month of storage and hosting for the whole corpus.
-The 90% range is a bootstrap over the calibration's chunks: it covers how
-much the model-call cost moves with the text, not price changes.
+The 90% range is a bootstrap over the complete chunks of the calibration run
+each model's figures come from (PMC chunks where it ran on them, production's
+otherwise), each request priced as the table prices it. It covers how much the
+model-call cost moves with the text, not price changes.
 
 Reading the headline:
 
@@ -216,13 +218,13 @@ per-paper rates.
 <!-- table:headline-all -->
 | Model | Backfill: model calls | 90% range | … with Batch | Backfill: embeddings | Per 30 days: model calls | Per 30 days: embeddings | Backfill total¹ | Per 30 days, self-hosted² | Per 30 days, managed² |
 |---|---|---|---|---|---|---|---|---|---|
-| GPT-4.1 mini (retiring 2027-01-14; measured reference) | $1.03M | $953k–$1.11M | $514k | $36k | $7,808 | $276 | $1.07M | $393k | $30k |
-| GPT-6 Luna (effort none) (not declared) | $272k | $259k–$287k | $136k | $32k | $2,064 | $244 | $307k | $168k | $17k |
-| GPT-6 Luna (Responses API) (not declared) | $336k | $307k–$363k | $168k | $31k | $2,552 | $239 | $370k | $169k | $17k |
+| GPT-4.1 mini (retiring 2027-01-14; measured reference) | $1.03M | $951k–$1.11M | $514k | $36k | $7,808 | $276 | $1.07M | $393k | $30k |
+| GPT-6 Luna (effort none) (not declared) | $272k | $253k–$293k | $136k | $32k | $2,064 | $244 | $307k | $168k | $17k |
+| GPT-6 Luna (Responses API) (not declared) | $336k | $309k–$365k | $168k | $31k | $2,552 | $239 | $370k | $169k | $17k |
 | GPT-5 mini (retiring 2026-12-11) | $4.15M | $3.49M–$4.78M | $2.08M | $35k | $31k | $269 | $4.18M | $385k | $53k |
-| GPT-6.1 Terra (effort none) (not declared) | $2.82M | $2.64M–$3.01M | $1.41M | $34k | $21k | $262 | $2.86M | $235k | $38k |
-| GPT-6.1 Terra (Responses API) (not declared) | $3.13M | $2.85M–$3.41M | $1.57M | $34k | $24k | $262 | $3.17M | $241k | $40k |
-| Claude Haiku 4.5 | $4.32M | $4.10M–$4.57M | $2.16M | $31k | $33k | $235 | $4.35M | $180k | $47k |
+| GPT-6.1 Terra (effort none) (not declared) | $2.82M | $2.63M–$3.04M | $1.41M | $34k | $21k | $262 | $2.86M | $235k | $38k |
+| GPT-6.1 Terra (Responses API) (not declared) | $3.13M | $2.92M–$3.33M | $1.57M | $34k | $24k | $262 | $3.17M | $241k | $40k |
+| Claude Haiku 4.5 | $4.32M | $4.08M–$4.59M | $2.16M | $31k | $33k | $235 | $4.35M | $180k | $47k |
 | Claude Sonnet 4.6 | $13.92M | $12.95M–$14.91M | $6.96M | $32k | $106k | $241 | $13.95M | $342k | $123k |
 | Gemini 3.1 Pro (preview) | $25.17M | $21.05M–$29.38M | $12.58M | $29k | $191k | $222 | $25.20M | $348k | $205k |
 <!-- /table:headline-all -->
@@ -317,12 +319,12 @@ copies are kept.
 <!-- table:embedding-scenarios -->
 | Embedding scenario (reference model) | Backfill embeddings | Vectors | Qdrant RAM | Qdrant nodes | Self-hosted storage + hosting /mo |
 |---|---|---|---|---|---|
-| As today: text-embedding-3-large, 3072 d, chunks and items | $24k | 2.29 billion | 34.3 TB | 79 | $254k |
-| Chunks only (no item vectors) | $17k | 148.68 million | 2.2 TB | 6 | $25k |
-| text-embedding-3-small, 1536 d | $3,676 | 2.29 billion | 17.4 TB | 40 | $132k |
-| text-embedding-3-large at 1024 d | $24k | 2.29 billion | 11.8 TB | 27 | $91k |
-| 3072 d, scalar int8 quantization, originals on disk | $24k | 2.29 billion | 9.0 TB | 21 | $75k |
-| 3072 d, binary quantization, originals on disk | $24k | 2.29 billion | 1.6 TB | 4 | $22k |
+| As today: text-embedding-3-large, 3072 d, chunks and items | $24k | 2.31 billion | 34.7 TB | 79 | $254k |
+| Chunks only (no item vectors) | $17k | 150.15 million | 2.3 TB | 6 | $25k |
+| text-embedding-3-small, 1536 d | $3,676 | 2.31 billion | 17.6 TB | 41 | $135k |
+| text-embedding-3-large at 1024 d | $24k | 2.31 billion | 11.9 TB | 28 | $94k |
+| 3072 d, scalar int8 quantization, originals on disk | $24k | 2.31 billion | 9.1 TB | 21 | $75k |
+| 3072 d, binary quantization, originals on disk | $24k | 2.31 billion | 1.6 TB | 4 | $22k |
 <!-- /table:embedding-scenarios -->
 
 ### PMC's own text instead of PDFs
@@ -414,11 +416,11 @@ gpt-4.1-mini's stored items on the same chunks and prompts.
 | Model | Chunks × prompts | Input tokens billed / offline | Output tokens | … of which reasoning | Calls per extraction | Failed | Items per chunk | Items vs reference | Seconds per call | Cost per chunk (8 prompts) |
 |---|---|---|---|---|---|---|---|---|---|---|
 | GPT-4.1 mini (retiring 2027-01-14; measured reference) | prod chunks: 10 × 8 | 1,206 / 1,207 | 77 | 0 | 1.01 | 0% | 29.4 | 1.00 | 1.2 | $0.0049 |
-| GPT-6 Luna (effort none) (not declared) | prod chunks: 10 × 8 | 1,281 / 1,207 | 34 | 0 | 1.00 | 0% | 4.8 | 0.17 | 1.1 | $0.0012 |
-| GPT-6 Luna (Responses API) (not declared) | prod chunks: 10 × 8 | 1,277 / 1,207 | 112 | 70 | 1.00 | 0% | 6.3 | 0.23 | 2.1 | $0.0015 |
+| GPT-6 Luna (effort none) (not declared) | prod chunks: 10 × 8 | 1,281 / 1,207 | 34 | 0 | 1.00 | 0% | 4.8 | 0.17 | 1.1 | $0.0011 |
+| GPT-6 Luna (Responses API) (not declared) | prod chunks: 10 × 8 | 1,277 / 1,207 | 112 | 70 | 1.00 | 0% | 6.3 | 0.23 | 2.1 | $0.0014 |
 | GPT-5 mini (retiring 2026-12-11) | prod chunks: 10 × 8 | 1,281 / 1,207 | 1,003 | 896 | 1.00 | 0% | 25.2 | 0.91 | 13.2 | $0.0186 |
-| GPT-6.1 Terra (effort none) (not declared) | prod chunks: 10 × 8 | 1,281 / 1,207 | 47 | 0 | 1.00 | 0% | 8.8 | 0.32 | 1.6 | $0.0121 |
-| GPT-6.1 Terra (Responses API) (not declared) | prod chunks: 10 × 8 | 1,277 / 1,207 | 95 | 43 | 1.00 | 0% | 9.3 | 0.34 | 2.5 | $0.0140 |
+| GPT-6.1 Terra (effort none) (not declared) | prod chunks: 10 × 8 | 1,281 / 1,207 | 47 | 0 | 1.00 | 0% | 8.8 | 0.32 | 1.6 | $0.0119 |
+| GPT-6.1 Terra (Responses API) (not declared) | prod chunks: 10 × 8 | 1,277 / 1,207 | 95 | 43 | 1.00 | 0% | 9.3 | 0.34 | 2.5 | $0.0138 |
 | Claude Haiku 4.5 | prod chunks: 10 × 8 | 1,965 / 1,207 | 59 | 0 | 1.00 | 0% | 8.2 | 0.30 | 1.2 | $0.0191 |
 | Claude Sonnet 4.6 | prod chunks: 10 × 8 | 1,966 / 1,207 | 102 | 0 | 1.00 | 0% | 16.0 | 0.58 | 2.3 | $0.0628 |
 | Gemini 3.1 Pro (preview) | prod chunks: 10 × 8 | 1,275 / 1,207 | 891 | 847 | 1.00 | 0% | 9.8 | 0.35 | 10.9 | $0.1118 |
@@ -426,7 +428,7 @@ gpt-4.1-mini's stored items on the same chunks and prompts.
 | GPT-6 Luna (effort none) (not declared) | PMC chunks: 40 × 8 | 1,254 / 1,180 | 44 | 0 | 1.00 | 0% | 5.5 |  | 1.1 | $0.0012 |
 | GPT-6 Luna (Responses API) (not declared) | PMC chunks: 26 × 8 | 1,241 / 1,171 | 116 | 71 | 1.00 | 0% | 5.5 |  | 2.1 | $0.0015 |
 | GPT-6.1 Terra (effort none) (not declared) | PMC chunks: 40 × 8 | 1,254 / 1,180 | 56 | 0 | 1.00 | 0% | 7.4 |  | 1.7 | $0.0123 |
-| GPT-6.1 Terra (Responses API) (not declared) | PMC chunks: 26 × 8 | 1,239 / 1,168 | 89 | 32 | 1.00 | 0% | 7.4 |  | 2.4 | $0.0134 |
+| GPT-6.1 Terra (Responses API) (not declared) | PMC chunks: 25 × 8 (+1 partial) | 1,239 / 1,168 | 89 | 32 | 1.00 | 0% | 7.5 |  | 2.4 | $0.0136 |
 | Claude Haiku 4.5 | PMC chunks: 40 × 8 | 1,958 / 1,180 | 55 | 0 | 1.00 | 0% | 4.7 |  | 1.2 | $0.0189 |
 <!-- /table:calibration -->
 
@@ -551,8 +553,10 @@ be changed and the tables regenerated.
 
 - **Calibration size.** 10 production chunks per model, and 40 PMC chunks for
   five configurations (26 for the two Responses ones, where the run's cap
-  stopped it). The 90% ranges in the headline are a bootstrap over those
-  chunks.
+  stopped it). The 90% ranges in the headline are a bootstrap over the
+  complete chunks of whichever of those runs a model's figures come from.
+- **Failed extractions** count as no items. The calibration had none: every
+  extraction it attempted succeeded.
 - **Items and vectors depend on the text and the model.** This is the largest
   uncertainty in storage. Production's papers were chosen for their topic, so
   they hold more of what the prompts ask for. On them, gpt-4.1-mini returns
@@ -585,15 +589,15 @@ be changed and the tables regenerated.
 <!-- table:item-levels -->
 | Model | Items/paper (PMC level) | Embeddings | Storage + hosting /mo | Items/paper (prod level) | Embeddings | Storage + hosting /mo |
 |---|---|---|---|---|---|---|
-| GPT-4.1 mini (retiring 2027-01-14; measured reference) | 255 | $24k | $254k | 561 | $30k | $530k |
-| GPT-6 Luna (effort none) (not declared) | 98 | $21k | $111k | 97 | $19k | $108k |
-| GPT-6 Luna (Responses API) (not declared) | 97 | $21k | $108k | 128 | $20k | $137k |
-| GPT-5 mini (retiring 2026-12-11) | 232 | $23k | $232k | 510 | $29k | $485k |
+| GPT-4.1 mini (retiring 2027-01-14; measured reference) | 255 | $24k | $254k | 561 | $30k | $536k |
+| GPT-6 Luna (effort none) (not declared) | 98 | $21k | $111k | 97 | $19k | $111k |
+| GPT-6 Luna (Responses API) (not declared) | 97 | $21k | $111k | 128 | $20k | $140k |
+| GPT-5 mini (retiring 2026-12-11) | 232 | $23k | $235k | 510 | $29k | $488k |
 | GPT-6.1 Terra (effort none) (not declared) | 131 | $23k | $140k | 178 | $21k | $184k |
 | GPT-6.1 Terra (Responses API) (not declared) | 133 | $23k | $143k | 188 | $21k | $194k |
-| Claude Haiku 4.5 | 84 | $20k | $98k | 166 | $21k | $171k |
-| Claude Sonnet 4.6 | 147 | $21k | $156k | 324 | $25k | $314k |
-| Gemini 3.1 Pro (preview) | 90 | $19k | $102k | 198 | $21k | $200k |
+| Claude Haiku 4.5 | 84 | $20k | $99k | 166 | $21k | $175k |
+| Claude Sonnet 4.6 | 147 | $21k | $156k | 324 | $25k | $317k |
+| Gemini 3.1 Pro (preview) | 90 | $19k | $105k | 198 | $21k | $203k |
 <!-- /table:item-levels -->
 
 ## What would have to change for a full run
@@ -675,3 +679,12 @@ start the engine, because an engine start publishes declarations into the
 datasets. It wrote nothing to any dataset, queued no run, and restarted no
 service. The one file it put in the container's `/tmp` (the PMC chunks it
 sent) was removed afterwards.
+
+These runs predate the calibration script's present budget rules: the
+provider client could retry on its own, a failed request was charged nothing,
+and each run's cap was chosen by hand to keep the total under 5 USD. Their 64
+failed requests are all HTTP 400 rejections of the request's parameters,
+refused before any generation, and none timed out, so the spend above stands.
+The script now enforces one 5 USD budget across runs (`--already-spent`),
+charges a failed request its worst case, and leaves retrying to the
+pipeline's own retry policy.

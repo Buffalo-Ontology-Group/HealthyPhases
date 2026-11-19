@@ -12,6 +12,7 @@ Reads only committed files (``prices.yaml``, ``assumptions.yaml`` and
     uv run $S/cost_model.py check     # exit 1 when the report's tables are stale
     uv run $S/cost_model.py tables    # print the tables
     uv run $S/cost_model.py calibration-prices   # prices JSON for calibrate.py
+    uv run $S/cost_model.py calibration-spent    # spend so far, for calibrate.py --already-spent
 
 Every function below the loaders is pure: it takes the loaded inputs and
 returns numbers or Markdown, which is what the tests exercise.
@@ -256,7 +257,6 @@ class Profile:
     output_tokens: dict[str, float]
     reasoning_tokens: dict[str, float]
     calls_per_extraction: float
-    failed_share: float
     item_ratio: float
     items_per_chunk: dict[str, float]
     calibrated_chunks: int
@@ -266,9 +266,38 @@ class Profile:
     source: str = "prod"
 
 
+def items_of(record: dict) -> int:
+    """Items an extraction kept: none when it failed."""
+    return record["items"] if record["status"] == "succeeded" else 0
+
+
+def complete_chunks(records: list[dict]) -> set[str]:
+    """Chunks every prompt was run on (a run its cap stopped may leave one partial)."""
+    prompts: dict[str, set[str]] = defaultdict(set)
+    for record in records:
+        prompts[record["chunk_id"]].add(record["prompt"])
+    return {chunk for chunk, seen in prompts.items() if seen >= set(PROMPTS)}
+
+
+def profile_records(inputs: Inputs, model_id: str) -> tuple[list[dict], str]:
+    """The calibration records ``profile`` takes ``model_id``'s figures from, and their source."""
+    prod = [r for r in calibration_records(inputs, "prod") if r["model_id"] == model_id]
+    pmc = [
+        r
+        for r in calibration_records(inputs, "pmc_sample")
+        if r["model_id"] == model_id
+    ]
+    if not prod:
+        raise ValueError(f"no calibration records for {model_id}")
+    if inputs.assumptions["chunk_level"] == "pmc_sample" and pmc:
+        return pmc, "pmc_sample"
+    return prod, "prod"
+
+
 def _usage(records: list[dict], offline: dict) -> dict[str, dict[str, float]]:
     """Per prompt: billed input (offline count plus measured overhead), cached
-    input, output, reasoning and items, means over successful calls."""
+    input, output, reasoning (means over successful calls), and items per
+    extraction (a failed extraction counts as none)."""
     by_prompt: dict[str, list[dict]] = defaultdict(list)
     for record in records:
         by_prompt[record["prompt"]].append(record)
@@ -282,7 +311,7 @@ def _usage(records: list[dict], offline: dict) -> dict[str, dict[str, float]]:
         ]
         if not calls:
             raise ValueError(f"no successful calibration call for {prompt}")
-        answered = [r for r in by_prompt[prompt] if r["status"] == "succeeded"]
+        extractions = by_prompt[prompt]
         usage[prompt] = {
             "input": offline[prompt]["input_tokens_mean"]
             + statistics.fmean(
@@ -291,9 +320,7 @@ def _usage(records: list[dict], offline: dict) -> dict[str, dict[str, float]]:
             "cached": statistics.fmean(c["cached_input_tokens"] or 0 for c, _ in calls),
             "output": statistics.fmean(c["output_tokens"] for c, _ in calls),
             "reasoning": statistics.fmean(c["reasoning_tokens"] or 0 for c, _ in calls),
-            "items": statistics.fmean(r["items"] for r in answered)
-            if answered
-            else 0.0,
+            "items": statistics.fmean(items_of(r) for r in extractions),
         }
     return usage
 
@@ -317,24 +344,14 @@ def profile(inputs: Inputs, model_id: str) -> Profile:
     offline = inputs.tokens["prompts"]
     level = inputs.assumptions["chunk_level"]
     reference = inputs.assumptions["reference_model"]
-    prod = [r for r in calibration_records(inputs, "prod") if r["model_id"] == model_id]
-    pmc = [
-        r
-        for r in calibration_records(inputs, "pmc_sample")
-        if r["model_id"] == model_id
-    ]
-    if not prod:
-        raise ValueError(f"no calibration records for {model_id}")
+    records, source = profile_records(inputs, model_id)
     ratio = item_ratio(inputs, model_id)
+    usage = _usage(records, offline)
 
-    if level == "pmc_sample" and pmc:
-        records, source = pmc, "pmc_sample"
-        usage = _usage(pmc, offline)
+    if source == "pmc_sample":
         items = {p: usage[p]["items"] for p in PROMPTS}
         output = {p: usage[p]["output"] for p in PROMPTS}
     else:
-        records, source = prod, "prod"
-        usage = _usage(prod, offline)
         output = {p: usage[p]["output"] for p in PROMPTS}
         items = {p: reference_items(inputs, level)[p] * ratio for p in PROMPTS}
         if level == "pmc_sample":
@@ -367,7 +384,6 @@ def profile(inputs: Inputs, model_id: str) -> Profile:
         output_tokens=output,
         reasoning_tokens={p: usage[p]["reasoning"] for p in PROMPTS},
         calls_per_extraction=attempts / len(records),
-        failed_share=sum(r["status"] == "failed" for r in records) / len(records),
         item_ratio=ratio,
         items_per_chunk=items,
         calibrated_chunks=len({r["chunk_id"] for r in records}),
@@ -387,14 +403,12 @@ def reference_items(inputs: Inputs, level: str | None = None) -> dict[str, float
         answers = inputs.tokens["answers"][model]
         return {p: answers[p]["items_per_chunk"] for p in PROMPTS}
     records = [
-        r
-        for r in calibration_records(inputs, "pmc_sample")
-        if r["model_id"] == model and r["status"] == "succeeded"
+        r for r in calibration_records(inputs, "pmc_sample") if r["model_id"] == model
     ]
     if not records:
         raise ValueError("no PMC-sample calibration of the reference model")
     return {
-        p: statistics.fmean(r["items"] for r in records if r["prompt"] == p)
+        p: statistics.fmean(items_of(r) for r in records if r["prompt"] == p)
         for p in PROMPTS
     }
 
@@ -406,12 +420,10 @@ def item_ratio(inputs: Inputs, model_id: str) -> float:
     records = [
         r
         for r in calibration_records(inputs)
-        if r["model_id"] == model_id
-        and r["status"] == "succeeded"
-        and r["reference_items"] is not None
+        if r["model_id"] == model_id and r["reference_items"] is not None
     ]
     reference = sum(r["reference_items"] for r in records)
-    return sum(r["items"] for r in records) / reference if reference else 1.0
+    return sum(items_of(r) for r in records) / reference if reference else 1.0
 
 
 def call_cost(profile: Profile, prompt: str, price: dict) -> float:
@@ -520,13 +532,17 @@ def qdrant_ram_per_point(
 ) -> float:
     """RAM per point by Qdrant's capacity formulas, headroom included.
 
-    Without quantization the float32 vectors are in RAM. With it, the quantized
-    copy is in RAM and the originals move to disk.
+    With quantization, the quantized copy is in RAM and the originals move to
+    disk. Without it, the float32 vectors are in RAM when
+    ``self_hosted.qdrant_vectors_in_ram`` (as production keeps them), and
+    otherwise on disk, leaving only the index and ID tracker in RAM.
     """
     sizing = inputs.prices["qdrant_sizing"]
     vector = dimensions * 4
     if quantization:
         vector = vector / sizing["quantization_ratio"][quantization]
+    elif not inputs.assumptions["self_hosted"]["qdrant_vectors_in_ram"]:
+        vector = 0
     raw = vector + sizing["hnsw_bytes_per_point"] + sizing["id_tracker_bytes_per_point"]
     return raw * (1 + sizing["headroom"])
 
@@ -748,11 +764,16 @@ class Bill:
     new_papers_month: float
 
 
+def held_papers(inputs: Inputs, corpus: str) -> float:
+    """What the stores hold while a month of new papers runs: the corpus plus a month."""
+    return corpus_size(inputs, corpus) + growth(inputs, corpus)["mean"]
+
+
 def bill(inputs: Inputs, model_id: str, corpus: str, **paper_options) -> Bill:
     per = paper(inputs, model_id, **paper_options)
     papers = corpus_size(inputs, corpus)
     new = growth(inputs, corpus)["mean"]
-    held = infra(inputs, per, papers + new)
+    held = infra(inputs, per, held_papers(inputs, corpus))
     return Bill(
         backfill_calls=per.model_calls * papers,
         backfill_calls_batch=per.model_calls_batch * papers,
@@ -859,21 +880,37 @@ def hours_to_complete(inputs: Inputs, model_id: str, papers: float) -> dict:
 # --- uncertainty -------------------------------------------------------------
 
 
+def chunk_costs(inputs: Inputs, records: list[dict], model_id: str) -> dict[str, float]:
+    """Model-call cost of each complete chunk in ``records``: every request
+    (retries included) priced as :func:`call_cost` prices it."""
+    price = model_price(inputs, model_id)
+    whole = complete_chunks(records)
+    costs: dict[str, float] = defaultdict(float)
+    for record in records:
+        if record["chunk_id"] not in whole:
+            continue
+        for call in record["calls"]:
+            if not call.get("ok"):
+                continue
+            cached = min(call["cached_input_tokens"] or 0, call["input_tokens"])
+            costs[record["chunk_id"]] += (
+                (call["input_tokens"] - cached) * price["input"]
+                + cached * price["cached_input"]
+                + call["output_tokens"] * price["output"]
+            ) / 1e6
+    return dict(costs)
+
+
 def calibration_interval(
     inputs: Inputs, model_id: str, seed: int = 855, draws: int = 2000
 ) -> tuple[float, float]:
-    """90% bootstrap interval, over calibration chunks, of model-call cost relative to its mean."""
-    records = [r for r in calibration_records(inputs) if r["model_id"] == model_id]
-    price = model_price(inputs, model_id)
-    per_chunk: dict[str, float] = defaultdict(float)
-    for record in records:
-        for call in record["calls"]:
-            if call.get("ok"):
-                per_chunk[record["chunk_id"]] += (
-                    call["input_tokens"] * price["input"]
-                    + call["output_tokens"] * price["output"]
-                ) / 1e6
-    values = list(per_chunk.values())
+    """90% bootstrap interval of model-call cost per chunk, relative to its mean.
+
+    Resampled over the complete chunks of the same calibration records the
+    model's profile is built from (:func:`profile_records`).
+    """
+    records, _ = profile_records(inputs, model_id)
+    values = list(chunk_costs(inputs, records, model_id).values())
     mean = statistics.fmean(values)
     rng = random.Random(seed)
     means = sorted(
@@ -949,8 +986,8 @@ def t_key_numbers(inputs: Inputs) -> str:
             f"{entrez}: `author manuscript[filter]`",
         ],
         [
-            "Article versions in the PMC Cloud bucket",
-            count(inputs.inventory["article_versions"]),
+            "Articles in the PMC Cloud bucket (article versions)",
+            f"{count(inputs.inventory['articles'])} ({count(inputs.inventory['article_versions'])})",
             f"{bucket}: snapshot {inputs.inventory['snapshot']}",
         ],
         [
@@ -1220,31 +1257,33 @@ def t_calibration(inputs: Inputs) -> str:
             if not records:
                 continue
             calls = [c for r in records for c in r["calls"] if c.get("ok")]
-            price = model_price(inputs, model_id)
-            cost = sum(
-                (
-                    c["input_tokens"] * price["input"]
-                    + c["output_tokens"] * price["output"]
-                )
-                / 1e6
-                for c in calls
+            # Per prompt, then summed: a chunk the cap stopped part-way would
+            # otherwise count as a whole one.
+            items = sum(
+                statistics.fmean(items_of(r) for r in records if r["prompt"] == p)
+                for p in PROMPTS
             )
+            costs = chunk_costs(inputs, records, model_id)
             chunks = {r["chunk_id"] for r in records}
-            answered = [r for r in records if r["status"] == "succeeded"]
             rows.append(
                 [
                     display(inputs, model_id),
-                    f"{label}: {len(chunks)} × {len(PROMPTS)}",
+                    f"{label}: {len(costs)} × {len(PROMPTS)}"
+                    + (
+                        f" (+{len(chunks) - len(costs)} partial)"
+                        if len(chunks) > len(costs)
+                        else ""
+                    ),
                     f"{statistics.fmean(c['input_tokens'] for c in calls):,.0f} / "
                     f"{statistics.fmean(r['offline_input_tokens'] for r in records):,.0f}",
                     f"{statistics.fmean(c['output_tokens'] for c in calls):,.0f}",
                     f"{statistics.fmean(c['reasoning_tokens'] or 0 for c in calls):,.0f}",
                     f"{sum(len(r['calls']) for r in records) / len(records):.2f}",
                     f"{sum(r['status'] == 'failed' for r in records) / len(records):.0%}",
-                    f"{sum(r['items'] for r in answered) / len(chunks):.1f}",
+                    f"{items:.1f}",
                     f"{item_ratio(inputs, model_id):.2f}" if source == "prod" else "",
                     f"{statistics.fmean(c['seconds'] for c in calls):.1f}",
-                    usd(cost / len(chunks)),
+                    usd(statistics.fmean(costs.values())),
                 ]
             )
     return table(
@@ -1367,7 +1406,7 @@ def t_embedding_scenarios(inputs: Inputs, corpus: str) -> str:
     rows = []
     for label, options in scenarios:
         per = paper(inputs, model, **options)
-        held = infra(inputs, per, papers)
+        held = infra(inputs, per, held_papers(inputs, corpus))
         rows.append(
             [
                 label,
@@ -1648,7 +1687,7 @@ def t_item_levels(inputs: Inputs, corpus: str) -> str:
         for level in ("pmc_sample", "prod"):
             varied = with_assumption(inputs, chunk_level=level)
             per = paper(varied, model_id)
-            held = infra(varied, per, papers)
+            held = infra(varied, per, held_papers(varied, corpus))
             cells += [
                 f"{per.items:,.0f}",
                 usd((per.embeddings_chunks + per.embeddings_items) * papers),
@@ -1709,6 +1748,11 @@ def render(inputs: Inputs, report: str) -> str:
     return MARKER.sub(fill, report)
 
 
+def calibration_spent(inputs: Inputs) -> float:
+    """What every committed calibration run spent, for ``calibrate.py --already-spent``."""
+    return round(calibration_spend(inputs)["total"], 6)
+
+
 def calibration_prices(inputs: Inputs) -> dict:
     out = {m: model_price(inputs, m) for m in inputs.prices["models"]}
     return out
@@ -1727,6 +1771,8 @@ def main(argv: list[str]) -> int:
         if render(inputs, current) != current:
             print(f"{REPORT.name} is stale: run cost_model.py report", file=sys.stderr)
             return 1
+    elif command == "calibration-spent":
+        print(calibration_spent(inputs))
     elif command == "calibration-prices":
         print(json.dumps(calibration_prices(inputs), separators=(",", ":")))
     else:

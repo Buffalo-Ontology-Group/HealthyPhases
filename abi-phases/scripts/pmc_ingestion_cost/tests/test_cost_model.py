@@ -29,7 +29,6 @@ def profile_with(input_tokens=1000.0, output_tokens=100.0, cached=0.0, calls=1.0
         output_tokens={p: output_tokens for p in cm.PROMPTS},
         reasoning_tokens={p: 0.0 for p in cm.PROMPTS},
         calls_per_extraction=calls,
-        failed_share=0.0,
         item_ratio=1.0,
         items_per_chunk={p: 1.0 for p in cm.PROMPTS},
         calibrated_chunks=1,
@@ -197,6 +196,104 @@ def test_render_refuses_an_unknown_table(committed):
 )
 def test_usd_rounds_to_a_readable_precision(value, text):
     assert cm.usd(value) == text
+
+
+def call(input_tokens, output_tokens, cached=0):
+    return {
+        "ok": True,
+        "input_tokens": input_tokens,
+        "cached_input_tokens": cached,
+        "output_tokens": output_tokens,
+        "reasoning_tokens": 0,
+        "seconds": 1.0,
+    }
+
+
+def record(chunk, prompt, calls, status="succeeded", items=1):
+    return {
+        "model_id": "openai/gpt-4.1-mini",
+        "chunk_id": chunk,
+        "prompt": prompt,
+        "status": status,
+        "items": items,
+        "reference_items": None,
+        "offline_input_tokens": 1000,
+        "calls": calls,
+    }
+
+
+def test_chunk_costs_price_cached_input_and_skip_partial_chunks(committed):
+    whole = [record("a", p, [call(1000, 100, cached=400)]) for p in cm.PROMPTS]
+    partial = [record("b", p, [call(1000, 100)]) for p in cm.PROMPTS[:-1]]
+    costs = cm.chunk_costs(committed, whole + partial, "openai/gpt-4.1-mini")
+    price = cm.model_price(committed, "openai/gpt-4.1-mini")
+    one = (
+        600 * price["input"] + 400 * price["cached_input"] + 100 * price["output"]
+    ) / 1e6
+    assert costs == {"a": pytest.approx(len(cm.PROMPTS) * one)}
+
+
+def test_a_failed_extraction_counts_as_no_items():
+    assert cm.items_of(record("a", "solitude_what", [], status="failed", items=7)) == 0
+    assert cm.items_of(record("a", "solitude_what", [], items=7)) == 7
+
+
+def test_the_interval_comes_from_the_records_the_profile_uses(committed):
+    model = "openai/gpt-6-luna@effort-none"
+    records, source = cm.profile_records(committed, model)
+    assert source == "pmc_sample"
+    before = cm.calibration_interval(committed, model)
+
+    # Wild production chunks leave it alone: the profile does not use them.
+    changed = copy.deepcopy(committed)
+    for run in changed.calibration:
+        for r in run["records"]:
+            if r["model_id"] == model and run.get("chunk_source", "prod") == "prod":
+                for c in r["calls"]:
+                    c["output_tokens"] *= 1000
+    assert cm.calibration_interval(changed, model) == before
+
+    # A wild PMC chunk moves it.
+    first = records[0]["chunk_id"]
+    for run in changed.calibration:
+        for r in run["records"]:
+            if (
+                r["model_id"] == model
+                and r["chunk_id"] == first
+                and run.get("chunk_source") == "pmc_sample"
+            ):
+                for c in r["calls"]:
+                    c["output_tokens"] *= 1000
+    assert cm.calibration_interval(changed, model) != before
+
+
+def test_vectors_on_disk_leave_only_the_index_in_ram(committed):
+    on_disk = cm.with_assumption(
+        committed,
+        self_hosted={
+            **committed.assumptions["self_hosted"],
+            "qdrant_vectors_in_ram": False,
+        },
+    )
+    sizing = committed.prices["qdrant_sizing"]
+    index = (sizing["hnsw_bytes_per_point"] + sizing["id_tracker_bytes_per_point"]) * (
+        1 + sizing["headroom"]
+    )
+    assert cm.qdrant_ram_per_point(on_disk, 3072) == pytest.approx(index)
+    assert cm.qdrant_ram_per_point(committed, 3072) > index
+
+
+def test_scenario_tables_size_the_stores_like_the_headline(committed):
+    model = committed.assumptions["reference_model"]
+    held = cm.bill(committed, model, "oa").infra
+    assert (
+        cm.count(held.vectors)
+        in cm.t_embedding_scenarios(committed, "oa").splitlines()[2]
+    )
+    assert (
+        cm.size(held.qdrant_ram)
+        in cm.t_embedding_scenarios(committed, "oa").splitlines()[2]
+    )
 
 
 # --- the committed data ------------------------------------------------------
