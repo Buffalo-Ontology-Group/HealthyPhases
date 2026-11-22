@@ -43,6 +43,7 @@ modules:
             viewer: [chat, files]
           workspace_overrides: {}
         magic_link_allow_signup: false
+        auth_password_enabled: true
         email_from_address: "{{ secret.SMTP_FROM_EMAIL }}"
         email_from_name: "{{ secret.SMTP_FROM_NAME }}"
         magic_link_email_app_name: "HealthyPhases Platform"
@@ -50,11 +51,12 @@ modules:
         magic_link_email_text_template: "Use this link to sign in to {app_name}:\n\n{magic_link_url}\n\nThis link expires in {expire_minutes} minutes."
         magic_link_email_html_template: "<p>Use this link to sign in to {app_name}:</p><p><a href=\"{magic_link_url}\">Sign in</a></p><p>This link expires in {expire_minutes} minutes.</p>"
         tenant:
-          tab_title: "HealthyPhases | ABI Nexus"
-          primary_color: "#22c55e"
-          accent_color: "#16a34a"
-          logo_emoji: "🏥"
-          show_powered_by: true
+          tab_title: "HealthyPhases Platform"
+          primary_color: "#20558A"
+          accent_color: "#184068"
+          logo_url: "https://healthyphases.org/img/healthyphases-logo.png"
+          show_powered_by: false
+          login_footer_text: "HealthyPhases is the name of the research group operating the PHASES project. NIH project 5U01AG088074-02 https://reporter.nih.gov/project-details/11184405"
         users:
           - email: "maxime@naas.ai"
             name: "Maxime"
@@ -66,10 +68,10 @@ modules:
           - name: "HealthyPhases"
             slug: "healthyphases"
             owner_email: "maxime@naas.ai"
-            logo_emoji: "🏥"
-            primary_color: "#22c55e"
-            accent_color: "#16a34a"
-            show_powered_by: true
+            logo_url: "https://healthyphases.org/img/healthyphases-logo.png"
+            primary_color: "#20558A"
+            accent_color: "#184068"
+            show_powered_by: false
             members:
               - email: "maxime@naas.ai"
                 role: "owner"
@@ -79,7 +81,7 @@ modules:
               - name: "Main Workspace"
                 slug: "main"
                 owner_email: "maxime@naas.ai"
-                primary_color: "#22c55e"
+                primary_color: "#20558A"
                 # Agents the workspace runs. Nexus re-aligns enabled agents to
                 # this list on every sync, so an app manifest's "agent" only
                 # binds the right pane to an agent listed here. The default

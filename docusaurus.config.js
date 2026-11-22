@@ -76,9 +76,10 @@ const config = {
             position: 'right',
           },
           {
-            to: '/chat',
-            label: 'Chat with AI',
+            href: 'https://nexus.healthyphases.org/auth/login',
+            label: 'Sign in',
             position: 'right',
+            target: '_blank',
           },
           {
             to: '/join',
@@ -179,7 +180,7 @@ const config = {
       },
       colorMode: {
         defaultMode: 'light',
-        disableSwitch: false,
+        disableSwitch: true,
         respectPrefersColorScheme: false,
       },
       docs: {
