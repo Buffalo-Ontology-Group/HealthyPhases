@@ -5,7 +5,7 @@ Guidance for coding agents working in this repository.
 ## 1) Repository Map
 
 - This repo has two main code areas:
-- `./` = Docusaurus website (`src/`, `docs/`, `static/`, `api/`), Node 18.
+- `./` = Docusaurus website (`src/`, `docs/`, `static/`), Node 18.
 - `./abi/` = HealthyPhases ABI Python package, managed with `uv`.
 - `./abi/abi/` = larger ABI monorepo snapshot with extensive Make targets.
 
@@ -122,7 +122,7 @@ Guidance for coding agents working in this repository.
 - Respect Docusaurus alias usage like `@site/...` and `@theme/...`.
 - Prefer CSS modules when file already uses `*.module.css`.
 - Keep browser-only logic guarded when SSR can occur.
-- For API access, keep network concerns in `api/services/*`.
+- The join form sends mail through EmailJS, and videos fetch YouTube directly. Keep axios; `scripts/convert-wiki.js` uses it.
 
 ## 10) Naming and File Placement
 
