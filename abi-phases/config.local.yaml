@@ -71,7 +71,7 @@ modules:
           accent_color: "#184068"
           logo_url: "https://healthyphases.org/img/healthyphases-logo.png"
           show_powered_by: false
-          login_footer_text: "HealthyPhases Platform"
+          login_footer_text: "HealthyPhases is the name of the research group operating the PHASES project. NIH project 5U01AG088074-02 https://reporter.nih.gov/project-details/11184405"
         users:
           - email: "maxime@naas.ai"
             name: "Maxime"
