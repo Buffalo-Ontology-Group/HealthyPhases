@@ -46,7 +46,7 @@ A question-answer system for solitude and gerotranscendence research allows stak
 - Ontology-based search result enhancement
 - Direct links to downloadable research papers
 
-**Current Status:** Phase 3 Active - Access the Q&A system at [/chat](/chat)
+**Current Status:** Phase 3 Active. The public chat was removed.
 
 ### Inference Extraction System
 
@@ -117,7 +117,7 @@ flowchart LR
 - [x] LLM integration with Gemini free API
 - [x] Basic system prompt implementation
 - [x] Open source ABI (Agentic Brain Infrastructure) framework integration
-- [x] Initial chat interface at [/chat](/chat)
+- [x] Initial chat interface (removed from the public site)
 
 ```mermaid
 flowchart LR
@@ -140,7 +140,7 @@ flowchart LR
 - [x] Natural language query processing for research questions
 - [x] Paper retrieval and downloadable link generation
 - [x] Agentic workflow orchestration for complex research queries
-- [x] Integration with existing chat interface at `/chat`
+- [x] Integration with the chat interface (removed from the public site)
 
 ```mermaid
 flowchart LR
@@ -230,7 +230,6 @@ flowchart LR
 The HealthyPhases portal is live and available for use by the research community:
 
 - **Free Access**: Open-access platform available at [healthyphases.org](https://healthyphases.org)
-- **Q&A System**: Interactive chat interface at [/chat](/chat) with PubMed integration
 - **Research Documentation**: Comprehensive resources and ontology information
 - **Community Resources**: Publications, training materials, and research areas
 - **Current Capabilities**: 
